@@ -1,40 +1,13 @@
 (ns exfn.app
   (:require [reagent.dom :as dom]
-            [exfn.parser :refer [parse]]
-            [re-frame.core :as rf]
-            [goog.string.format]))
+            [exfn.subs]
+            [exfn.events]
+            [re-frame.core :as rf]))
 
 ;; DEV NOTES
 ;; npx shadow-cljs watch app
 ;; then open web page in browser
 ;; then connect to repl.
-
-;; -- Events ------------------------------------------------------------------------
-(rf/reg-event-db
- :initialize
- (fn [_ _]
-   {:source ""
-    :code []
-    :eip 0
-    :registers {:internal-registers {} :eip-stack []}
-    :stack []}))
-
-(rf/reg-event-db
- :update-source
- (fn [db [_ source]]
-   (assoc db :source source)))
-
-(rf/reg-event-db
- :parse
- (fn [{:keys [source] :as db} _]
-   (let [parsed (parse source)]
-     (assoc db :code parsed))))
-
-;; -- Subscriptions -----------------------------------------------------------------
-(rf/reg-sub
- :code
- (fn [db _]
-   (:code db)))
 
 ;; -- Reagent Components ------------------------------------------------------------
 (defn code-editor []
