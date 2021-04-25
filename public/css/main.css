@@ -1,20 +1,50 @@
 body{
     background-color:lightsteelblue;
 }
+
 .content {
-    text-align: center;
     margin:10px;
+    text-align: center;
 }
 
-.canvas {
-    border: 3px black solid;
-}
-
-.result {
-    border: 2px black solid;
-    background-color:yellow;
-}
-
-.btn{
+/*
+The parsed code control:
+*/
+.code {
+    border: 1px black solid;
     margin: 10px;
+    table-layout: fixed;
+    text-align: left;
+}
+
+.instruction {
+    color: darkblue;
+    font-weight: bold;
+    margin-left: 8px;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    text-align: left;
+    width: 50px;
+}
+
+.register {
+    color: darkmagenta;
+    font-weight: bold;
+    text-align: center;
+    width: 150px;
+}
+
+.value {
+    color: black;
+    font-weight: normal;
+    text-align: center;
+    width: 150px;
+}
+
+.eip {
+    width: 10px;
+}
+
+.current-line {
+    background-color: goldenrod;
 }

@@ -7,7 +7,7 @@
  (fn [_ _]
    {:source ""
     :code []
-    :eip 0
+    :eip 2
     :registers {:internal-registers {} :eip-stack []}
     :stack []}))
 
