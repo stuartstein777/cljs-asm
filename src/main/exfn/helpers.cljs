@@ -9,4 +9,4 @@
                              (assoc :line-nos (str line-nos cur "\n"))
                              (update :cur inc))))
                      {:cur 0 :line-nos ""}
-                     (str/split-lines source))))
+                     (str/split source #"\r?\n" -1))))

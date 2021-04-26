@@ -15,16 +15,23 @@
     :breakpoints #{}
     :running? false}))
 
+;; Handles the user typing into the source control editor.
 (rf/reg-event-db
  :update-source
  (fn [db [_ source]]
    (assoc db :source source)))
 
+;; Handles when the user clicks the Parse button.
 (rf/reg-event-db
  :parse
  (fn [{:keys [source] :as db} _]
    (let [parsed (parse source)]
      (assoc db :code parsed))))
+
+(rf/reg-event-db
+ :update-scroll
+ (fn [db [_ scroll-pos]]
+   (assoc db :scroll-pos scroll-pos)))
 
 ;; ===================================================================
 ;; Parsed code events

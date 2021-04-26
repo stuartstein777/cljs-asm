@@ -25,3 +25,8 @@
  :running?
  (fn [db _]
    (:running? db)))
+
+(rf/reg-sub
+ :scroll-pos
+ (fn [db _]
+   (:scroll-pos db)))

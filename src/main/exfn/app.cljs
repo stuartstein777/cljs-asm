@@ -1,6 +1,7 @@
 (ns exfn.app
   (:require
    [reagent.dom :as dom]
+   [reagent.core :refer [with-let atom]]
    [exfn.subs]
    [exfn.events]
    [exfn.helpers :as h]
@@ -16,14 +17,23 @@
   (let [source @(rf/subscribe [:source])]
     [:div
      [:div.editor
-      [:textarea.text-editor-line-nos {:readOnly true
-                                       :value (h/get-source-line-numbers source)}]
-      [:textarea.text-editor {:on-change #(rf/dispatch-sync [:update-source (-> % .-target .-value)])
-                              :value     @(rf/subscribe [:source])
-                              :wrap :off}]]]))
+      [:div.source-editor-header "Source Editor"]
+      [:textarea#lineNos.text-editor-line-nos {:readOnly  true
+                                               :value     (h/get-source-line-numbers source)}]
+      [:textarea#editor.text-editor {:on-change #(rf/dispatch-sync [:update-source (-> % .-target .-value)])
+                                     :on-scroll (fn [^js e]
+                                                  (let [scroll-pos (.. e -target -scrollTop)]
+                                                    (-> js/document
+                                                        (.getElementById "lineNos")
+                                                        (.-scrollTop)
+                                                        (set! scroll-pos))
+                                                    ))
+                                     :value     @(rf/subscribe [:source])
+                                     :wrap      :off}]]]))
 
 (defn code []
   [:div.code-holder
+   [:div.parsed-code-header "Parsed Code"]
    (let [code @(rf/subscribe [:code])
          breakpoints @(rf/subscribe [:breakpoints])
          code-with-lines (zipmap (range (count code)) code)
@@ -36,7 +46,7 @@
           [:td.breakpoint
            [:i.fas.fa-circle {:style {:color (if (some? (breakpoints line-no)) "red" "lightgray")}
                               :on-click #(rf/dispatch [:toggle-breakpoint line-no])}]]
-          [:td.eip
+          [:td.code-eip
            [:i.fas.fa-angle-double-right
             {:style {:visibility (if (= eip line-no) :visible :hidden)}}]]
           [:td.line-number
@@ -51,11 +61,29 @@
                   [:label.value {:key (key i)} (val i)])))]]])]])])
 
 (defn execution-controls []
-  (let [is-running? @(rf/subscribe [:running?])]
-    [:div.execution-controls
-     [:button.btn.btn-success.play-pause
-      {:on-click #(rf/dispatch [:toggle-running])}
-      (if is-running? [:i.fas.fa-pause] [:i.fas.fa-play])]]))
+  [:div.row
+   (let [is-running? @(rf/subscribe [:running?])]
+     [:div.execution-controls
+      [:button.btn.btn-success.play-pause
+       {:on-click #(rf/dispatch [:toggle-running])}
+       (if is-running? [:i.fas.fa-pause] [:i.fas.fa-play])]
+      [:button.btn.btn-success.next-instruction
+       [:i.fas.fa-forward]]
+      [:button.btn.btn-danger.stop-button
+       [:i.fas.fa-stop]]
+      [:input.instr-per-sec {:type "text"
+                             :placeholder "1"}]
+      [:label.speed-label "speed (secs / instruction.)"]])])
+
+(defn eip []
+  (let [eip @(rf/subscribe [:eip])]
+    [:div
+     [:label.eip-header "EIP"]
+     [:label.eip eip]]))
+
+(defn memory []
+  [:div
+   [eip]])
 
 ;; -- App ---------------------------------------------------------------------------
 (defn app []
@@ -66,10 +94,11 @@
     [:div.col.col-lg-4
      [code]]
     [:div.col.col-lg-4]]
-   [:div.row 
-    [:button.btn.btn-primary.parse-btn {:on-click #(rf/dispatch [:parse])} "Parse"]]
    [:div.row
-    [execution-controls]]])
+    [:button.btn.btn-primary.parse-btn {:on-click #(rf/dispatch [:parse])} "Parse"]]
+   [execution-controls]
+   [:div.row.memory-eip
+    [memory]]])
 
 ;; -- Dev Helpers -------------------------------------------------------------------
 (comment (rf/dispatch-sync [:initialize]))

@@ -1,5 +1,5 @@
 body{
-    background-color:lightsteelblue;
+    background-color: rgb(150, 150, 150);
 }
 
 .content {
@@ -8,7 +8,8 @@ body{
 }
 
 .parse-btn {
-    margin-left: 20px;
+    margin-top: 10px;
+    margin-left: 30px;
     width: 150px;
 }
 
@@ -18,29 +19,42 @@ The code editor
 reagent function::          code-editor
 ----------------------------------------------------------
 */
+
 .editor {
     height: 400px;
     margin: 10px;
     width: 600px;
 }
 
+.source-editor-header {
+    background-color: brown;
+    border: 1px black solid;
+    color: white;
+    padding-left: 5px;
+    text-align: left;
+    vertical-align: middle;
+}
+
 .text-editor-line-nos {
     background-color: lightgray;
     border-right: 0px;
     float: left;
+    font-size: 13px;
     height: 400px;
     margin: 0 auto;
+    overflow: hidden;
     resize: none;
     text-align: center;
-    width: 35px;
+    width: 45px;
 }
 
 .text-editor {
     border-left: 0px;
     float: left;
+    font-size: 13px;
     height: 100%;
     margin: 0 auto;
-    width: 565px;
+    width: 555px;
 }
 
 textarea:focus { 
@@ -54,6 +68,7 @@ The parsed code control
 reagent function::          code
 ----------------------------------------------------------
 */
+
 .breakpoint {
     cursor: pointer;
     width: 25px;
@@ -87,7 +102,7 @@ reagent function::          code
     background-color: goldenrod;
 }
 
-.eip {
+.code-eip {
     width: 25px;
 }
 
@@ -107,7 +122,16 @@ reagent function::          code
     border-left: 2px solid black;
     color: white;
     text-align: center;
-    width: 30px;
+    width: 45px;
+}
+
+.parsed-code-header {
+    background-color: brown;
+    border: 1px black solid;
+    color: white;
+    padding-left: 5px;
+    text-align: left;
+    vertical-align: middle;
 }
 
 .register {
@@ -140,6 +164,60 @@ reagent function::          execution-controls
     text-align:  left;
 }
 
+.instr-per-sec {
+    margin-left: 40px;
+    text-align: center;
+    vertical-align: middle;
+    width: 50px;
+}
+
+.next-instruction {
+    color: black;
+    margin-left: 10px;
+}
+
 .play-pause {
     color: black;
+}
+
+.speed-label {
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
+.stop-button {
+    color: black;
+    margin-left: 10px;
+}
+
+/*
+----------------------------------------------------------
+The registers section
+
+reagent function::          memory, eip
+
+----------------------------------------------------------
+*/
+.memory-eip {
+    text-align: left;
+}
+
+.eip-header {
+    background-color: brown;
+    border: 1px black solid;
+    color:white;
+    text-align: center;
+    vertical-align: middle;
+    width: 50px;
+}
+
+.eip {
+    background-color: white;
+    border-right: 1px black solid;
+    border-top: 1px black solid;
+    border-bottom: 1px black solid;
+    color: black;
+    text-align: center;
+    vertical-align: middle;
+    width: 100px;
 }
