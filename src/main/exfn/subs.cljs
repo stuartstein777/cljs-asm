@@ -14,7 +14,7 @@
 (rf/reg-sub
  :eip
  (fn [db _]
-   (:eip db)))
+   (:eip (:memory db))))
 
 (rf/reg-sub
  :breakpoints

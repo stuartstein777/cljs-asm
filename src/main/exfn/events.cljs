@@ -6,12 +6,14 @@
 (rf/reg-event-db
  :initialize
  (fn [_ _]
-   {:source ""
-    :code []
-    :eip 0
-    :registers {:internal-registers {} :eip-stack []}
-    :stack []
-    :breakpoints #{}}))
+   {:source      ""
+    :code        []
+    :memory {:eip       0
+             :registers {:internal-registers {}
+                         :eip-stack          []}
+             :stack     []}
+    :breakpoints #{}
+    :running false}))
 
 (rf/reg-event-db
  :update-source

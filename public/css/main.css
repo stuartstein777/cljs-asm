@@ -7,6 +7,11 @@ body{
     text-align: center;
 }
 
+.parse-btn {
+    margin-left: 20px;
+    width: 150px;
+}
+
 /*
 ----------------------------------------------------------
 The code editor
