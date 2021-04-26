@@ -8,13 +8,82 @@ body{
 }
 
 /*
-The parsed code control:
+----------------------------------------------------------
+The code editor
+reagent function::          code-editor
+----------------------------------------------------------
 */
-.code {
-    border: 1px black solid;
+.editor {
+    height: 400px;
     margin: 10px;
+    width: 600px;
+}
+
+.text-editor-line-nos {
+    background-color: lightgray;
+    border-right: 0px;
+    float: left;
+    height: 400px;
+    margin: 0 auto;
+    resize: none;
+    text-align: center;
+    width: 35px;
+}
+
+.text-editor {
+    border-left: 0px;
+    float: left;
+    height: 100%;
+    margin: 0 auto;
+    width: 565px;
+}
+
+textarea:focus { 
+    outline: none !important;
+    border-color: black;
+}
+
+/*
+----------------------------------------------------------
+The parsed code control
+reagent function::          code
+----------------------------------------------------------
+*/
+.breakpoint {
+    cursor: pointer;
+    width: 25px;
+    text-align: center;
+    text-shadow: 0 0 2px #000;
+}
+
+.code { 
+    border-bottom: 1px solid black;
     table-layout: fixed;
     text-align: left;
+    width: 100%;
+}
+
+.code-holder {
+    background-color: white;
+    border: 1px black solid;
+    height: 400px;
+    margin: 10px;
+    max-width: 1200px;
+    min-width: 1200px;
+    width: 1200px;
+}
+
+.code-line {
+    height: 15px;
+    max-height: 15px;
+}
+
+.current-line {
+    background-color: goldenrod;
+}
+
+.eip {
+    width: 25px;
 }
 
 .instruction {
@@ -27,24 +96,26 @@ The parsed code control:
     width: 50px;
 }
 
-.register {
-    color: darkmagenta;
-    font-weight: bold;
+.line-number {
+    background-color: grey;
+    border-right: 2px solid black;
+    border-left: 2px solid black;
+    color: white;
     text-align: center;
-    width: 150px;
+    width: 30px;
+}
+
+.register {
+    color: darkmagenta;    
+    font-weight: bold;
+    text-align: left;
+    min-width: 30px;
 }
 
 .value {
+    border-right: 1px solid black dashed;
     color: black;
     font-weight: normal;
-    text-align: center;
-    width: 150px;
-}
-
-.eip {
-    width: 10px;
-}
-
-.current-line {
-    background-color: goldenrod;
+    text-align: left;
+    min-width: 30px;
 }

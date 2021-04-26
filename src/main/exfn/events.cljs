@@ -1,15 +1,17 @@
 (ns exfn.events
   (:require [exfn.parser :refer [parse]]
-            [re-frame.core :as rf]))
+            [re-frame.core :as rf]
+            [clojure.set :as set]))
 
 (rf/reg-event-db
  :initialize
  (fn [_ _]
    {:source ""
     :code []
-    :eip 2
+    :eip 0
     :registers {:internal-registers {} :eip-stack []}
-    :stack []}))
+    :stack []
+    :breakpoints #{}}))
 
 (rf/reg-event-db
  :update-source
@@ -21,3 +23,14 @@
  (fn [{:keys [source] :as db} _]
    (let [parsed (parse source)]
      (assoc db :code parsed))))
+
+;; ===================================================================
+;; Parsed code events
+;; ===================================================================
+(rf/reg-event-db
+ :toggle-breakpoint
+ (fn [{:keys [breakpoints] :as db} [_ line-no]]
+   (assoc db :breakpoints (if (some? (breakpoints line-no))
+                             (set/difference  breakpoints #{line-no})
+                             (conj breakpoints line-no)))))
+

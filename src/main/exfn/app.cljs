@@ -1,8 +1,10 @@
 (ns exfn.app
-  (:require [reagent.dom :as dom]
-            [exfn.subs]
-            [exfn.events]
-            [re-frame.core :as rf]))
+  (:require
+   [reagent.dom :as dom]
+   [exfn.subs]
+   [exfn.events]
+   [clojure.string :as str]
+   [re-frame.core :as rf]))
 
 ;; DEV NOTES
 ;; npx shadow-cljs watch app
@@ -11,26 +13,45 @@
 
 ;; -- Reagent Components ------------------------------------------------------------
 (defn code-editor []
-  [:div
-   [:textarea {:on-change #(rf/dispatch-sync [:update-source (-> % .-target .-value)])
-               :style {:margin "10px"
-                       :width  "100%"
-                       :height "100%"}
-               :value @(rf/subscribe [:source])}]
-   [:button.btn.btn-primary {:on-click #(rf/dispatch [:parse])}
-    "Parse"]])
+  (let [source @(rf/subscribe [:source])
+        total-lines (count (str/split-lines source))]
+    [:div
+     [:div.editor
+      [:textarea.text-editor-line-nos {:readonly true
+                                       :value (->> source
+                                                   (str/split-lines)
+                                                   (count)
+                                                   (range)
+                                                   (str/join "\n"))}]
+      [:textarea.text-editor {:on-change #(rf/dispatch-sync [:update-source (-> % .-target .-value)])
+                              :value     @(rf/subscribe [:source])}]]
+     [:button.btn.btn-primary {:on-click #(rf/dispatch [:parse])} "Parse"]]))
+
+(let [source "abc\ndef\nghi\njkl\nmno"]
+  (->> source
+       (str/split-lines)
+       (count)
+       (range)
+       (str/join "\n")))
 
 (defn code []
-  [:div
+  [:div.code-holder
    (let [code @(rf/subscribe [:code])
+         breakpoints @(rf/subscribe [:breakpoints])
          code-with-lines (zipmap (range (count code)) code)
          eip @(rf/subscribe [:eip])]
      [:table.code
       (for [[line-no code-line] code-with-lines]
-        [:tr {:key line-no
+        [:tr.code-line {:key line-no
               :style {:background-color (if (= eip line-no) "goldenrod" "white")}}
+         [:td.breakpoint
+          [:i.fas.fa-circle {:style {:color (if (some? (breakpoints line-no)) "red" "lightgray")}
+                             :on-click #(rf/dispatch [:toggle-breakpoint line-no])}]]
          [:td.eip
-          [:i.fas.fa-angle-double-right {:style {:visibility (if (= eip line-no) :visible :hidden)}}]]
+          [:i.fas.fa-angle-double-right
+           {:style {:visibility (if (= eip line-no) :visible :hidden)}}]]
+         [:td.line-number
+          line-no]
          [:td
           [:span
            [:label.instruction (first code-line)]

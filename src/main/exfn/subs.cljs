@@ -15,3 +15,8 @@
  :eip
  (fn [db _]
    (:eip db)))
+
+(rf/reg-sub
+ :breakpoints
+ (fn [db _]
+   (:breakpoints db)))
