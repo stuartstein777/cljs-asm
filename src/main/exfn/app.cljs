@@ -50,17 +50,9 @@
                   [:label.register {:key (key i)} (val i)]
                   [:label.value {:key (key i)} (val i)])))]]])]])])
 
-(let [instr [:mov :a 5]]
-  (prn "count" (count (rest instr)))
-  (for [i (zipmap (range (count (rest instr))) (rest instr))]
-    (do
-      (prn i)
-      (if (keyword? i)
-        [:label.register {:key (key i)} (val i)]
-        [:label.value {:key (key i)} (val i)]))))
-
 (defn execution-controls []
   )
+
 ;; -- App ---------------------------------------------------------------------------
 (defn app []
   [:div.content
