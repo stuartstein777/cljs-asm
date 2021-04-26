@@ -124,3 +124,22 @@ reagent function::          code
     text-align: left;
     min-width: 30px;
 }
+
+/*
+----------------------------------------------------------
+The buttons for play / pausing / stopping code flow.
+The instructions / second selector.
+
+reagent function::          execution-controls
+
+----------------------------------------------------------
+*/
+
+.execution-controls {
+    margin: 10px;
+    text-align:  left;
+}
+
+.play-pause {
+    color: black;
+}

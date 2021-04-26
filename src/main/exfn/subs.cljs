@@ -20,3 +20,8 @@
  :breakpoints
  (fn [db _]
    (:breakpoints db)))
+
+(rf/reg-sub
+ :running?
+ (fn [db _]
+   (:running? db)))

@@ -51,7 +51,11 @@
                   [:label.value {:key (key i)} (val i)])))]]])]])])
 
 (defn execution-controls []
-  )
+  (let [is-running? @(rf/subscribe [:running?])]
+    [:div.execution-controls
+     [:button.btn.btn-success.play-pause
+      {:on-click #(rf/dispatch [:toggle-running])}
+      (if is-running? [:i.fas.fa-pause] [:i.fas.fa-play])]]))
 
 ;; -- App ---------------------------------------------------------------------------
 (defn app []

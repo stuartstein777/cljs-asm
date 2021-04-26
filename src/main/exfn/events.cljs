@@ -13,7 +13,7 @@
                          :eip-stack          []}
              :stack     []}
     :breakpoints #{}
-    :running false}))
+    :running? false}))
 
 (rf/reg-event-db
  :update-source
@@ -36,3 +36,10 @@
                              (set/difference  breakpoints #{line-no})
                              (conj breakpoints line-no)))))
 
+;; ===================================================================
+;; Code execution control events
+;; ===================================================================
+(rf/reg-event-db
+ :toggle-running
+ (fn [db _]
+   (assoc db :running? (not (db :running?)))))
