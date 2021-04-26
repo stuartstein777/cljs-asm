@@ -3,6 +3,7 @@
    [reagent.dom :as dom]
    [exfn.subs]
    [exfn.events]
+   [exfn.helpers :as h]
    [clojure.string :as str]
    [re-frame.core :as rf]))
 
@@ -13,16 +14,11 @@
 
 ;; -- Reagent Components ------------------------------------------------------------
 (defn code-editor []
-  (let [source @(rf/subscribe [:source])
-        total-lines (count (str/split-lines source))]
+  (let [source @(rf/subscribe [:source])]
     [:div
      [:div.editor
       [:textarea.text-editor-line-nos {:readonly true
-                                       :value (->> source
-                                                   (str/split-lines)
-                                                   (count)
-                                                   (range)
-                                                   (str/join "\n"))}]
+                                       :value (h/get-source-line-numbers source)}]
       [:textarea.text-editor {:on-change #(rf/dispatch-sync [:update-source (-> % .-target .-value)])
                               :value     @(rf/subscribe [:source])}]]
      [:button.btn.btn-primary {:on-click #(rf/dispatch [:parse])} "Parse"]]))
