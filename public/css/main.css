@@ -27,19 +27,21 @@ reagent function::          code-editor
 }
 
 .source-editor-header {
-    background-color: brown;
+    background-color: rgb(34, 34, 34);
     border: 1px black solid;
     color: white;
+    height: 25px;
     padding-left: 5px;
     text-align: left;
     vertical-align: middle;
 }
 
 .text-editor-line-nos {
-    background-color: lightgray;
+    background-color: rgb(18, 18, 19);
     border-right: 0px;
+    color:rgb(150, 150, 150);
     float: left;
-    font-size: 13px;
+    font-size: 14px;
     height: 400px;
     margin: 0 auto;
     overflow: hidden;
@@ -49,11 +51,14 @@ reagent function::          code-editor
 }
 
 .text-editor {
+    background-color: rgb(29, 29, 29);;
     border-left: 0px;
+    color: rgb(97, 192, 255);
     float: left;
-    font-size: 13px;
+    font-size: 14px;
     height: 100%;
     margin: 0 auto;
+    resize: none;
     width: 555px;
 }
 
@@ -77,25 +82,25 @@ reagent function::          code
 }
 
 .code { 
-    border-bottom: 1px solid black;
+    border-bottom: 1px solid rgb(46, 46, 46);
     table-layout: fixed;
     text-align: left;
     width: 100%;
 }
 
-.code-holder {
+.code-container {
     background-color: white;
-    border: 1px black solid;
-    height: 400px;
+    border: 1px rgb(51, 51, 51) solid;
+    height: 425px;
     margin: 10px;
     max-width: 1200px;
     min-width: 1200px;
+    overflow: auto;
     width: 1200px;
 }
 
 .code-line {
-    height: 15px;
-    max-height: 15px;
+    max-height: 25px;
 }
 
 .current-line {
@@ -126,9 +131,10 @@ reagent function::          code
 }
 
 .parsed-code-header {
-    background-color: brown;
+    background-color: rgb(34, 34, 34);
     border: 1px black solid;
     color: white;
+    height: 25px;
     padding-left: 5px;
     text-align: left;
     vertical-align: middle;
@@ -199,6 +205,7 @@ reagent function::          memory, eip
 ----------------------------------------------------------
 */
 .memory-eip {
+    margin: 0;
     text-align: left;
 }
 

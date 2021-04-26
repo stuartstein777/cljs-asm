@@ -1,7 +1,6 @@
 (ns exfn.app
   (:require
    [reagent.dom :as dom]
-   [reagent.core :refer [with-let atom]]
    [exfn.subs]
    [exfn.events]
    [exfn.helpers :as h]
@@ -13,6 +12,8 @@
 ;; then connect to repl.
 
 ;; -- Reagent Components ------------------------------------------------------------
+
+;; Source Code Editor.
 (defn code-editor []
   (let [source @(rf/subscribe [:source])]
     [:div
@@ -26,13 +27,13 @@
                                                     (-> js/document
                                                         (.getElementById "lineNos")
                                                         (.-scrollTop)
-                                                        (set! scroll-pos))
-                                                    ))
+                                                        (set! scroll-pos))));move this to a side effect!
                                      :value     @(rf/subscribe [:source])
                                      :wrap      :off}]]]))
 
+;; Display the parsed code.
 (defn code []
-  [:div.code-holder
+  [:div.code-container
    [:div.parsed-code-header "Parsed Code"]
    (let [code @(rf/subscribe [:code])
          breakpoints @(rf/subscribe [:breakpoints])
@@ -49,8 +50,8 @@
           [:td.code-eip
            [:i.fas.fa-angle-double-right
             {:style {:visibility (if (= eip line-no) :visible :hidden)}}]]
-          [:td.line-number
-           line-no]
+          [:td.line-number [:div {:style {:height 25}}
+                            line-no]]
           [:td
            [:span
             [:label.instruction (first code-line)]
