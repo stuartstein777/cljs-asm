@@ -4,7 +4,6 @@
    [exfn.subs]
    [exfn.events]
    [exfn.helpers :as h]
-   [clojure.string :as str]
    [re-frame.core :as rf]))
 
 ;; DEV NOTES
@@ -20,15 +19,9 @@
       [:textarea.text-editor-line-nos {:readonly true
                                        :value (h/get-source-line-numbers source)}]
       [:textarea.text-editor {:on-change #(rf/dispatch-sync [:update-source (-> % .-target .-value)])
-                              :value     @(rf/subscribe [:source])}]]
+                              :value     @(rf/subscribe [:source])
+                              :wrap :off}]]
      [:button.btn.btn-primary {:on-click #(rf/dispatch [:parse])} "Parse"]]))
-
-(let [source "abc\ndef\nghi\njkl\nmno"]
-  (->> source
-       (str/split-lines)
-       (count)
-       (range)
-       (str/join "\n")))
 
 (defn code []
   [:div.code-holder
