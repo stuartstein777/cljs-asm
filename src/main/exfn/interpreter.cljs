@@ -195,16 +195,8 @@
 
 ;;=======================================================================================================
 ;; The interpreter.
-;;
-;; Recursively handle each instruction in our set of instructions.
-;; Keep track of the eip.
-;; eip-stack is a vector containing the return instruction pointers for call / ret
-;; Exit conditions:
-;;  * :end instruction
-;;  * the eip is beyond the last instruction (when this occurs return -1 as the exit code).
-;;  * the eip is -1, meaning we hit a ret with an empty eip-stack.
 ;;=======================================================================================================
-(defn interpret [instructions {:keys [eip registers internal-registers stack symbol-table] :as memory}]
+(defn interpret [instructions {:keys [eip registers internal-registers symbol-table] :as memory}]
   #_(js/console.log memory)
   (let [[instruction & args] (nth instructions eip)]
     (prn eip)
@@ -222,43 +214,3 @@
       (-> memory
           (assoc :eip new-eip)
           (assoc :eip-stack eip-stack)))))
-
-(comment (interpret [[:mov :a 5]]
-                    {:eip 0
-                     :registers {}
-                     :internal-registers {}
-                     :stack []
-                     :eip-stack []
-                     :symbol-table []}))
-
-
-#_(defn interpret [instructions {:keys [eip registers internal-registers stack]}]
-  (let [symbol-table (build-symbol-table instructions)]
-    (loop [eip 0
-           memory {:registers {} :eip-stack [] :stack []}]
-      #_(prn eip "::" memory)
-      ; if we have an eip that points after the last instruction exit with a -1 error code and
-      ; show the registers (including internal registers).
-      (if (or (= eip (count instructions)) (= eip -1))
-        (if return-registers?
-          [-1 (memory :registers)]
-          -1)
-        ; else get the current instruction in the instructions list at the eip location and
-        ; destructure into the instruction and its arguments.
-        (let [[instruction & args] (nth instructions eip)]
-          (cond (= :end instruction)
-                (return-value (memory :registers) return-registers?)
-                :else
-                (let [new-eip   (if (#{:jmp :jnz :jne :je :jgl :jg :jle :jl :jge :ret :call} instruction)
-                                  (process-jump eip instruction (memory :registers) symbol-table (:eip-stack memory) args)
-                                  (inc eip))
-
-                      memory (if (#{:mov :mul :add :sub :dec :xor :and :or :div :inc :msg :cmp :push :pop} instruction)
-                               (process-instruction instruction memory args)
-                               memory)
-
-                      eip-stack (cond (= :ret instruction) (pop (:eip-stack memory))
-                                      (= :call instruction) (conj (:eip-stack memory) eip)
-                                      :else (:eip-stack memory))]
-
-                  (recur new-eip (assoc memory :eip-stack eip-stack)))))))))
