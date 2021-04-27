@@ -45,3 +45,13 @@
  :stack
  (fn [db _]
    (-> db :memory :stack)))
+
+(rf/reg-sub
+ :eip-stack
+ (fn [db _]
+   (-> db :memory :eip-stack)))
+
+(rf/reg-sub
+ :symbols
+ (fn [db _]
+   (-> db :memory :symbol-table)))

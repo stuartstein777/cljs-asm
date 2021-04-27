@@ -12,7 +12,8 @@
              :registers          {}
              :eip-stack          []
              :internal-registers {}
-             :stack              []}
+             :stack              []
+             :symbol-table       []}
     :breakpoints #{}
     :running? false}))
 
@@ -91,6 +92,8 @@ mul c b    ; a = 0, b = 2, c = 4
 cmp a b    ; :cmp = lt
 jne quax   ; jump
 mul c 10   ;
+                      
+
 ;; quax:: call bar and zero :b
 quax:      ;
 nop        ;
@@ -98,10 +101,14 @@ call bar   ; move eip to bar, push eip to eip-stack
 xor b b    ; a = 7, b = 0, c = 3
 msg 'a = ' a ', b = ' b ', c = ' c
 end        ; a = 7, b = 0, c = 3
+                      
+
 ;; foo:: increment b
 foo:
 inc b      ; a = 0, b = 2, c = 2
 ret        ; ret to foo call, pop eip stack
+
+
 ;; bar:: add 7 to a and decrement c
 bar:
 add a 7    ; a = 7, b = 2, c = 4

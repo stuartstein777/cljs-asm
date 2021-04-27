@@ -258,7 +258,7 @@ reagent function::          memory, eip
     min-height: 350px;
     min-width: 225px;
     overflow-x: hidden;
-    overflow-y: auto;
+    overflow-y: scroll;
     width: 225px;
 }
 
@@ -287,7 +287,7 @@ reagent function::          memory, eip
     grid-gap: 0px;
     margin: 12px;
     height: 380px;
-    width: 1225px;
+    width: 650px;
 }
 
 .stack-container {
@@ -309,7 +309,7 @@ reagent function::          memory, eip
 }
 
 .stack-list {
-    background-color: yellow;
+    background-color: white;
     border: 1px solid black;
     height: 350px;
     max-height: 350px;
@@ -317,7 +317,7 @@ reagent function::          memory, eip
     min-height: 350px;
     min-width: 125px;
     overflow-x: hidden;
-    overflow-y: auto;
+    overflow-y: scroll;
     width: 125px;
 }
 
@@ -327,4 +327,35 @@ reagent function::          memory, eip
     border-right: 1px solid black;
     text-align: center;
     width: 120px;
+}
+
+.symbol-table-container {
+    text-align: left;
+    width: 150px;
+}
+
+.symbol-table-header {
+    background-color: rgb(46, 43, 43);
+    border-bottom: 1px black solid;
+    border-left: 1px black solid;
+    border-right: 1px black solid;
+    color:white;
+    height: 30px;
+    padding: 5px;
+    text-align: center;
+    vertical-align: middle;
+    width: 150px;
+}
+
+.symbol-table {
+    background-color: white;
+    border: 1px solid black;
+    height: 350px;
+    max-height: 350px;
+    max-width: 150px;
+    min-height: 350px;
+    min-width: 150px;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    width: 150px;
 }

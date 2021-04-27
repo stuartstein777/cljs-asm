@@ -93,6 +93,7 @@
            [:div.col-col-lg6.register-name (first r)]
            [:div.col-col-lg6.register-value (second r)]]))]]))
 
+;; Display the internal registers.
 (defn internal-registers []
   (let [internal-registers @(rf/subscribe [:internal-registers])]
     [:div.registers-container
@@ -104,15 +105,27 @@
            [:div.col-col-lg6.register-name (first r)]
            [:div.col-col-lg6.register-value (second r)]]))]]))
 
-(defn stack []
-  (let [stack @(rf/subscribe [:stack])]
+;; Display the stack.
+(defn stack [stack title]
+  (let [stack @(rf/subscribe [stack])]
     [:div.stack-container
-     [:div.stack-header "Stack"]
+     [:div.stack-header title]
      [:div.stack-list
       (when (not= stack {})
-        (for [r stack]
+        (for [r (reverse stack)]
           [:div.row
            [:div.col-col-lg6.stack-value r]]))]]))
+
+;; Display the symbol table.
+(defn symbol-table []
+  (let [symbols @(rf/subscribe [:symbols])]
+    [:div.symbol-table-container
+     [:div.symbol-table-header "Symbol Table"]
+     [:div.symbol-table
+      (when (seq? symbols)
+        (for [s symbols]
+          [:div.row
+           [:div.col-col-lg6.stack-value s]]))]]))
 
 ;; -- App ---------------------------------------------------------------------------
 (defn app []
@@ -134,19 +147,27 @@
     [:div
      [internal-registers]]
     [:div
-     [stack]]]])
+     [stack :stack "Stack"]]
+    [:div
+     [stack :eip-stack "EIP Stack"]]
+    [:div
+     [symbol-table]]]])
 
 ;; -- Dev Helpers -------------------------------------------------------------------
 (comment (rf/dispatch-sync [:initialize]))
 (comment (rf/dispatch-sync [:test-code]))
-(comment (rf/dispatch [:add-value-to-registers [:m 1]]))
-(comment (rf/dispatch [:add-value-to-stack 1]))
+(comment (rf/dispatch-sync [:parse]))
+(comment (rf/dispatch-sync [:toggle-breakpoint 11]))
+(comment 
+  (let [registers [[:a 1] [:b 2] [:c 3] [:d 4] [:e 5] [:f 6]]]
+    ((doseq [[k v] registers]
+       (rf/dispatch-sync [:add-value-to-registers [k v]])))))
+(comment (rf/dispatch [:add-value-to-stack 5]))
 
 #_(let [db {:memory {:registers {:a 6, :b 7}}}]
   (let [registers (-> db :memory :registers)]
     registers
     ))
-
 
 ;; -- After-Load --------------------------------------------------------------------
 ;; Do this after the page has loaded.
