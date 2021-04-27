@@ -223,7 +223,7 @@ reagent function::          memory, eip
 }
 
 .eip-header {
-    background-color: brown;
+    background-color: rgb(46,43,43);
     border: 1px black solid;
     color:white;
     text-align: center;
@@ -231,28 +231,42 @@ reagent function::          memory, eip
     width: 100px;
 }
 
-.registers {
-    margin-left: 12px;
+.registers-container {
     text-align: left;
+    width: 225px;
 }
 
 .registers-header {
-    background-color: brown;
+    background-color: rgb(46, 43, 43);
     border-bottom: 1px black solid;
     border-left: 1px black solid;
     border-right: 1px black solid;
     color:white;
+    height: 30px;
+    padding: 5px;
+    text-align: center;
+    vertical-align: middle;
     width: 225px;
 }
 
 .registers-list {
     background-color: white;
+    border: 1px solid black;
+    height: 350px;
+    max-height: 350px;
+    max-width: 225px;
+    min-height: 350px;
+    min-width: 225px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    width: 225px;
 }
 
 .register-name {
     background-color: grey;
     border-bottom: 1px solid black;
     border-left: 1px solid black;
+    margin-left: 10px;
     text-align: center;
     width: 100px;
 }
@@ -262,5 +276,55 @@ reagent function::          memory, eip
     border-bottom: 1px solid black;
     border-right: 1px solid black;
     text-align: center;
-    width: 100px;
+    width: 108px;
+}
+
+.grid {
+    background-color: green;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+    grid-auto-rows: minmax(225px, auto);
+    grid-gap: 0px;
+    margin: 12px;
+    height: 380px;
+    width: 1225px;
+}
+
+.stack-container {
+    text-align: left;
+    width: 125px;
+}
+
+.stack-header {
+    background-color: rgb(46, 43, 43);
+    border-bottom: 1px black solid;
+    border-left: 1px black solid;
+    border-right: 1px black solid;
+    color:white;
+    height: 30px;
+    padding: 5px;
+    text-align: center;
+    vertical-align: middle;
+    width: 125px;
+}
+
+.stack-list {
+    background-color: yellow;
+    border: 1px solid black;
+    height: 350px;
+    max-height: 350px;
+    max-width: 125px;
+    min-height: 350px;
+    min-width: 125px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    width: 125px;
+}
+
+.stack-value {
+    background-color: white;
+    border-bottom: 1px solid black;
+    border-right: 1px solid black;
+    text-align: center;
+    width: 120px;
 }

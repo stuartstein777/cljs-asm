@@ -35,3 +35,13 @@
  :registers
  (fn [db _]
    (-> db :memory :registers)))
+
+(rf/reg-sub
+ :internal-registers
+ (fn [db _]
+   (-> db :memory :internal-registers)))
+
+(rf/reg-sub
+ :stack
+ (fn [db _]
+   (-> db :memory :stack)))
