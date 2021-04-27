@@ -28,18 +28,32 @@
    (let [parsed (parse source)]
      (assoc db :code parsed))))
 
-(rf/reg-event-db
+;; ====================================================================
+;; Source Code Editor events
+;; ====================================================================
+
+(rf/reg-fx
+ :scroll-line-nos
+ (fn [scroll-pos]
+   (-> js/document
+       (.getElementById "lineNos")
+       (.-scrollTop)
+       (set! scroll-pos))))
+
+(rf/reg-event-fx
  :update-scroll
- (fn [db [_ scroll-pos]]
-   (assoc db :scroll-pos scroll-pos)))
+ (fn [{:keys [db]} [_ scroll-pos]]
+   (js/console.log (str "scroll-pos: " scroll-pos))
+   {:db (assoc db :scroll-pos scroll-pos)
+    :scroll-line-nos scroll-pos}))
 
 ;; ===================================================================
 ;; Parsed code events
 ;; ===================================================================
-(rf/reg-event-db
- :toggle-breakpoint
- (fn [{:keys [breakpoints] :as db} [_ line-no]]
-   (assoc db :breakpoints (if (some? (breakpoints line-no))
+ (rf/reg-event-db
+  :toggle-breakpoint
+  (fn [{:keys [breakpoints] :as db} [_ line-no]]
+    (assoc db :breakpoints (if (some? (breakpoints line-no))
                              (set/difference  breakpoints #{line-no})
                              (conj breakpoints line-no)))))
 

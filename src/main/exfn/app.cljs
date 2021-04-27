@@ -24,10 +24,7 @@
       [:textarea#editor.text-editor {:on-change #(rf/dispatch-sync [:update-source (-> % .-target .-value)])
                                      :on-scroll (fn [^js e]
                                                   (let [scroll-pos (.. e -target -scrollTop)]
-                                                    (-> js/document
-                                                        (.getElementById "lineNos")
-                                                        (.-scrollTop)
-                                                        (set! scroll-pos))));move this to a side effect!
+                                                    (rf/dispatch [:update-scroll scroll-pos])))
                                      :value     @(rf/subscribe [:source])
                                      :wrap      :off}]]]))
 
