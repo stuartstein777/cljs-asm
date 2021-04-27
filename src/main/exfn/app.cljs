@@ -84,14 +84,35 @@
 ;; Display the user registers.
 (defn registers []
   (let [registers @(rf/subscribe [:registers])]
-    [:div.registers
+    [:div.registers-container
      [:div.registers-header "Registers"]
-     [:div.registers.list
+     [:div.registers-list
       (when (not= registers {})
         (for [r registers]
           [:div.row
            [:div.col-col-lg6.register-name (first r)]
            [:div.col-col-lg6.register-value (second r)]]))]]))
+
+(defn internal-registers []
+  (let [internal-registers @(rf/subscribe [:internal-registers])]
+    [:div.registers-container
+     [:div.registers-header "Internal"]
+     [:div.registers-list
+      (when (not= internal-registers {})
+        (for [r internal-registers]
+          [:div.row
+           [:div.col-col-lg6.register-name (first r)]
+           [:div.col-col-lg6.register-value (second r)]]))]]))
+
+(defn stack []
+  (let [stack @(rf/subscribe [:stack])]
+    [:div.stack-container
+     [:div.stack-header "Stack"]
+     [:div.stack-list
+      (when (not= stack {})
+        (for [r stack]
+          [:div.row
+           [:div.col-col-lg6.stack-value r]]))]]))
 
 ;; -- App ---------------------------------------------------------------------------
 (defn app []
@@ -107,12 +128,19 @@
    [execution-controls]
    [:div.row.eip-container
     [eip]]
-   [:div.row
-    [registers]]])
+   [:div.grid
+    [:div
+     [registers]]
+    [:div
+     [internal-registers]]
+    [:div
+     [stack]]]])
 
 ;; -- Dev Helpers -------------------------------------------------------------------
 (comment (rf/dispatch-sync [:initialize]))
-(comment (rf/dispatch [:add-value-to-registers [:b 7]]))
+(comment (rf/dispatch-sync [:test-code]))
+(comment (rf/dispatch [:add-value-to-registers [:m 1]]))
+(comment (rf/dispatch [:add-value-to-stack 1]))
 
 #_(let [db {:memory {:registers {:a 6, :b 7}}}]
   (let [registers (-> db :memory :registers)]
