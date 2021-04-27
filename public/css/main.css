@@ -204,20 +204,6 @@ reagent function::          memory, eip
 
 ----------------------------------------------------------
 */
-.memory-eip {
-    margin: 0;
-    text-align: left;
-}
-
-.eip-header {
-    background-color: brown;
-    border: 1px black solid;
-    color:white;
-    text-align: center;
-    vertical-align: middle;
-    width: 50px;
-}
-
 .eip {
     background-color: white;
     border-right: 1px black solid;
@@ -226,5 +212,55 @@ reagent function::          memory, eip
     color: black;
     text-align: center;
     vertical-align: middle;
+    width: 125px;
+}
+
+.eip-container {
+    float: left;
+    margin: 0;
+    text-align: left;
+    width: 100%;
+}
+
+.eip-header {
+    background-color: brown;
+    border: 1px black solid;
+    color:white;
+    text-align: center;
+    vertical-align: middle;
+    width: 100px;
+}
+
+.registers {
+    margin-left: 12px;
+    text-align: left;
+}
+
+.registers-header {
+    background-color: brown;
+    border-bottom: 1px black solid;
+    border-left: 1px black solid;
+    border-right: 1px black solid;
+    color:white;
+    width: 225px;
+}
+
+.registers-list {
+    background-color: white;
+}
+
+.register-name {
+    background-color: grey;
+    border-bottom: 1px solid black;
+    border-left: 1px solid black;
+    text-align: center;
+    width: 100px;
+}
+
+.register-value {
+    background-color: white;
+    border-bottom: 1px solid black;
+    border-right: 1px solid black;
+    text-align: center;
     width: 100px;
 }

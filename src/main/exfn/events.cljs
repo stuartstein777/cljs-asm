@@ -8,10 +8,11 @@
  (fn [_ _]
    {:source      ""
     :code        []
-    :memory {:eip       0
-             :registers {:internal-registers {}
-                         :eip-stack          []}
-             :stack     []}
+    :memory {:eip                0
+             :registers          {}
+             :eip-stack          []
+             :internal-registers {}
+             :stack              []}
     :breakpoints #{}
     :running? false}))
 
@@ -64,3 +65,11 @@
  :toggle-running
  (fn [db _]
    (assoc db :running? (not (db :running?)))))
+ 
+
+
+ ;;================== DEV TEST EVENTS ==================================
+ (rf/reg-event-db
+  :add-value-to-registers
+  (fn [db [_ [k v]]]
+    (update-in db [:memory :registers] assoc k v)))

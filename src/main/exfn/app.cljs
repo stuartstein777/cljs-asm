@@ -58,6 +58,7 @@
                   [:label.register {:key (key i)} (val i)]
                   [:label.value {:key (key i)} (val i)])))]]])]])])
 
+;; Buttons that control the executing code (start/stop/pause/speed)
 (defn execution-controls []
   [:div.row
    (let [is-running? @(rf/subscribe [:running?])]
@@ -73,15 +74,24 @@
                              :placeholder "1"}]
       [:label.speed-label "speed (secs / instruction.)"]])])
 
+;; Display the current eip when running.
 (defn eip []
   (let [eip @(rf/subscribe [:eip])]
     [:div
      [:label.eip-header "EIP"]
      [:label.eip eip]]))
 
-(defn memory []
-  [:div
-   [eip]])
+;; Display the user registers.
+(defn registers []
+  (let [registers @(rf/subscribe [:registers])]
+    [:div.registers
+     [:div.registers-header "Registers"]
+     [:div.registers.list
+      (when (not= registers {})
+        (for [r registers]
+          [:div.row
+           [:div.col-col-lg6.register-name (first r)]
+           [:div.col-col-lg6.register-value (second r)]]))]]))
 
 ;; -- App ---------------------------------------------------------------------------
 (defn app []
@@ -95,11 +105,20 @@
    [:div.row
     [:button.btn.btn-primary.parse-btn {:on-click #(rf/dispatch [:parse])} "Parse"]]
    [execution-controls]
-   [:div.row.memory-eip
-    [memory]]])
+   [:div.row.eip-container
+    [eip]]
+   [:div.row
+    [registers]]])
 
 ;; -- Dev Helpers -------------------------------------------------------------------
 (comment (rf/dispatch-sync [:initialize]))
+(comment (rf/dispatch [:add-value-to-registers [:b 7]]))
+
+#_(let [db {:memory {:registers {:a 6, :b 7}}}]
+  (let [registers (-> db :memory :registers)]
+    registers
+    ))
+
 
 ;; -- After-Load --------------------------------------------------------------------
 ;; Do this after the page has loaded.

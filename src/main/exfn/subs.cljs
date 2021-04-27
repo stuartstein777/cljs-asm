@@ -30,3 +30,8 @@
  :scroll-pos
  (fn [db _]
    (:scroll-pos db)))
+
+(rf/reg-sub
+ :registers
+ (fn [db _]
+   (-> db :memory :registers)))
