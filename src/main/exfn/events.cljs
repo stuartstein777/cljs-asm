@@ -28,11 +28,16 @@
 ;; Handles when the user clicks the Parse button.
 (rf/reg-event-db
  :parse
- (fn [{:keys [source memory] :as db} _]
+ (fn [{:keys [source] :as db} _]
    (let [parsed (parse source)
          symbol-table (interp/build-symbol-table parsed)]
      (-> db 
-          (assoc :memory (assoc memory :symbol-table symbol-table))
+          (assoc :memory {:eip                0
+                          :registers          {}
+                          :eip-stack          []
+                          :internal-registers {}
+                          :stack              []
+                          :symbol-table symbol-table})
           (assoc :code parsed)))))
 
 ;; ====================================================================
@@ -81,7 +86,7 @@
                         :eip-stack          []
                         :internal-registers {}
                         :stack              []
-                        :symbol-table       {}})
+                        :symbol-table (:symbol-table (:memory db))})
         (assoc :running? false))))
  
  (rf/reg-event-db

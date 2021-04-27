@@ -73,9 +73,9 @@
 (defn cmp [registers x y]
   (let [x-val (if (keyword? x) (get registers x) x)
         y-val (if (keyword? y) (get registers y) y)]
-    (assoc-in registers [:internal-registers :cmp] (cond (= x-val y-val) (conj :eq)
-                                                         (> x-val y-val) (conj :gt)
-                                                         (< x-val y-val) (conj :lt)))))
+    (cond (= x-val y-val) :eq
+          (> x-val y-val) :gt
+          (< x-val y-val) :lt)))
 
 ;;=======================================================================================================
 ;; After a cmp either the comparison will be in one of three states, :eq, :gt, :lt
@@ -168,7 +168,7 @@
 
         (= :cmp instruction)
         (let [[x y] args]
-          (assoc memory :registers (cmp registers x y)))
+          (assoc-in memory [:internal-registers :cmp] (cmp registers x y)))
 
         (= :pop instruction)
         (if (empty? stack)
@@ -204,18 +204,31 @@
 ;;  * the eip is -1, meaning we hit a ret with an empty eip-stack.
 ;;=======================================================================================================
 (defn interpret [instructions {:keys [eip registers internal-registers stack symbol-table] :as memory}]
-  (prn eip)
+  (js/console.log memory)
   (let [[instruction & args] (nth instructions eip)]
     (prn eip)
-    (condp instruction
-           :mov (let [new-eip (inc eip)
-                      memory (process-instruction instruction memory args)]
-                  (-> memory
-                      (assoc :eip new-eip))))))
+    (let [new-eip   (if (#{:jmp :jnz :jne :je :jgl :jg :jle :jl :jge :ret :call} instruction)
+                      (process-jump eip instruction (memory :registers) symbol-table (:eip-stack memory) args)
+                      (inc eip))
 
-(interpret [[:mov :a 5]]
-           {:eip 0
-            :registers {} :internal-registers {} :stack [] :eip-stack [] :symbol-table []})
+          memory (if (#{:mov :mul :add :sub :dec :xor :and :or :div :inc :msg :cmp :push :pop} instruction)
+                   (process-instruction instruction memory args)
+                   memory)
+
+          eip-stack (cond (= :ret instruction) (pop (:eip-stack memory))
+                          (= :call instruction) (conj (:eip-stack memory) eip)
+                          :else (:eip-stack memory))]
+      (-> memory
+          (assoc :eip new-eip)
+          (assoc :eip-stack eip-stack)))))
+
+(comment (interpret [[:mov :a 5]]
+                    {:eip 0
+                     :registers {}
+                     :internal-registers {}
+                     :stack []
+                     :eip-stack []
+                     :symbol-table []}))
 
 
 #_(defn interpret [instructions {:keys [eip registers internal-registers stack]}]
