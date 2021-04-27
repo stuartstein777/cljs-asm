@@ -1,6 +1,7 @@
 (ns exfn.events
   (:require [exfn.parser :refer [parse]]
             [re-frame.core :as rf]
+            [exfn.interpreter :as interp]
             [clojure.set :as set]))
 
 (rf/reg-event-db
@@ -13,9 +14,10 @@
              :eip-stack          []
              :internal-registers {}
              :stack              []
-             :symbol-table       []}
+             :symbol-table       {}}
     :breakpoints #{}
-    :running? false}))
+    :running? false
+    :finished? false}))
 
 ;; Handles the user typing into the source control editor.
 (rf/reg-event-db
@@ -26,9 +28,12 @@
 ;; Handles when the user clicks the Parse button.
 (rf/reg-event-db
  :parse
- (fn [{:keys [source] :as db} _]
-   (let [parsed (parse source)]
-     (assoc db :code parsed))))
+ (fn [{:keys [source memory] :as db} _]
+   (let [parsed (parse source)
+         symbol-table (interp/build-symbol-table parsed)]
+     (-> db 
+          (assoc :memory (assoc memory :symbol-table symbol-table))
+          (assoc :code parsed)))))
 
 ;; ====================================================================
 ;; Source Code Editor events
@@ -67,7 +72,23 @@
  (fn [db _]
    (assoc db :running? (not (db :running?)))))
  
-
+ (rf/reg-event-db
+  :reset
+  (fn [db _]
+    (-> db
+        (assoc :memory {:eip                0
+                        :registers          {}
+                        :eip-stack          []
+                        :internal-registers {}
+                        :stack              []
+                        :symbol-table       {}})
+        (assoc :running? false))))
+ 
+ (rf/reg-event-db
+ :next-instruction
+ (fn [{:keys [memory code] :as db} _]
+   (let [memory (exfn.interpreter/interpret code memory)]
+     (assoc db :memory memory))))
 
  ;;================== DEV TEST EVENTS ==================================
  (rf/reg-event-db
@@ -80,6 +101,11 @@
  (fn [db [_ v]]
    (update-in db [:memory :stack] conj v)))
 
+(rf/reg-event-db
+ :reset-eip
+ (fn [db _]
+   (assoc-in db [:memory :eip] 0)))
+ 
 (rf/reg-event-db
  :test-code
  (fn [db _]

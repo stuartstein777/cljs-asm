@@ -67,8 +67,10 @@
        {:on-click #(rf/dispatch [:toggle-running])}
        (if is-running? [:i.fas.fa-pause] [:i.fas.fa-play])]
       [:button.btn.btn-success.next-instruction
+       {:on-click #(rf/dispatch [:next-instruction])}
        [:i.fas.fa-forward]]
       [:button.btn.btn-danger.stop-button
+       {:on-click #(rf/dispatch [:reset])}
        [:i.fas.fa-stop]]
       [:input.instr-per-sec {:type "text"
                              :placeholder "1"}]
@@ -122,10 +124,12 @@
     [:div.symbol-table-container
      [:div.symbol-table-header "Symbol Table"]
      [:div.symbol-table
-      (when (seq? symbols)
+      (when (not= {} symbols)
+        (prn symbols)
         (for [s symbols]
           [:div.row
-           [:div.col-col-lg6.stack-value s]]))]]))
+           [:div.col-col-lg6.symbol-name (key s)]
+           [:div.col-col-lg6.symbol-value (val s)]]))]]))
 
 ;; -- App ---------------------------------------------------------------------------
 (defn app []
@@ -158,11 +162,13 @@
 (comment (rf/dispatch-sync [:test-code]))
 (comment (rf/dispatch-sync [:parse]))
 (comment (rf/dispatch-sync [:toggle-breakpoint 11]))
+(comment (rf/dispatch-sync [:reset-eip]))
+
 (comment 
   (let [registers [[:a 1] [:b 2] [:c 3] [:d 4] [:e 5] [:f 6]]]
     ((doseq [[k v] registers]
        (rf/dispatch-sync [:add-value-to-registers [k v]])))))
-(comment (rf/dispatch [:add-value-to-stack 5]))
+(comment (rf/dispatch [:add-value-to-stack 4]))
 
 #_(let [db {:memory {:registers {:a 6, :b 7}}}]
   (let [registers (-> db :memory :registers)]

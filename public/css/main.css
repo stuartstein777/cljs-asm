@@ -93,10 +93,10 @@ reagent function::          code
     border: 1px rgb(51, 51, 51) solid;
     height: 425px;
     margin: 10px;
-    max-width: 1200px;
-    min-width: 1200px;
+    max-width: 1000px;
+    min-width: 1000px;
     overflow: auto;
-    width: 1200px;
+    width: 1000px;
 }
 
 .code-line {
@@ -250,7 +250,7 @@ reagent function::          memory, eip
 }
 
 .registers-list {
-    background-color: white;
+    background-color: gray;
     border: 1px solid black;
     height: 350px;
     max-height: 350px;
@@ -268,7 +268,7 @@ reagent function::          memory, eip
     border-left: 1px solid black;
     margin-left: 10px;
     text-align: center;
-    width: 100px;
+    width: 102px;
 }
 
 .register-value {
@@ -280,7 +280,6 @@ reagent function::          memory, eip
 }
 
 .grid {
-    background-color: green;
     display: grid;
     grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
     grid-auto-rows: minmax(225px, auto);
@@ -309,7 +308,7 @@ reagent function::          memory, eip
 }
 
 .stack-list {
-    background-color: white;
+    background-color: gray;
     border: 1px solid black;
     height: 350px;
     max-height: 350px;
@@ -331,7 +330,7 @@ reagent function::          memory, eip
 
 .symbol-table-container {
     text-align: left;
-    width: 150px;
+    width: 200px;
 }
 
 .symbol-table-header {
@@ -344,18 +343,32 @@ reagent function::          memory, eip
     padding: 5px;
     text-align: center;
     vertical-align: middle;
-    width: 150px;
+    width: 200px;
 }
 
 .symbol-table {
-    background-color: white;
     border: 1px solid black;
     height: 350px;
     max-height: 350px;
-    max-width: 150px;
+    max-width: 200px;
     min-height: 350px;
-    min-width: 150px;
+    min-width: 200px;
     overflow-x: hidden;
     overflow-y: scroll;
-    width: 150px;
+    width: 200px;
+}
+
+.symbol-name {
+    background-color: gray;
+    border-bottom: 1px solid black;
+    text-align: center;
+    width: 94px;
+
+}
+
+.symbol-value {
+    background-color: white;
+    border-bottom: 1px solid black;
+    text-align: right;
+    width: 100px;
 }
