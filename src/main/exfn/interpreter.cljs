@@ -31,6 +31,7 @@
 ;; Return the predicate for cmp jumps that we want the jump check to satisfy.
 ;;=======================================================================================================
 (defn cmp-jump-predicates [jump-instruction]
+  (js/console.log "jump-instruction" jump-instruction)
   (cond (= :jge jump-instruction) #{:eq :gt}
         (= :jg  jump-instruction) #{:gt}
         (= :jne jump-instruction) #{:lt :gt}
@@ -87,8 +88,8 @@
 ;; If it is in the set then we can return the location for the label (lbl) in the symbol table.
 ;; Otherwise we just return the eip incremented so we advance to the next instruction.
 ;;=======================================================================================================
-(defn cmp-jmp [registers symbol-table eip valid-comps lbl]
-  (if (nil? (valid-comps (:cmp (:internal-registers registers))))
+(defn cmp-jmp [internal-registers symbol-table eip valid-comps lbl]
+  (if (nil? (valid-comps (:cmp internal-registers)))
     (inc eip)
     (lbl symbol-table)))
 
@@ -122,8 +123,8 @@
 ;;=======================================================================================================
 ;; Process the jump instructions and return the new eip.
 ;;=======================================================================================================
-(defn process-jump [eip instruction registers symbol-table eip-stack args]
-  #_(prn "JMP" registers)
+(defn process-jump [eip instruction registers internal-registers symbol-table eip-stack args]
+  (prn "JMP" registers)
   ;; if we are jumping to a label, just return the location of the label in the symbol-table
   (cond (= :jmp instruction)
         (inc (get symbol-table (first args)))
@@ -136,7 +137,7 @@
         (#{:jne :je :jge :jg :jle :jl} instruction)
         (let [pred (cmp-jump-predicates instruction)
               x    (first args)]
-          (cmp-jmp registers symbol-table eip pred x))
+          (cmp-jmp internal-registers symbol-table eip pred x))
 
         (= :call instruction)
         (call symbol-table (first args))
@@ -204,11 +205,11 @@
 ;;  * the eip is -1, meaning we hit a ret with an empty eip-stack.
 ;;=======================================================================================================
 (defn interpret [instructions {:keys [eip registers internal-registers stack symbol-table] :as memory}]
-  (js/console.log memory)
+  #_(js/console.log memory)
   (let [[instruction & args] (nth instructions eip)]
     (prn eip)
     (let [new-eip   (if (#{:jmp :jnz :jne :je :jgl :jg :jle :jl :jge :ret :call} instruction)
-                      (process-jump eip instruction (memory :registers) symbol-table (:eip-stack memory) args)
+                      (process-jump eip instruction registers internal-registers symbol-table (:eip-stack memory) args)
                       (inc eip))
 
           memory (if (#{:mov :mul :add :sub :dec :xor :and :or :div :inc :msg :cmp :push :pop} instruction)
