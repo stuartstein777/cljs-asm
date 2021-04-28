@@ -27,22 +27,32 @@
  (fn [db [_ source]]
    (assoc db :source source)))
 
+(rf/reg-fx
+ :scroll-parsed-code-to-top
+ (fn [_]
+   (-> js/document
+       (.getElementById "code-container")
+       (.-scrollTop)
+       (set! 0))))
+
 ;; Handles when the user clicks the Parse button.
-(rf/reg-event-db
+(rf/reg-event-fx
  :parse
- (fn [{:keys [source] :as db} _]
-   (let [parsed (parse source)
+ (fn [{:keys [db]} _]
+   (let [parsed (parse (db :source))
          symbol-table (interp/build-symbol-table parsed)]
-     (-> db 
-         (assoc :memory {:eip                0
-                         :registers          {}
-                         :eip-stack          []
-                         :internal-registers {}
-                         :stack              []
-                         :symbol-table       symbol-table})
-         (assoc :code parsed)
-         (assoc :has-parsed-code? (pos? (count parsed)))
-         (assoc :finished? false)))))
+     {:db
+      (-> db
+          (assoc :memory {:eip                0
+                          :registers          {}
+                          :eip-stack          []
+                          :internal-registers {}
+                          :stack              []
+                          :symbol-table       symbol-table})
+          (assoc :code parsed)
+          (assoc :has-parsed-code? (pos? (count parsed)))
+          (assoc :finished? false))
+      :scroll-parsed-code-to-top _})))
 
 ;; ====================================================================
 ;; Source Code Editor events
