@@ -183,18 +183,6 @@
 
 (comment (rf/dispatch [:add-value-to-stack 4]))
 
-(comment (let [db {:memory {:registers {:a 6, :b 7}}}]
-           (-> db :memory :registers)))
-
-(comment 
-  (let [set-interval (fn [f] (f) :handle)
-        handle (set-interval (fn [] (if (= handle :handle)
-                                      :bar
-                                      :quax)))]
-    )
-  
-  )
-
 ;; -- After-Load --------------------------------------------------------------------
 ;; Do this after the page has loaded.
 ;; Initialize the initial db state.
