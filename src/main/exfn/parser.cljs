@@ -2,7 +2,7 @@
   (:require [clojure.string :as str]))
 
 (defn is-register? [x]
-  (nil? (re-find #"^[\+\-]?\d*\.?[Ee]?[\+\-]?\d*$" x)))
+  (nil? (re-find #"^[\+\-]?\d*\.?[\+\-]?\d*$" x)))
 
 (defn get-value [x]
   (if (is-register? x)
