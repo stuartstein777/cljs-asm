@@ -55,7 +55,6 @@
 (rf/reg-event-fx
  :update-scroll
  (fn [{:keys [db]} [_ scroll-pos]]
-   (js/console.log (str "scroll-pos: " scroll-pos))
    {:db (assoc db :scroll-pos scroll-pos)
     :scroll-line-nos scroll-pos}))
 
@@ -72,6 +71,14 @@
 ;; ===================================================================
 ;; Code execution control events
 ;; ===================================================================
+(rf/reg-fx
+ :scroll-current-code-into-view
+ (fn [eip]
+   (-> js/document
+       (.getElementById "code-container")
+       (.-scrollTop)
+       (set! (* eip 25)))))
+ 
 (rf/reg-event-db
  :toggle-running
  (fn [db _]
@@ -89,11 +96,17 @@
                         :symbol-table (:symbol-table (:memory db))})
         (assoc :running? false))))
  
- (rf/reg-event-db
+;; make this a reg-event-fx
+;; var table = document.getElementById ('code-container')
+;; table.scrollTop = eip * 25
+;; then call :scroll-current-code-into-view
+ (rf/reg-event-fx
  :next-instruction
- (fn [{:keys [memory code] :as db} _]
-   (let [memory (exfn.interpreter/interpret code memory)]
-     (assoc db :memory memory))))
+ (fn [{:keys [db]} _]
+   (prn "eip:" (:eip (db :memory)))
+   (let [memory (exfn.interpreter/interpret (db :code) (db :memory))]
+     {:db (assoc db :memory memory)
+      :scroll-current-code-into-view (:eip memory)})))
 
  ;;================== DEV TEST EVENTS ==================================
  (rf/reg-event-db

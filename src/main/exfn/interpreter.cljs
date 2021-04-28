@@ -31,7 +31,7 @@
 ;; Return the predicate for cmp jumps that we want the jump check to satisfy.
 ;;=======================================================================================================
 (defn cmp-jump-predicates [jump-instruction]
-  (js/console.log "jump-instruction" jump-instruction)
+  #_(js/console.log "jump-instruction" jump-instruction)
   (cond (= :jge jump-instruction) #{:eq :gt}
         (= :jg  jump-instruction) #{:gt}
         (= :jne jump-instruction) #{:lt :gt}
@@ -124,7 +124,7 @@
 ;; Process the jump instructions and return the new eip.
 ;;=======================================================================================================
 (defn process-jump [eip instruction registers internal-registers symbol-table eip-stack args]
-  (prn "JMP" registers)
+  #_(prn "JMP" registers)
   ;; if we are jumping to a label, just return the location of the label in the symbol-table
   (cond (= :jmp instruction)
         (inc (get symbol-table (first args)))

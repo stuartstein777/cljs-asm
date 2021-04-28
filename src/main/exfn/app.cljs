@@ -30,13 +30,13 @@
 
 ;; Display the parsed code.
 (defn code []
-  [:div.code-container
+  [:div#code-container.code-container
    [:div.parsed-code-header "Parsed Code"]
    (let [code @(rf/subscribe [:code])
          breakpoints @(rf/subscribe [:breakpoints])
          code-with-lines (zipmap (range (count code)) code)
          eip @(rf/subscribe [:eip])]
-     [:table.code
+     [:table#code.code
       [:tbody
        (for [[line-no code-line] code-with-lines]
          [:tr.code-line {:key line-no
@@ -95,17 +95,25 @@
            [:div.col-col-lg6.register-name (first r)]
            [:div.col-col-lg6.register-value (second r)]]))]]))
 
+(defn cmp-values [cmp]
+  (prn "cmp: " cmp)
+  (cond (keyword-identical? cmp :lt) "<"
+        (keyword-identical? cmp :gt) ">"
+        (keyword-identical? cmp :eq) "="
+        :else cmp))
+
 ;; Display the internal registers.
 (defn internal-registers []
   (let [internal-registers @(rf/subscribe [:internal-registers])]
     [:div.registers-container
-     [:div.registers-header "Internal"]
+     [:div.registers-header "Internal Registers"]
      [:div.registers-list
       (when (not= internal-registers {})
-        (for [r internal-registers]
+        (for [[reg v] internal-registers]
           [:div.row
-           [:div.col-col-lg6.register-name (first r)]
-           [:div.col-col-lg6.register-value (second r)]]))]]))
+           [:div.col-col-lg6.register-name reg]
+           [:div.col-col-lg6.register-value
+            (cmp-values v)]]))]]))
 
 ;; Display the stack.
 (defn stack [stack title]
@@ -125,7 +133,6 @@
      [:div.symbol-table-header "Symbol Table"]
      [:div.symbol-table
       (when (not= {} symbols)
-        (prn symbols)
         (for [s symbols]
           [:div.row
            [:div.col-col-lg6.symbol-name (key s)]
