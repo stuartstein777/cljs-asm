@@ -55,3 +55,13 @@
  :symbols
  (fn [db _]
    (-> db :memory :symbol-table)))
+
+(rf/reg-sub
+ :finished?
+ (fn [db _]
+   (db :finished?)))
+
+(rf/reg-sub
+ :has-parsed-code?
+ (fn [db _]
+   (db :has-parsed-code?)))

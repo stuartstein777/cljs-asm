@@ -182,8 +182,18 @@ reagent function::          execution-controls
     margin-left: 10px;
 }
 
+.next-instruction[disabled] {
+    background-color: darkgray;
+    border: 1px solid grey;
+}
+
 .play-pause {
     color: black;
+}
+
+.play-pause[disabled] {
+    background-color: darkgray;
+    border: 1px solid grey;
 }
 
 .speed-label {
@@ -277,6 +287,10 @@ reagent function::          memory, eip
     border-right: 1px solid black;
     text-align: center;
     width: 108px;
+}
+
+.register-updated {
+    background-color: yellow;
 }
 
 .grid {

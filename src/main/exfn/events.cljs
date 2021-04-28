@@ -14,10 +14,12 @@
              :eip-stack          []
              :internal-registers {}
              :stack              []
-             :symbol-table       {}}
+             :symbol-table       {}
+             :last-edit-register nil}
     :breakpoints #{}
     :running? false
-    :finished? false}))
+    :finished? false
+    :has-parsed-code? false}))
 
 ;; Handles the user typing into the source control editor.
 (rf/reg-event-db
@@ -32,13 +34,15 @@
    (let [parsed (parse source)
          symbol-table (interp/build-symbol-table parsed)]
      (-> db 
-          (assoc :memory {:eip                0
-                          :registers          {}
-                          :eip-stack          []
-                          :internal-registers {}
-                          :stack              []
-                          :symbol-table symbol-table})
-          (assoc :code parsed)))))
+         (assoc :memory {:eip                0
+                         :registers          {}
+                         :eip-stack          []
+                         :internal-registers {}
+                         :stack              []
+                         :symbol-table       symbol-table})
+         (assoc :code parsed)
+         (assoc :has-parsed-code? (pos? (count parsed)))
+         (assoc :finished? false)))))
 
 ;; ====================================================================
 ;; Source Code Editor events
@@ -85,7 +89,7 @@
        (.-scrollTop)
        (set! (* eip 25)))))
  
-(rf/reg-event-db
+ (rf/reg-event-db
  :toggle-running
  (fn [db _]
    (assoc db :running? (not (db :running?)))))
@@ -100,13 +104,16 @@
                         :internal-registers {}
                         :stack              []
                         :symbol-table (:symbol-table (:memory db))})
-        (assoc :running? false))))
+        (assoc :running? false)
+        (assoc :finished? false))))
 
 (rf/reg-event-fx
  :next-instruction
  (fn [{:keys [db]} _]
-   (let [memory (exfn.interpreter/interpret (db :code) (db :memory))]
-     {:db (assoc db :memory memory)
+   (let [[memory finished?] (exfn.interpreter/interpret (db :code) (db :memory))]
+     {:db (-> db
+              (assoc :memory memory)
+              (assoc :finished? finished?))
       :scroll-current-code-into-view (:eip memory)})))
 
  

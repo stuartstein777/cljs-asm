@@ -155,17 +155,23 @@
 ;;=======================================================================================================
 (defn process-instruction [instruction {:keys [registers stack] :as memory} args]
   #_#_(prn "args::" args)
-    (prn "memory::" registers stack)
+  (prn "memory::" registers stack)
   (cond (= :mov instruction)
         (let [[x y] args]
-          (assoc memory :registers (mov registers x y)))
+          (-> memory
+              (assoc :registers (mov registers x y))
+              (assoc :last-edit-register x)))
 
         (#{:inc :dec} instruction)
-        (assoc memory :registers (unary-op registers (get-unary-operation instruction) (first args)))
+        (-> memory
+            (assoc :registers (unary-op registers (get-unary-operation instruction) (first args)))
+            (assoc :last-edit-register (first args)))
 
         (#{:mul :add :sub :div :xor :and :or} instruction)
         (let [[x y] args]
-          (assoc memory :registers (binary-op registers (get-binary-operations instruction) x y)))
+          (-> memory
+              (assoc :registers (binary-op registers (get-binary-operations instruction) x y))
+              (assoc :last-edit-register x)))
 
         (= :cmp instruction)
         (let [[x y] args]
@@ -176,7 +182,8 @@
           (update-in memory [:internal-registers] assoc :err "Popped empty stack.")
           (-> memory
               (assoc :registers (mov registers (first args) (peek stack)))
-              (update :stack (if (empty? stack) identity pop))))
+              (update :stack (if (empty? stack) identity pop))
+              (assoc :last-edit-register (first args))))
 
         (= :push instruction)
         (let [x (get-value registers (first args))]
@@ -211,6 +218,7 @@
           eip-stack (cond (= :ret instruction) (pop (:eip-stack memory))
                           (= :call instruction) (conj (:eip-stack memory) eip)
                           :else (:eip-stack memory))]
-      (-> memory
-          (assoc :eip new-eip)
-          (assoc :eip-stack eip-stack)))))
+      [(-> memory
+           (assoc :eip new-eip)
+           (assoc :eip-stack eip-stack))
+       (or (= (nth instructions new-eip) [:end]) (> new-eip (count instructions)))])))

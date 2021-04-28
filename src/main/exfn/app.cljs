@@ -61,13 +61,17 @@
 ;; Buttons that control the executing code (start/stop/pause/speed)
 (defn execution-controls []
   [:div.row
-   (let [is-running? @(rf/subscribe [:running?])]
+   (let [is-running? @(rf/subscribe [:running?])
+         finished? @(rf/subscribe [:finished?])
+         has-parsed-code? @(rf/subscribe [:has-parsed-code?])]
      [:div.execution-controls
       [:button.btn.btn-success.play-pause
-       {:on-click #(rf/dispatch [:toggle-running])}
+       {:on-click #(rf/dispatch [:toggle-running])
+        :disabled (or finished? (not has-parsed-code?))}
        (if is-running? [:i.fas.fa-pause] [:i.fas.fa-play])]
       [:button.btn.btn-success.next-instruction
-       {:on-click #(rf/dispatch [:next-instruction])}
+       {:on-click #(rf/dispatch [:next-instruction])
+        :disabled (or finished? (not has-parsed-code?))}
        [:i.fas.fa-forward]]
       [:button.btn.btn-danger.stop-button
        {:on-click #(rf/dispatch [:reset])}
@@ -90,10 +94,10 @@
      [:div.registers-header "Registers"]
      [:div.registers-list
       (when (not= registers {})
-        (for [r registers]
-          [:div.row
-           [:div.col-col-lg6.register-name (first r)]
-           [:div.col-col-lg6.register-value (second r)]]))]]))
+        (for [[k [name v]] (zipmap (range (count registers)) registers)]
+          [:div.row {:key k}
+           [:div.col-col-lg6.register-name {:key (str k "reg:name")} name]
+           [:div.col-col-lg6.register-value {:id (str "reg" name) :key (str k "reg:value")} v]]))]]))
 
 (defn cmp-values [cmp]
   (prn "cmp: " cmp)
@@ -180,6 +184,14 @@
 
 (comment (let [db {:memory {:registers {:a 6, :b 7}}}]
            (-> db :memory :registers)))
+
+(comment (let [reg-name :a
+               ticked? false
+               tickfn (fn []
+                        (if ticked?
+                          ))]
+           
+           ))
 
 ;; -- After-Load --------------------------------------------------------------------
 ;; Do this after the page has loaded.
