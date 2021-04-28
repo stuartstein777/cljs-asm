@@ -44,6 +44,12 @@
 ;; Source Code Editor events
 ;; ====================================================================
 
+; replace with
+;(reagent/with-let [ref2 (reagent/atom nil)]
+;   [:div
+;    [:textarea {:on-scroll (fn [^js e] (when-some [node2 @ref2] ...))}]
+;    [:textarea {:ref #(reset! ref2 %)}]])
+
 (rf/reg-fx
  :scroll-line-nos
  (fn [scroll-pos]
@@ -95,18 +101,34 @@
                         :stack              []
                         :symbol-table (:symbol-table (:memory db))})
         (assoc :running? false))))
- 
-;; make this a reg-event-fx
-;; var table = document.getElementById ('code-container')
-;; table.scrollTop = eip * 25
-;; then call :scroll-current-code-into-view
- (rf/reg-event-fx
+
+(rf/reg-event-fx
  :next-instruction
  (fn [{:keys [db]} _]
-   (prn "eip:" (:eip (db :memory)))
    (let [memory (exfn.interpreter/interpret (db :code) (db :memory))]
      {:db (assoc db :memory memory)
       :scroll-current-code-into-view (:eip memory)})))
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
  ;;================== DEV TEST EVENTS ==================================
  (rf/reg-event-db

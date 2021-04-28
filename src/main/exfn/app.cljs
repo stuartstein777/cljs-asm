@@ -173,14 +173,13 @@
 
 (comment 
   (let [registers [[:a 1] [:b 2] [:c 3] [:d 4] [:e 5] [:f 6]]]
-    ((doseq [[k v] registers]
-       (rf/dispatch-sync [:add-value-to-registers [k v]])))))
+    ((doseq [r registers]
+       (rf/dispatch-sync [:add-value-to-registers r])))))
+
 (comment (rf/dispatch [:add-value-to-stack 4]))
 
-#_(let [db {:memory {:registers {:a 6, :b 7}}}]
-  (let [registers (-> db :memory :registers)]
-    registers
-    ))
+(comment (let [db {:memory {:registers {:a 6, :b 7}}}]
+           (-> db :memory :registers)))
 
 ;; -- After-Load --------------------------------------------------------------------
 ;; Do this after the page has loaded.
