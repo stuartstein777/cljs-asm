@@ -152,7 +152,8 @@
      [code]]
     [:div.col.col-lg-4]]
    [:div.row
-    [:button.btn.btn-primary.parse-btn {:on-click #(rf/dispatch [:parse])} "Parse"]]
+    [:button.btn.btn-primary.parse-btn {:on-click #(rf/dispatch [:parse])} "Parse"]
+    [:button.btn.btn-danger.parse-btn {:on-click #(rf/dispatch [:clear-parsed])} "Clear Parsed"]]
    [execution-controls]
    [:div.row.eip-container
     [eip]]
@@ -185,13 +186,14 @@
 (comment (let [db {:memory {:registers {:a 6, :b 7}}}]
            (-> db :memory :registers)))
 
-(comment (let [reg-name :a
-               ticked? false
-               tickfn (fn []
-                        (if ticked?
-                          ))]
-           
-           ))
+(comment 
+  (let [set-interval (fn [f] (f) :handle)
+        handle (set-interval (fn [] (if (= handle :handle)
+                                      :bar
+                                      :quax)))]
+    )
+  
+  )
 
 ;; -- After-Load --------------------------------------------------------------------
 ;; Do this after the page has loaded.

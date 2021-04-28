@@ -54,6 +54,20 @@
           (assoc :finished? false))
       :scroll-parsed-code-to-top _})))
 
+(rf/reg-event-db
+ :clear-parsed
+ (fn [db _]
+   (-> db
+       (assoc :code [])
+       (assoc :running? false)
+       (assoc :has-parsed-code? false)
+       (assoc :memory {:eip                0
+                       :registers          {}
+                       :eip-stack          []
+                       :internal-registers {}
+                       :stack              []
+                       :symbol-table       []}))))
+
 ;; ====================================================================
 ;; Source Code Editor events
 ;; ====================================================================
@@ -182,7 +196,6 @@ quax:      ;
 nop        ;
 call bar   ; move eip to bar, push eip to eip-stack
 xor b b    ; a = 7, b = 0, c = 3
-msg 'a = ' a ', b = ' b ', c = ' c
 end        ; a = 7, b = 0, c = 3
                       
 
