@@ -167,7 +167,7 @@
   [:div
    [:h2 "Supported Instructions"]
    [:table.table.table-striped.table-hover {:style {:margin 10 :border "1px solid black"}}
-    [:thead.table
+    [:thead.table {:style {:background-color "rgb(18, 18, 19)" :color :white}}
      [:td {:style {:text-align :left :padding 10}} "Instruction"]
      [:td {:style {:text-align :left :padding 10}} "Example"]
      [:td {:style {:text-align :left :padding 10}} "Description"]]

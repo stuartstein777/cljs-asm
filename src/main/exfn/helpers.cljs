@@ -9,7 +9,8 @@
                              (assoc :line-nos (str line-nos cur "\n"))
                              (update :cur inc))))
                      {:cur 0 :line-nos ""}
-                     (str/split source #"\r?\n" -1))))
+                     (->> (str/split source #"\r?\n" -1)
+                          (map str/trim)))))
 
 (defn get-supported-instructions []
   [{:instruction "mov"

@@ -16,7 +16,7 @@ mul c b    ; a = 0, b = 2, c = 4
 cmp a b    ; :cmp = lt
 jne quax   ; jump
 mul c 10   ;
-                      
+
 
 ;; quax:: call bar and zero :b
 quax:      ;
@@ -26,7 +26,7 @@ pop d
 pop e
 xor b b    ; a = 7, b = 0, c = 3
 end        ; a = 7, b = 0, c = 3
-                      
+
 
 ;; foo:: increment b
 foo:
