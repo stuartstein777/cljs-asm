@@ -190,7 +190,8 @@
     [:div.col.col-lg-4]]
    [:div.row
     [:button.btn.btn-primary.parse-btn {:on-click #(rf/dispatch [:parse])} "Parse"]
-    [:button.btn.btn-danger.parse-btn {:on-click #(rf/dispatch [:clear-parsed])} "Clear Parsed"]]
+    [:button.btn.btn-danger.parse-btn {:on-click #(rf/dispatch [:clear-parsed])} "Clear Parsed"]
+    [:button.btn.btn-danger.parse-btn {:on-click #(rf/dispatch [:clear-breakpoints]) :style {:width 200}} "Clear Breakpoints"]]
    [execution-controls]
    [:div.row.eip-container
     [eip]]

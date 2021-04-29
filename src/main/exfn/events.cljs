@@ -94,6 +94,7 @@ ret        ; ret to bar call, pop eip stack"
           (assoc :finished? false))
       :scroll-parsed-code-to-top _})))
 
+; Handles when the user clicks the Clear Parsed button
 (rf/reg-event-db
  :clear-parsed
  (fn [db _]
@@ -108,6 +109,12 @@ ret        ; ret to bar call, pop eip stack"
                        :internal-registers {}
                        :stack              []
                        :symbol-table       []}))))
+
+; Handles when the user clicks Clear Breakpoints button
+(rf/reg-event-db
+ :clear-breakpoints
+ (fn [db _]
+   (assoc db :breakpoints #{})))
 
 ;; ====================================================================
 ;; Source Code Editor events
@@ -136,12 +143,12 @@ ret        ; ret to bar call, pop eip stack"
 ;; ===================================================================
 ;; Parsed code events
 ;; ===================================================================
- (rf/reg-event-db
-  :toggle-breakpoint
-  (fn [{:keys [breakpoints] :as db} [_ line-no]]
-    (assoc db :breakpoints (if (some? (breakpoints line-no))
-                             (set/difference  breakpoints #{line-no})
-                             (conj breakpoints line-no)))))
+(rf/reg-event-db
+ :toggle-breakpoint
+ (fn [{:keys [breakpoints] :as db} [_ line-no]]
+   (assoc db :breakpoints (if (some? (breakpoints line-no))
+                            (set/difference  breakpoints #{line-no})
+                            (conj breakpoints line-no)))))
 
 ;; ===================================================================
 ;; Code execution control events
@@ -150,14 +157,14 @@ ret        ; ret to bar call, pop eip stack"
  :set-handle
  (fn [db [_ handle]]
    (assoc db :ticker-handle handle)))
- 
+
 (rf/reg-fx
  :toggle-running
  (fn [[running? handle speed]]
    (if running?
      (rf/dispatch [:set-handle (js/setInterval dispatch-timer-event speed)])
      (js/clearInterval handle))))
- 
+
 (rf/reg-fx
  :scroll-current-code-into-view
  (fn [eip]
@@ -165,34 +172,34 @@ ret        ; ret to bar call, pop eip stack"
        (.getElementById "code-container")
        (.-scrollTop)
        (set! (* eip 25)))))
- 
- (rf/reg-event-fx
+
+(rf/reg-event-fx
  :toggle-running
  (fn [{:keys [db]} _]
    {:db (assoc db :running? (not (db :running?)))
     :toggle-running [(not (db :running?)) (db :ticker-handle) (db :running-speed)]}))
- 
+
 (rf/reg-fx
  :end-if-finished
  (fn [[handle finished?]]
    (when finished?
      (js/clearInterval handle))))
 
- (rf/reg-event-fx
-  :reset
-  (fn [{:keys [db]} _]
-    {:db (-> db
-             (assoc :memory {:eip                0
-                             :registers          {}
-                             :eip-stack          []
-                             :internal-registers {}
-                             :stack              []
-                             :symbol-table (:symbol-table (:memory db))})
-             (assoc :running? false)
-             (assoc :on-breakpoint false)
-             (assoc :finished? false))
-     :toggle-running [false (db :ticker-handle)]
-     :scroll-parsed-code-to-top _}))
+(rf/reg-event-fx
+ :reset
+ (fn [{:keys [db]} _]
+   {:db (-> db
+            (assoc :memory {:eip                0
+                            :registers          {}
+                            :eip-stack          []
+                            :internal-registers {}
+                            :stack              []
+                            :symbol-table (:symbol-table (:memory db))})
+            (assoc :running? false)
+            (assoc :on-breakpoint false)
+            (assoc :finished? false))
+    :toggle-running [false (db :ticker-handle)]
+    :scroll-parsed-code-to-top _}))
 
 (rf/reg-event-fx
  :next-instruction
@@ -207,17 +214,16 @@ ret        ; ret to bar call, pop eip stack"
                 (assoc :on-breakpoint true)
                 (assoc :running? false))
         :scroll-current-code-into-view (:eip memory)
-        :toggle-running [false (db :ticker-handle)]
-        }
+        :toggle-running [false (db :ticker-handle)]}
        {:db (assoc db :on-breakpoint false)
         :scroll-current-code-into-view (:eip memory)
         :end-if-finished [(db :ticker-handle) finished?]}))))
 
  ;;================== DEV TEST EVENTS ==================================
- (rf/reg-event-db
-  :add-value-to-registers
-  (fn [db [_ [k v]]]
-    (update-in db [:memory :registers] assoc k v)))
+(rf/reg-event-db
+ :add-value-to-registers
+ (fn [db [_ [k v]]]
+   (update-in db [:memory :registers] assoc k v)))
 
 (rf/reg-event-db
  :update-running-speed
@@ -233,7 +239,7 @@ ret        ; ret to bar call, pop eip stack"
  :reset-eip
  (fn [db _]
    (assoc-in db [:memory :eip] 0)))
- 
+
 (rf/reg-event-db
  :test-code
  (fn [db _]
