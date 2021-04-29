@@ -30,33 +30,41 @@
 
 ;; Display the parsed code.
 (defn code []
-  [:div#code-container.code-container
-   [:div.parsed-code-header "Parsed Code"]
-   (let [code @(rf/subscribe [:code])
-         breakpoints @(rf/subscribe [:breakpoints])
-         code-with-lines (zipmap (range (count code)) code)
-         eip @(rf/subscribe [:eip])]
-     [:table#code.code
-      [:tbody
-       (for [[line-no code-line] code-with-lines]
-         [:tr.code-line {:key line-no
-                         :style {:background-color (if (= eip line-no) "goldenrod" "white")}}
-          [:td.breakpoint
-           [:i.fas.fa-circle {:style {:color (if (some? (breakpoints line-no)) "red" "lightgray")}
-                              :on-click #(rf/dispatch [:toggle-breakpoint line-no])}]]
-          [:td.code-eip
-           [:i.fas.fa-angle-double-right
-            {:style {:visibility (if (= eip line-no) :visible :hidden)}}]]
-          [:td.line-number [:div {:style {:height 25}}
-                            line-no]]
-          [:td
-           [:span
-            [:label.instruction (first code-line)]
-            (let [arguments (rest code-line)]
-              (for [i (zipmap (range (count arguments)) arguments)]
-                (if (keyword? (val i))
-                  [:label.register {:key (key i)} (val i)]
-                  [:label.value {:key (key i)} (val i)])))]]])]])])
+  (let [code            @(rf/subscribe [:code])
+        breakpoints     @(rf/subscribe [:breakpoints])
+        code-with-lines (zipmap (range (count code)) code)
+        eip             @(rf/subscribe [:eip])
+        on-breakpoint?  @(rf/subscribe [:on-breakpoint])]
+    [:div {:style {:margin 10
+                   :height 455
+                   :overflow-y :none
+                   :width  1000}}
+     [:div.parsed-code-header "Parsed Code"]
+     [:div#code-container.code-container
+      [:table#code.code
+       [:tbody
+        (for [[line-no code-line] code-with-lines]
+          [:tr.code-line {:key   line-no
+                          :style {:background-color (if (= eip line-no) "goldenrod" "white")}}
+           [:td.breakpoint
+            [:i.fas.fa-circle {:style    {:color (if (some? (breakpoints line-no)) "red" "lightgray")}
+                               :on-click #(rf/dispatch [:toggle-breakpoint line-no])}]]
+           [:td.code-eip
+            [:i.fas.fa-angle-double-right
+             {:style {:visibility (if (= eip line-no) :visible :hidden)}}]]
+           [:td.line-number [:div {:style {:height 25}}
+                             line-no]]
+           [:td
+            [:span
+             [:label.instruction (first code-line)]
+             (let [arguments (rest code-line)]
+               (for [i (zipmap (range (count arguments)) arguments)]
+                 (if (keyword? (val i))
+                   [:label.register {:key (key i)} (val i)]
+                   [:label.value {:key (key i)} (val i)])))]]])]]]
+     [:div.breakpoint-indicator
+      {:style {:visibility (if on-breakpoint? :visible :hidden)}}
+      [:label (str "Breakpoint hit: Line " eip)]]]))
 
 ;; Buttons that control the executing code (start/stop/pause/speed)
 (defn execution-controls []

@@ -21,6 +21,8 @@ mul c 10   ;
 ;; quax:: call bar and zero :b
 quax:      ;
 nop        ;
+pop d
+pop e
 call bar   ; move eip to bar, push eip to eip-stack
 xor b b    ; a = 7, b = 0, c = 3
 end        ; a = 7, b = 0, c = 3
@@ -36,6 +38,8 @@ ret        ; ret to foo call, pop eip stack
 bar:
 add a 7    ; a = 7, b = 2, c = 4
 sub c 1    ; a = 7, b = 2, c = 3
+push 3
+push 4
 ret        ; ret to bar call, pop eip stack"
     :code        []
     :memory {:eip                0
