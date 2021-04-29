@@ -46,9 +46,11 @@ ret        ; ret to bar call, pop eip stack"
              :symbol-table       {}
              :last-edit-register nil}
     :breakpoints #{}
-    :running? false
-    :finished? false
+    :on-breakpoint false
     :has-parsed-code? false
+    :finished? false
+    :running? false
+    :running-speed 1000
     :ticker-handle nil}))
 
 (defn dispatch-timer-event []
@@ -83,6 +85,7 @@ ret        ; ret to bar call, pop eip stack"
                           :stack              []
                           :symbol-table       symbol-table})
           (assoc :code parsed)
+          (assoc :on-breakpoint false)
           (assoc :has-parsed-code? (pos? (count parsed)))
           (assoc :finished? false))
       :scroll-parsed-code-to-top _})))
@@ -94,6 +97,7 @@ ret        ; ret to bar call, pop eip stack"
        (assoc :code [])
        (assoc :running? false)
        (assoc :has-parsed-code? false)
+       (assoc :on-breakpoint false)
        (assoc :memory {:eip                0
                        :registers          {}
                        :eip-stack          []
@@ -181,6 +185,7 @@ ret        ; ret to bar call, pop eip stack"
                              :stack              []
                              :symbol-table (:symbol-table (:memory db))})
              (assoc :running? false)
+             (assoc :on-breakpoint false)
              (assoc :finished? false))
      :toggle-running [false (db :ticker-handle)]
      :scroll-parsed-code-to-top _}))
@@ -188,12 +193,21 @@ ret        ; ret to bar call, pop eip stack"
 (rf/reg-event-fx
  :next-instruction
  (fn [{:keys [db]} _]
-   (let [[memory finished?] (exfn.interpreter/interpret (db :code) (db :memory))]
-     {:db (-> db
-              (assoc :memory memory)
-              (assoc :finished? finished?))
-      :scroll-current-code-into-view (:eip memory)
-      :end-if-finished [(db :ticker-handle) finished?]})))
+   (let [[memory finished?] (exfn.interpreter/interpret (db :code) (db :memory))
+         breakpoints (db :breakpoints)
+         db (-> db
+                (assoc :memory memory)
+                (assoc :finished? finished?))]
+     (if (some? (breakpoints (:eip memory)))
+       {:db (-> db
+                (assoc :on-breakpoint true)
+                (assoc :running? false))
+        :scroll-current-code-into-view (:eip memory)
+        :toggle-running [false (db :ticker-handle)]
+        }
+       {:db (assoc db :on-breakpoint false)
+        :scroll-current-code-into-view (:eip memory)
+        :end-if-finished [(db :ticker-handle) finished?]}))))
 
  ;;================== DEV TEST EVENTS ==================================
  (rf/reg-event-db

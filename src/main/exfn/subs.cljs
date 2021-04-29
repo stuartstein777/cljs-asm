@@ -70,3 +70,8 @@
  :running-speed
  (fn [db _]
    (db :running-speed)))
+
+(rf/reg-sub
+ :on-breakpoint
+ (fn [db _]
+   (db :on-breakpoint)))

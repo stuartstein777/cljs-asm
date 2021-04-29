@@ -64,15 +64,16 @@
    (let [is-running? @(rf/subscribe [:running?])
          finished? @(rf/subscribe [:finished?])
          has-parsed-code? @(rf/subscribe [:has-parsed-code?])
-         running-speed @(rf/subscribe [:running-speed])]
+         running-speed @(rf/subscribe [:running-speed])
+         on-breakpoint @(rf/subscribe [:on-breakpoint])]
      [:div.execution-controls
       [:button.btn.btn-success.play-pause
        {:on-click #(rf/dispatch [:toggle-running])
-        :disabled (or finished? (not has-parsed-code?))}
+        :disabled (and (or finished? (not has-parsed-code?)) (not on-breakpoint))}
        (if is-running? [:i.fas.fa-pause] [:i.fas.fa-play])]
       [:button.btn.btn-success.next-instruction
        {:on-click #(rf/dispatch [:next-instruction])
-        :disabled (or finished? (not has-parsed-code?) is-running?)}
+        :disabled (and (or finished? (not has-parsed-code?) is-running? ) (not on-breakpoint))}
        [:i.fas.fa-forward]]
       [:button.btn.btn-danger.stop-button
        {:on-click #(rf/dispatch [:reset])}
