@@ -65,7 +65,8 @@
          finished? @(rf/subscribe [:finished?])
          has-parsed-code? @(rf/subscribe [:has-parsed-code?])
          running-speed @(rf/subscribe [:running-speed])
-         on-breakpoint @(rf/subscribe [:on-breakpoint])]
+         on-breakpoint @(rf/subscribe [:on-breakpoint])
+         eip @(rf/subscribe [:eip])]
      [:div.execution-controls
       [:button.btn.btn-success.play-pause
        {:on-click #(rf/dispatch [:toggle-running])
@@ -82,7 +83,10 @@
                              :placeholder "1000"
                              :type        "text"
                              :value running-speed}]
-      [:label.speed-label "speed (msecs / instruction.)"]])])
+      [:label.speed-label "speed (msecs / instruction.)"]
+      [:label.breakpoint-label
+       {:style {:visibility (if on-breakpoint :visible :hidden)}}
+       (str "on-breakpoint: " eip)]])])
 
 ;; Display the current eip when running.
 (defn eip []

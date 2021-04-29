@@ -390,3 +390,8 @@ reagent function::          memory, eip
     text-align: right;
     width: 100px;
 }
+
+.breakpoint-label {
+    margin-left: 25px;
+    vertical-align: middle;
+}
