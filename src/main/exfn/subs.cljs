@@ -65,3 +65,8 @@
  :has-parsed-code?
  (fn [db _]
    (db :has-parsed-code?)))
+
+(rf/reg-sub
+ :running-speed
+ (fn [db _]
+   (db :running-speed)))

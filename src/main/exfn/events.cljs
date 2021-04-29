@@ -145,9 +145,9 @@ ret        ; ret to bar call, pop eip stack"
  
 (rf/reg-fx
  :toggle-running
- (fn [[running? handle]]
+ (fn [[running? handle speed]]
    (if running?
-     (rf/dispatch [:set-handle (js/setInterval dispatch-timer-event 1000)])
+     (rf/dispatch [:set-handle (js/setInterval dispatch-timer-event speed)])
      (js/clearInterval handle))))
  
 (rf/reg-fx
@@ -162,7 +162,7 @@ ret        ; ret to bar call, pop eip stack"
  :toggle-running
  (fn [{:keys [db]} _]
    {:db (assoc db :running? (not (db :running?)))
-    :toggle-running [(not (db :running?)) (db :ticker-handle)]}))
+    :toggle-running [(not (db :running?)) (db :ticker-handle) (db :running-speed)]}))
  
 (rf/reg-fx
  :end-if-finished
@@ -170,18 +170,20 @@ ret        ; ret to bar call, pop eip stack"
    (when finished?
      (js/clearInterval handle))))
 
- (rf/reg-event-db
+ (rf/reg-event-fx
   :reset
-  (fn [db _]
-    (-> db
-        (assoc :memory {:eip                0
-                        :registers          {}
-                        :eip-stack          []
-                        :internal-registers {}
-                        :stack              []
-                        :symbol-table (:symbol-table (:memory db))})
-        (assoc :running? false)
-        (assoc :finished? false))))
+  (fn [{:keys [db]} _]
+    {:db (-> db
+             (assoc :memory {:eip                0
+                             :registers          {}
+                             :eip-stack          []
+                             :internal-registers {}
+                             :stack              []
+                             :symbol-table (:symbol-table (:memory db))})
+             (assoc :running? false)
+             (assoc :finished? false))
+     :toggle-running [false (db :ticker-handle)]
+     :scroll-parsed-code-to-top _}))
 
 (rf/reg-event-fx
  :next-instruction
@@ -198,6 +200,11 @@ ret        ; ret to bar call, pop eip stack"
   :add-value-to-registers
   (fn [db [_ [k v]]]
     (update-in db [:memory :registers] assoc k v)))
+
+(rf/reg-event-db
+ :update-running-speed
+ (fn [db [_ speed]]
+   (assoc db :running-speed speed)))
 
 (rf/reg-event-db
  :add-value-to-stack

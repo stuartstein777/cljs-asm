@@ -63,7 +63,8 @@
   [:div.row
    (let [is-running? @(rf/subscribe [:running?])
          finished? @(rf/subscribe [:finished?])
-         has-parsed-code? @(rf/subscribe [:has-parsed-code?])]
+         has-parsed-code? @(rf/subscribe [:has-parsed-code?])
+         running-speed @(rf/subscribe [:running-speed])]
      [:div.execution-controls
       [:button.btn.btn-success.play-pause
        {:on-click #(rf/dispatch [:toggle-running])
@@ -71,14 +72,16 @@
        (if is-running? [:i.fas.fa-pause] [:i.fas.fa-play])]
       [:button.btn.btn-success.next-instruction
        {:on-click #(rf/dispatch [:next-instruction])
-        :disabled (or finished? (not has-parsed-code?))}
+        :disabled (or finished? (not has-parsed-code?) is-running?)}
        [:i.fas.fa-forward]]
       [:button.btn.btn-danger.stop-button
        {:on-click #(rf/dispatch [:reset])}
        [:i.fas.fa-stop]]
-      [:input.instr-per-sec {:type "text"
-                             :placeholder "1"}]
-      [:label.speed-label "speed (secs / instruction.)"]])])
+      [:input.instr-per-sec {:on-change   #(rf/dispatch-sync [:update-running-speed (-> % .-target .-value)])
+                             :placeholder "1000"
+                             :type        "text"
+                             :value running-speed}]
+      [:label.speed-label "speed (msecs / instruction.)"]])])
 
 ;; Display the current eip when running.
 (defn eip []

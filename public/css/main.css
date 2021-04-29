@@ -172,9 +172,9 @@ reagent function::          execution-controls
 
 .instr-per-sec {
     margin-left: 40px;
-    text-align: center;
+    text-align: right;
     vertical-align: middle;
-    width: 50px;
+    width: 100px;
 }
 
 .next-instruction {
@@ -206,6 +206,10 @@ reagent function::          execution-controls
     margin-left: 10px;
 }
 
+.stop-button[disabled] {
+    background-color: darkgray;
+    border: 1px solid grey;
+}
 /*
 ----------------------------------------------------------
 The registers section
