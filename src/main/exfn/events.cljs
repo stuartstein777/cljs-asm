@@ -21,9 +21,9 @@ mul c 10   ;
 ;; quax:: call bar and zero :b
 quax:      ;
 nop        ;
+call bar   ; move eip to bar, push eip to eip-stack
 pop d
 pop e
-call bar   ; move eip to bar, push eip to eip-stack
 xor b b    ; a = 7, b = 0, c = 3
 end        ; a = 7, b = 0, c = 3
                       
@@ -54,7 +54,7 @@ ret        ; ret to bar call, pop eip stack"
     :has-parsed-code? false
     :finished? false
     :running? false
-    :running-speed 1000
+    :running-speed 700
     :ticker-handle nil}))
 
 (defn dispatch-timer-event []

@@ -163,6 +163,22 @@
            [:div.col-col-lg6.symbol-name (key s)]
            [:div.col-col-lg6.symbol-value (val s)]]))]]))
 
+(defn supported-instructions []
+  [:div
+   [:h2 "Supported Instructions"]
+   [:table.table.table-striped.table-hover {:style {:margin 10 :border "1px solid black"}}
+    [:thead.table
+     [:td {:style {:text-align :left :padding 10}} "Instruction"]
+     [:td {:style {:text-align :left :padding 10}} "Example"]
+     [:td {:style {:text-align :left :padding 10}} "Description"]]
+    [:tbody
+     (for [{:keys [instruction example description]} (h/get-supported-instructions)]
+       [:tr {:style {:border "1px solid black"}}
+        [:td {:style {:width 150 :text-align :left :border-right "1px solid black"}}instruction]
+        [:td {:style {:width 200 :text-align :left :border-right "1px solid black"}}
+         example]
+        [:td {:style {:width 500 :text-align :left}} description]])]]])
+
 ;; -- App ---------------------------------------------------------------------------
 (defn app []
   [:div.content
@@ -188,7 +204,9 @@
     [:div
      [stack :eip-stack "EIP Stack"]]
     [:div
-     [symbol-table]]]])
+     [symbol-table]]]
+   [:div
+    [supported-instructions]]])
 
 ;; -- Dev Helpers -------------------------------------------------------------------
 (comment (rf/dispatch-sync [:initialize]))
