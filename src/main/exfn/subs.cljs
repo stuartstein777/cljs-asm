@@ -75,3 +75,8 @@
  :on-breakpoint
  (fn [db _]
    (db :on-breakpoint)))
+
+(rf/reg-sub
+ :last-edit-register
+ (fn [db _]
+   (-> db :memory :last-edit-register)))

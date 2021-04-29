@@ -206,7 +206,6 @@
 (defn interpret [instructions {:keys [eip registers internal-registers symbol-table] :as memory}]
   #_(js/console.log memory)
   (let [[instruction & args] (nth instructions eip)]
-    (prn eip)
     (let [new-eip   (if (#{:jmp :jnz :jne :je :jgl :jg :jle :jl :jge :ret :call} instruction)
                       (process-jump eip instruction registers internal-registers symbol-table (:eip-stack memory) args)
                       (inc eip))
@@ -218,6 +217,7 @@
           eip-stack (cond (= :ret instruction) (pop (:eip-stack memory))
                           (= :call instruction) (conj (:eip-stack memory) eip)
                           :else (:eip-stack memory))]
+      (prn (:last-edit-register memory))
       [(-> memory
            (assoc :eip new-eip)
            (assoc :eip-stack eip-stack))

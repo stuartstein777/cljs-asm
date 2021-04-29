@@ -97,7 +97,8 @@
 
 ;; Display the user registers.
 (defn registers []
-  (let [registers @(rf/subscribe [:registers])]
+  (let [registers @(rf/subscribe [:registers])
+        last-edit-register @(rf/subscribe [:last-edit-register])]
     [:div.registers-container
      [:div.registers-header "Registers"]
      [:div.registers-list
@@ -105,7 +106,11 @@
         (for [[k [name v]] (zipmap (range (count registers)) registers)]
           [:div.row {:key k}
            [:div.col-col-lg6.register-name {:key (str k "reg:name")} name]
-           [:div.col-col-lg6.register-value {:id (str "reg" name) :key (str k "reg:value")} v]]))]]))
+           (if (keyword-identical? name last-edit-register)
+             [:div.col-col-lg6.register-value {:id (str "reg" name) :key (str k "reg:value")
+                                               :style {:background-color :yellow}}
+              v]
+             [:div.col-col-lg6.register-value {:id (str "reg" name) :key (str k "reg:value")} v])]))]]))
 
 (defn cmp-values [cmp]
   (prn "cmp: " cmp)
