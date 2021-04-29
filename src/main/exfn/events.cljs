@@ -7,7 +7,36 @@
 (rf/reg-event-db
  :initialize
  (fn [_ _]
-   {:source      ""
+   {:source      "; function calls.
+mov a 0    ; a = 0
+mov b 1    ; a = 0, b = 1
+mov c 2    ; a = 0, b = 1, c = 2
+call foo   ; move eip to foo, push eip to eip-stack
+mul c b    ; a = 0, b = 2, c = 4
+cmp a b    ; :cmp = lt
+jne quax   ; jump
+mul c 10   ;
+                      
+
+;; quax:: call bar and zero :b
+quax:      ;
+nop        ;
+call bar   ; move eip to bar, push eip to eip-stack
+xor b b    ; a = 7, b = 0, c = 3
+end        ; a = 7, b = 0, c = 3
+                      
+
+;; foo:: increment b
+foo:
+inc b      ; a = 0, b = 2, c = 2
+ret        ; ret to foo call, pop eip stack
+
+
+;; bar:: add 7 to a and decrement c
+bar:
+add a 7    ; a = 7, b = 2, c = 4
+sub c 1    ; a = 7, b = 2, c = 3
+ret        ; ret to bar call, pop eip stack"
     :code        []
     :memory {:eip                0
              :registers          {}
@@ -19,7 +48,11 @@
     :breakpoints #{}
     :running? false
     :finished? false
-    :has-parsed-code? false}))
+    :has-parsed-code? false
+    :ticker-handle nil}))
+
+(defn dispatch-timer-event []
+  (rf/dispatch [:next-instruction]))
 
 ;; Handles the user typing into the source control editor.
 (rf/reg-event-db
@@ -105,6 +138,18 @@
 ;; ===================================================================
 ;; Code execution control events
 ;; ===================================================================
+(rf/reg-event-db
+ :set-handle
+ (fn [db [_ handle]]
+   (assoc db :ticker-handle handle)))
+ 
+(rf/reg-fx
+ :toggle-running
+ (fn [[running? handle]]
+   (if running?
+     (rf/dispatch [:set-handle (js/setInterval dispatch-timer-event 1000)])
+     (js/clearInterval handle))))
+ 
 (rf/reg-fx
  :scroll-current-code-into-view
  (fn [eip]
@@ -113,11 +158,18 @@
        (.-scrollTop)
        (set! (* eip 25)))))
  
- (rf/reg-event-db
+ (rf/reg-event-fx
  :toggle-running
- (fn [db _]
-   (assoc db :running? (not (db :running?)))))
+ (fn [{:keys [db]} _]
+   {:db (assoc db :running? (not (db :running?)))
+    :toggle-running [(not (db :running?)) (db :ticker-handle)]}))
  
+(rf/reg-fx
+ :end-if-finished
+ (fn [[handle finished?]]
+   (when finished?
+     (js/clearInterval handle))))
+
  (rf/reg-event-db
   :reset
   (fn [db _]
@@ -138,28 +190,8 @@
      {:db (-> db
               (assoc :memory memory)
               (assoc :finished? finished?))
-      :scroll-current-code-into-view (:eip memory)})))
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+      :scroll-current-code-into-view (:eip memory)
+      :end-if-finished [(db :ticker-handle) finished?]})))
 
  ;;================== DEV TEST EVENTS ==================================
  (rf/reg-event-db
