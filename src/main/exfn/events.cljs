@@ -41,7 +41,10 @@ sub c 1    ; a = 7, b = 2, c = 3
 push 3
 push 4
 ret        ; ret to bar call, pop eip stack"
+    :breakpoints #{}
     :code        []
+    :finished? false
+    :has-parsed-code? false
     :memory {:eip                0
              :registers          {}
              :eip-stack          []
@@ -49,10 +52,8 @@ ret        ; ret to bar call, pop eip stack"
              :stack              []
              :symbol-table       {}
              :last-edit-register nil}
-    :breakpoints #{}
     :on-breakpoint false
-    :has-parsed-code? false
-    :finished? false
+    :output "Output >>\n---------------------------------"
     :running? false
     :running-speed 700
     :ticker-handle nil}))
@@ -201,14 +202,26 @@ ret        ; ret to bar call, pop eip stack"
     :toggle-running [false (db :ticker-handle)]
     :scroll-parsed-code-to-top _}))
 
+(defn append-output [existing new]
+  (cond (and existing new) ;existing output and new output.
+        (str existing "\n" new)
+
+        (and existing (not new))
+        existing
+
+        (= "" existing)
+        new))
+
+
 (rf/reg-event-fx
  :next-instruction
  (fn [{:keys [db]} _]
-   (let [[memory finished?] (exfn.interpreter/interpret (db :code) (db :memory))
+   (let [[memory finished? output] (exfn.interpreter/interpret (db :code) (db :memory))
          breakpoints (db :breakpoints)
          db (-> db
                 (assoc :memory memory)
-                (assoc :finished? finished?))]
+                (assoc :finished? finished?)
+                (assoc :output (append-output (db :output) output)))]
      (if (some? (breakpoints (:eip memory)))
        {:db (-> db
                 (assoc :on-breakpoint true)
@@ -218,6 +231,11 @@ ret        ; ret to bar call, pop eip stack"
        {:db (assoc db :on-breakpoint false)
         :scroll-current-code-into-view (:eip memory)
         :end-if-finished [(db :ticker-handle) finished?]}))))
+
+(rf/reg-event-db
+ :clear-output
+ (fn [db _]
+   (assoc db :output "Output >>\n---------------------------------")))
 
  ;;================== DEV TEST EVENTS ==================================
 (rf/reg-event-db

@@ -401,3 +401,13 @@ reagent function::          memory, eip
     margin-left: 25px;
     vertical-align: middle;
 }
+
+.std-out {
+    background-color: rgb(46,43,43);
+    color: greenyellow;
+    height: 320px;
+    max-height: 320px;
+    margin-left: 50px;
+    padding: 10px;
+    width: 400px;    
+}

@@ -80,3 +80,8 @@
  :last-edit-register
  (fn [db _]
    (-> db :memory :last-edit-register)))
+
+(rf/reg-sub
+ :output
+ (fn [db _]
+   (db :output)))

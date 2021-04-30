@@ -168,9 +168,10 @@
    [:h2 "Supported Instructions"]
    [:table.table.table-striped.table-hover {:style {:margin 10 :border "1px solid black"}}
     [:thead.table {:style {:background-color "rgb(18, 18, 19)" :color :white}}
-     [:td {:style {:text-align :left :padding 10}} "Instruction"]
-     [:td {:style {:text-align :left :padding 10}} "Example"]
-     [:td {:style {:text-align :left :padding 10}} "Description"]]
+     [:tr
+      [:th {:style {:text-align :left :padding 10}} "Instruction"]
+      [:th {:style {:text-align :left :padding 10}} "Example"]
+      [:th {:style {:text-align :left :padding 10}} "Description"]]]
     [:tbody
      (for [{:keys [instruction example description]} (h/get-supported-instructions)]
        [:tr {:style {:border "1px solid black"}}
@@ -178,6 +179,15 @@
         [:td {:style {:width 200 :text-align :left :border-right "1px solid black"}}
          example]
         [:td {:style {:width 500 :text-align :left}} description]])]]])
+
+(defn output []
+  (let [output @(rf/subscribe [:output])]
+    [:div
+     [:textarea.std-out {:value output
+                         :readOnly  true
+                         :wrap      :off}]
+     [:div {:style {:text-align :right}}
+      [:button.btn.btn-danger.clear-output {:on-click #(rf/dispatch [:clear-output])} "Clear"]]]))
 
 ;; -- App ---------------------------------------------------------------------------
 (defn app []
@@ -205,7 +215,9 @@
     [:div
      [stack :eip-stack "EIP Stack"]]
     [:div
-     [symbol-table]]]
+     [symbol-table]]
+    [:div
+     [output]]]
    [:div
     [supported-instructions]]])
 

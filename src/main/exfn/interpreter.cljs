@@ -205,20 +205,26 @@
 ;;=======================================================================================================
 (defn interpret [instructions {:keys [eip registers internal-registers symbol-table] :as memory}]
   #_(js/console.log memory)
-  (let [[instruction & args] (nth instructions eip)]
-    (let [new-eip   (if (#{:jmp :jnz :jne :je :jgl :jg :jle :jl :jge :ret :call} instruction)
-                      (process-jump eip instruction registers internal-registers symbol-table (:eip-stack memory) args)
-                      (inc eip))
+  (let [[instruction & args] (nth instructions eip)
+        new-eip              (if (#{:jmp :jnz :jne :je :jgl :jg :jle :jl :jge :ret :call} instruction)
+                               (process-jump eip instruction registers internal-registers symbol-table (:eip-stack memory) args)
+                               (inc eip))
 
-          memory (if (#{:mov :mul :add :sub :dec :xor :and :or :div :inc :msg :cmp :push :pop} instruction)
-                   (process-instruction instruction memory args)
-                   memory)
+        memory               (if (#{:mov :mul :add :sub :dec :xor :and :or :div :inc :msg :cmp :push :pop} instruction)
+                               (process-instruction instruction memory args)
+                               memory)
 
-          eip-stack (cond (= :ret instruction) (pop (:eip-stack memory))
-                          (= :call instruction) (conj (:eip-stack memory) eip)
-                          :else (:eip-stack memory))]
-      (prn (:last-edit-register memory))
-      [(-> memory
-           (assoc :eip new-eip)
-           (assoc :eip-stack eip-stack))
-       (or (= (nth instructions new-eip) [:end]) (> new-eip (count instructions)))])))
+        eip-stack            (cond (= :ret instruction) (pop (:eip-stack memory))
+                                   (= :call instruction) (conj (:eip-stack memory) eip)
+                                   :else (:eip-stack memory))
+        
+        output               (when (= :prn instruction)
+                               (str (get-value registers (first args))))]
+    [; new memory state
+     (-> memory
+         (assoc :eip new-eip)
+         (assoc :eip-stack eip-stack))
+       ; finished?
+     (or (= (nth instructions new-eip) [:end]) (> new-eip (count instructions)))
+       ;new output
+     output]))
