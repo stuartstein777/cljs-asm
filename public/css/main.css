@@ -262,7 +262,6 @@ reagent function::          memory, eip
     border-left: 1px black solid;
     border-right: 1px black solid;
     color:white;
-    height: 30px;
     padding: 5px;
     text-align: center;
     vertical-align: middle;
@@ -305,12 +304,12 @@ reagent function::          memory, eip
 
 .grid {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
     grid-auto-rows: minmax(225px, auto);
     grid-gap: 0px;
     margin: 12px;
     height: 380px;
-    width: 650px;
+    width: 1000px;
 }
 
 .stack-container {
@@ -324,7 +323,6 @@ reagent function::          memory, eip
     border-left: 1px black solid;
     border-right: 1px black solid;
     color:white;
-    height: 30px;
     padding: 5px;
     text-align: center;
     vertical-align: middle;
@@ -363,7 +361,6 @@ reagent function::          memory, eip
     border-left: 1px black solid;
     border-right: 1px black solid;
     color:white;
-    height: 30px;
     padding: 5px;
     text-align: center;
     vertical-align: middle;

@@ -47,7 +47,7 @@
         (= :mul instruction) *
         (= :div instruction) quot
         (= :xor instruction) bit-xor
-        (= :or  instruction)  bit-or
+        (= :or  instruction) bit-or
         (= :and instruction) bit-and
         (= :cat instruction) str))
 
@@ -56,7 +56,9 @@
 ;;=======================================================================================================
 (defn get-unary-operation [instruction]
   (cond (= :inc instruction) inc
-        (= :dec instruction) dec))
+        (= :dec instruction) dec
+        (= :len instruction) count
+        (= :not instruction) bit-not))
 
 ;;=======================================================================================================
 ;; jump forward or backwards y steps if x is not zero.
@@ -81,7 +83,8 @@
 ;;=======================================================================================================
 ;; After a cmp either the comparison will be in one of three states, :eq, :gt, :lt
 ;;
-;; Therefore, to check if we need to jump or not, we simple have to pass in a set of allowed states.
+;; Therefor
+;; e, to check if we need to jump or not, we simple have to pass in a set of allowed states.
 ;; e.g,
 ;; jge :: we would pass in #{:eq :gt}, then we can check if the cmp register is either :eq or :gt.
 ;;
@@ -153,7 +156,7 @@
 ;;=======================================================================================================
 ;; Process regular instructions and return the new registers.
 ;;=======================================================================================================
-(defn process-instruction [instruction {:keys [registers stack] :as memory} args]
+(defn process-instruction [instruction {:keys [registers stack eip] :as memory} args]
   #_#_(prn "args::" args)
   (prn "memory::" registers stack)
   (cond (= :mov instruction)
@@ -162,13 +165,14 @@
               (assoc :registers (mov registers x y))
               (assoc :last-edit-register x)))
 
-        (#{:inc :dec} instruction)
+        (#{:inc :dec :not} instruction)
         (-> memory
             (assoc :registers (unary-op registers (get-unary-operation instruction) (first args)))
             (assoc :last-edit-register (first args)))
 
         (#{:mul :add :sub :div :xor :and :or :cat} instruction)
         (let [[x y] args]
+          (prn x y args)
           (-> memory
               (assoc :registers (binary-op registers (get-binary-operations instruction) x y))
               (assoc :last-edit-register x)))
@@ -189,8 +193,14 @@
         (let [x (get-value registers (first args))]
           (update memory :stack #(conj % x)))
 
+        (= :len instruction)
+        (update-in memory [:registers] assoc (first args) (count (get-value registers (second args))))
+
         (= :msg instruction)
-        (assoc memory :registers (apply (partial set-message registers) args))))
+        (assoc memory :registers (apply (partial set-message registers) args))
+        
+        (= :rep instruction)
+        (update-in memory [:internal-registers :rep-stack] conj eip)))
 
 (defn build-symbol-table [asm]
   (reduce (fn [a [i ix]]
@@ -210,7 +220,7 @@
                                (process-jump eip instruction registers internal-registers symbol-table (:eip-stack memory) args)
                                (inc eip))
 
-        memory               (if (#{:mov :mul :add :sub :dec :xor :and :or :div :inc :msg :cmp :push :pop :cat} instruction)
+        memory               (if (#{:mov :mul :add :sub :dec :xor :and :or :div :inc :msg :cmp :push :pop :cat :len :not :rep} instruction)
                                (process-instruction instruction memory args)
                                memory)
 

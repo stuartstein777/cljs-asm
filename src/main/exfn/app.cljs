@@ -39,7 +39,20 @@
                    :height 455
                    :overflow-y :none
                    :width  1000}}
-     [:div.parsed-code-header "Parsed Code"]
+     [:div.parsed-code-header
+      [:div
+       [:div {:style {:text-align   :left
+                      :padding-left 5}}
+        [:i.fas.fa-trash-alt {:style    {:color  :red
+                                         :cursor :pointer}
+                              :on-click #(rf/dispatch [:clear-breakpoints])}]
+        [:label {:style {:margin-left 10}} "Parsed Code"]
+        [:button.btn.btn-danger.btn.py-0 {:on-click #(rf/dispatch [:clear-parsed])
+                                          :style    {:font-size    "0.8em"
+                                                     :float        :right
+                                                     :margin-top   2
+                                                     :margin-right 2}}
+         "clear"]]]]
      [:div#code-container.code-container
       [:table#code.code
        [:tbody
@@ -163,6 +176,18 @@
            [:div.col-col-lg6.symbol-name (key s)]
            [:div.col-col-lg6.symbol-value (val s)]]))]]))
 
+;; Rep EIP stack.
+(defn rep-returns []
+  (let [symbols @(rf/subscribe [:symbols])]
+    [:div.symbol-table-container
+     [:div.symbol-table-header "Rep stack"]
+     [:div.symbol-table
+      (when (not= {} symbols)
+        (for [s symbols]
+          [:div.row
+           [:div.col-col-lg6.symbol-name (key s)]
+           [:div.col-col-lg6.symbol-value (val s)]]))]]))
+
 (defn supported-instructions []
   [:div
    [:h2 "Supported Instructions"]
@@ -196,12 +221,9 @@
     [:div.col.col-lg-4
      [code-editor]]
     [:div.col.col-lg-4
-     [code]]
-    [:div.col.col-lg-4]]
+     [code]]]
    [:div.row
-    [:button.btn.btn-primary.parse-btn {:on-click #(rf/dispatch [:parse])} "Parse"]
-    [:button.btn.btn-danger.parse-btn {:on-click #(rf/dispatch [:clear-parsed])} "Clear Parsed"]
-    [:button.btn.btn-danger.parse-btn {:on-click #(rf/dispatch [:clear-breakpoints]) :style {:width 200}} "Clear Breakpoints"]]
+    [:button.btn.btn-primary.parse-btn {:on-click #(rf/dispatch [:parse])} "Parse"]]
    [execution-controls]
    [:div.row.eip-container
     [eip]]
@@ -217,7 +239,9 @@
     [:div
      [symbol-table]]
     [:div
-     [output]]]
+     [rep-returns]]
+    [:div
+     [output]]]   
    [:div
     [supported-instructions]]])
 
