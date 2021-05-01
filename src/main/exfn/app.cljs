@@ -18,7 +18,7 @@
   (let [source @(rf/subscribe [:source])]
     [:div
      [:div.editor
-      [:div.source-editor-header "Source Editor"
+      [:div.source-editor-header.header "Source Editor"
        [:button.btn.btn-danger.btn.py-0 {:on-click #(rf/dispatch [:clear-source])
                                          :style    {:font-size    "0.8em"
                                                     :float        :right
@@ -45,7 +45,7 @@
                    :height 455
                    :overflow-y :none
                    :width  1000}}
-     [:div.parsed-code-header
+     [:div.parsed-code-header.header
       [:div
        [:div {:style {:text-align   :left
                       :padding-left 5}}
@@ -120,7 +120,7 @@
 (defn eip []
   (let [eip @(rf/subscribe [:eip])]
     [:div
-     [:label.eip-header "EIP"]
+     [:label.eip-header.header "EIP"]
      [:label.eip eip]]))
 
 ;; Display the user registers.
@@ -128,7 +128,7 @@
   (let [registers @(rf/subscribe [:registers])
         last-edit-register @(rf/subscribe [:last-edit-register])]
     [:div.registers-container
-     [:div.registers-header "Registers"]
+     [:div.registers-header.header "Registers"]
      [:div.registers-list
       (when (not= registers {})
         (for [[k [name v]] (zipmap (range (count registers)) registers)]
@@ -151,7 +151,7 @@
 (defn internal-registers []
   (let [internal-registers @(rf/subscribe [:internal-registers])]
     [:div.registers-container
-     [:div.registers-header "Internal Registers"]
+     [:div.registers-header.header "Internal Registers"]
      [:div.registers-list
       (when (not= internal-registers {})
         (for [[reg v] internal-registers]
@@ -164,7 +164,7 @@
 (defn stack [stack title]
   (let [stack @(rf/subscribe [stack])]
     [:div.stack-container
-     [:div.stack-header title]
+     [:div.stack-header.header title]
      [:div.stack-list
       (when (not= stack {})
         (for [r (reverse stack)]
@@ -175,7 +175,7 @@
 (defn symbol-table []
   (let [symbols @(rf/subscribe [:symbols])]
     [:div.symbol-table-container
-     [:div.symbol-table-header "Symbol Table"]
+     [:div.symbol-table-header.header "Symbol Table"]
      [:div.symbol-table
       (when (not= {} symbols)
         (for [s symbols]
@@ -187,7 +187,7 @@
 (defn rep-returns []
   (let [symbols @(rf/subscribe [:symbols])]
     [:div.symbol-table-container
-     [:div.symbol-table-header "Rep stack"]
+     [:div.symbol-table-header.header "Rep stack"]
      [:div.symbol-table
       (when (not= {} symbols)
         (for [s symbols]
@@ -215,7 +215,7 @@
 (defn output []
   (let [output @(rf/subscribe [:output])]
     [:div.std-out-container
-     [:div.std-out-header {:style {:text-align :left}}
+     [:div.header {:style {:text-align :left}}
       [:label {:style {:margin-left 5}}"Output"]
       [:button.btn.btn-danger.btn.py-0 {:on-click #(rf/dispatch [:clear-output])
                                         :style    {:font-size    "0.8em"
