@@ -14,37 +14,37 @@
 
 (defn get-supported-instructions []
   [{:instruction "mov"
-    :example      "mov a b"
+    :example      "mov :a :b"
     :description  "moves b (number or register) into register :a"}
    {:instruction "add"
-    :example      "add a b"
+    :example      "add :a :b"
     :description  "a + b (numbers or registers), result goes into :a"}
    {:instruction "sub"
-    :example      "sub a b"
+    :example      "sub :a :b"
     :description  "a - b (numbers or registers), result goes into :a"}
    {:instruction "mul"
-    :example      "mul a b"
+    :example      "mul :a :b"
     :description  "a * b (numbers or registers), result goes into :a"}
    {:instruction "div"
-    :example      "a / b"
+    :example      "div :a :b"
     :description  "a / b (numbers or registers), result goes into :a"}
    {:instruction "and"
-    :example      "and a b"
+    :example      "and :a :b"
     :description  "a ∧ b (numbers or registers), result goes into :a"}
    {:instruction "or"
-    :example      "or a b"
+    :example      "or :a :b"
     :description  "a ∨ b (numbers or registers), result goes into :a"}
    {:instruction "xor"
-    :example      "xor a b"
+    :example      "xor :a :b"
     :description  "a ⊕ b (numbers or registers), result goes into :a"}
    {:instruction "dec"
-    :example      "dec a"
+    :example      "dec :a"
     :description  "Decrements the register :a by one"}
    {:instruction "inc"
-    :example      "inc a"
+    :example      "inc :a"
     :description  "Increments the register :a by one"}
    {:instruction "jnz"
-    :example      "jnz a b"
+    :example      "jnz :x :y"
     :description  "jumps y (number or register) instructions (positive or negative) if x (number or register) is not zero."}
    {:instruction "label"
     :example      "foo:"
@@ -56,7 +56,7 @@
     :example      "nop"
     :description  "Does nothing."}
    {:instruction "cmp"
-    :example      "cmp x y"
+    :example      "cmp :x :y"
     :description  "compares x and y and stores the result in the internal register :cmp, result will either be x < y, x = y, x > y."}
    {:instruction  "jne"
     :example      "jne foo"
@@ -86,11 +86,14 @@
     :example      "end"
     :description  "terminates the program."}
    {:instruction "pop"
-    :example      "pop x"
+    :example      "pop :x"
     :description  "Pops the top value off the stack into register x"}
    {:instruction "push"
-    :example      "push x"
+    :example      "push :x"
     :description  "Pushes x (value or register) onto the stack"}
+   {:instruction "cat"
+    :example      "cat :x y"
+    :description  "Concatents the string in register x with the string y (where y is a register or literal string)"}
    {:instruction "comments"
     :example      "; foo"
     :description  "Comments are ignored, can be on own line or trailing, e.g. mov a b ; moves b into a"}])

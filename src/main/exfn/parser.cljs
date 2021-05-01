@@ -49,7 +49,7 @@
         (js/Number arg)
 
         (or (str/starts-with? arg "'") (str/starts-with? arg "`"))
-        arg
+        (subs arg 1 (dec (count arg)))
 
         :else
         (keyword arg)))

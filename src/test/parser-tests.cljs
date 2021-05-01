@@ -2,8 +2,7 @@
   (:require [cljs.test :refer-macros [deftest is testing run-tests]]
             [exfn.parser :refer [parse is-register? parse-line-of-code scrub-comments]]))
 
-
-(deftest to-keywords-tests
+(deftest parse-line-of-code-tests
   (testing "[mov :a 5] to [:mov :a 5]"
     (is (= [:mov :a 5] (parse-line-of-code "mov :a 5"))))
   (testing "[mov :a b] to [:mov :a :b]"
@@ -23,7 +22,7 @@
   (testing "[end] to [:end]"
     (is (= [:end] (parse-line-of-code "end")))))
 
-#_(deftest is-register?-tests
+(deftest is-register?-tests
   (testing "a should return true"
     (is (true? (is-register? ":a"))))
   (testing "5 should return false"

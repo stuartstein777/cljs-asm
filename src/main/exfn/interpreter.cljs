@@ -31,7 +31,6 @@
 ;; Return the predicate for cmp jumps that we want the jump check to satisfy.
 ;;=======================================================================================================
 (defn cmp-jump-predicates [jump-instruction]
-  #_(js/console.log "jump-instruction" jump-instruction)
   (cond (= :jge jump-instruction) #{:eq :gt}
         (= :jg  jump-instruction) #{:gt}
         (= :jne jump-instruction) #{:lt :gt}
@@ -49,7 +48,8 @@
         (= :div instruction) quot
         (= :xor instruction) bit-xor
         (= :or  instruction)  bit-or
-        (= :and instruction) bit-and))
+        (= :and instruction) bit-and
+        (= :cat instruction) str))
 
 ;;=======================================================================================================
 ;; Return the appropriate unary operation for the given unary instruction.
@@ -167,7 +167,7 @@
             (assoc :registers (unary-op registers (get-unary-operation instruction) (first args)))
             (assoc :last-edit-register (first args)))
 
-        (#{:mul :add :sub :div :xor :and :or} instruction)
+        (#{:mul :add :sub :div :xor :and :or :cat} instruction)
         (let [[x y] args]
           (-> memory
               (assoc :registers (binary-op registers (get-binary-operations instruction) x y))
@@ -210,7 +210,7 @@
                                (process-jump eip instruction registers internal-registers symbol-table (:eip-stack memory) args)
                                (inc eip))
 
-        memory               (if (#{:mov :mul :add :sub :dec :xor :and :or :div :inc :msg :cmp :push :pop} instruction)
+        memory               (if (#{:mov :mul :add :sub :dec :xor :and :or :div :inc :msg :cmp :push :pop :cat} instruction)
                                (process-instruction instruction memory args)
                                memory)
 
