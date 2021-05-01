@@ -149,7 +149,8 @@
 
 ;; Display the internal registers.
 (defn internal-registers []
-  (let [internal-registers @(rf/subscribe [:internal-registers])]
+  (let [internal-registers @(rf/subscribe [:internal-registers])
+        eip-stack @(rf/subscribe [:eip-stack])]
     [:div.registers-container
      [:div.registers-header.header "Internal Registers"]
      [:div.registers-list
@@ -158,7 +159,20 @@
           [:div.row
            [:div.col-col-lg6.register-name reg]
            [:div.col-col-lg6.register-value
-            (cmp-values v)]]))]]))
+            (cmp-values v)]]))
+      [:div
+       [:div {:style {:float :left :width 103 :text-align :center}}
+        [:div.header "EIP Stack"]
+        [:div
+         (for [r (reverse eip-stack)]
+           [:div.eip-stack-value r])]
+        ]
+       [:div {:style {:float :right :width 105 :text-align :center}}
+        [:div.header "RP Stack"]]]]]))
+
+(comment (let [eip-stack [1 2 3]]
+           (for [r (reverse eip-stack)]
+             [:div.stack-value r])))
 
 ;; Display the stack.
 (defn stack [stack title]
@@ -176,18 +190,6 @@
   (let [symbols @(rf/subscribe [:symbols])]
     [:div.symbol-table-container
      [:div.symbol-table-header.header "Symbol Table"]
-     [:div.symbol-table
-      (when (not= {} symbols)
-        (for [s symbols]
-          [:div.row
-           [:div.col-col-lg6.symbol-name (key s)]
-           [:div.col-col-lg6.symbol-value (val s)]]))]]))
-
-;; Rep EIP stack.
-(defn rep-returns []
-  (let [symbols @(rf/subscribe [:symbols])]
-    [:div.symbol-table-container
-     [:div.symbol-table-header.header "Rep stack"]
      [:div.symbol-table
       (when (not= {} symbols)
         (for [s symbols]
@@ -247,11 +249,7 @@
     [:div
      [stack :stack "Stack"]]
     [:div
-     [stack :eip-stack "EIP Stack"]]
-    [:div
      [symbol-table]]
-    [:div
-     [rep-returns]]
     [:div
      [output]]]   
    [:div

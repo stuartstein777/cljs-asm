@@ -151,6 +151,7 @@ ret        ; ret to bar call, pop eip stack"
  :clear-source
  (fn [db _]
    (assoc db :source "")))
+
 ;; ===================================================================
 ;; Parsed code events
 ;; ===================================================================
@@ -226,7 +227,6 @@ ret        ; ret to bar call, pop eip stack"
 
         (= "" existing)
         new))
-
 
 (rf/reg-event-fx
  :next-instruction

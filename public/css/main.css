@@ -278,7 +278,7 @@ reagent function::          memory, eip
     border-left: 1px solid black;
     margin-left: 10px;
     text-align: center;
-    width: 102px;
+    width: 105px;
 }
 
 .register-value {
@@ -286,7 +286,7 @@ reagent function::          memory, eip
     border-bottom: 1px solid black;
     border-right: 1px solid black;
     text-align: center;
-    width: 108px;
+    width: 105px;
 }
 
 .register-updated {
@@ -334,6 +334,14 @@ reagent function::          memory, eip
     border-right: 1px solid black;
     text-align: center;
     width: 120px;
+}
+
+.eip-stack-value {
+    background-color: white;
+    border-bottom: 1px solid black;
+    border-right: 1px solid black;
+    text-align: center;
+    width: 105px;
 }
 
 .symbol-table-container {
