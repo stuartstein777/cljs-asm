@@ -213,12 +213,18 @@
 
 (defn output []
   (let [output @(rf/subscribe [:output])]
-    [:div
+    [:div.std-out-container
+     [:div.std-out-header {:style {:text-align :left}}
+      [:label {:style {:margin-left 5}}"Output"]
+      [:button.btn.btn-danger.btn.py-0 {:on-click #(rf/dispatch [:clear-output])
+                                        :style    {:font-size    "0.8em"
+                                                   :float        :right
+                                                   :margin-top   2
+                                                   :margin-right 2}}
+       "clear"]]
      [:textarea.std-out {:value output
                          :readOnly  true
-                         :wrap      :off}]
-     [:div {:style {:text-align :right}}
-      [:button.btn.btn-danger.clear-output {:on-click #(rf/dispatch [:clear-output])} "Clear"]]]))
+                         :wrap      :off}]]))
 
 ;; -- App ---------------------------------------------------------------------------
 (defn app []

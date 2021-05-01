@@ -56,7 +56,7 @@ ret        ; ret to bar call, pop eip stack"
              :symbol-table       {}
              :last-edit-register nil}
     :on-breakpoint false
-    :output "Output >>\n---------------------------------"
+    :output "$ Toy Asm Output >>"
     :running? false
     :running-speed 700
     :ticker-handle nil}))
@@ -250,7 +250,7 @@ ret        ; ret to bar call, pop eip stack"
 (rf/reg-event-db
  :clear-output
  (fn [db _]
-   (assoc db :output "Output >>\n---------------------------------")))
+   (assoc db :output "$ Toy Asm Output >")))
 
  ;;================== DEV TEST EVENTS ==================================
 (rf/reg-event-db
