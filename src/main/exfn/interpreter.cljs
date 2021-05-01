@@ -199,8 +199,12 @@
         (= :msg instruction)
         (assoc memory :registers (apply (partial set-message registers) args))
         
-        (= :rep instruction)
-        (update-in memory [:internal-registers :rep-stack] conj eip)))
+        ; if rep has no arguments then its going to be returned to with a conditional return so push to eip stack.
+        ; if rep has an argument, its a counter, push it to the rep-counters stack.
+        (= :rep instruction)        
+        (if (seq args)
+          (update-in memory [:rep-counters-stack] conj (get-value registers (first args)))
+          (update-in memory [:eip-stack] conj eip))))
 
 (defn build-symbol-table [asm]
   (reduce (fn [a [i ix]]
@@ -210,13 +214,14 @@
           {}
           (map vector (range) asm)))
 
+
 ;;=======================================================================================================
 ;; The interpreter.
 ;;=======================================================================================================
 (defn interpret [instructions {:keys [eip registers internal-registers symbol-table] :as memory}]
   #_(js/console.log memory)
   (let [[instruction & args] (nth instructions eip)
-        new-eip              (if (#{:jmp :jnz :jne :je :jgl :jg :jle :jl :jge :ret :call} instruction)
+        new-eip              (if (#{:jmp :jnz :jne :je :jgl :jg :jle :jl :jge :ret :call :rp} instruction)
                                (process-jump eip instruction registers internal-registers symbol-table (:eip-stack memory) args)
                                (inc eip))
 

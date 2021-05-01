@@ -54,7 +54,7 @@ ret        ; ret to bar call, pop eip stack"
              :internal-registers {}
              :stack              []
              :symbol-table       {}
-             :rep-counters       []
+             :rep-counters-stack []
              :last-edit-register nil}
     :on-breakpoint false
     :output "$ Toy Asm Output >"
@@ -92,6 +92,7 @@ ret        ; ret to bar call, pop eip stack"
                           :eip-stack          []
                           :internal-registers {}
                           :stack              []
+                          :rep-counters-stack []
                           :symbol-table       symbol-table})
           (assoc :code parsed)
           (assoc :on-breakpoint false)
@@ -211,6 +212,7 @@ ret        ; ret to bar call, pop eip stack"
                             :eip-stack          []
                             :internal-registers {}
                             :stack              []
+                            :rep-counters-stack []
                             :symbol-table (:symbol-table (:memory db))})
             (assoc :running? false)
             (assoc :on-breakpoint false)

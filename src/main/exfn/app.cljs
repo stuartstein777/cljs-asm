@@ -150,7 +150,8 @@
 ;; Display the internal registers.
 (defn internal-registers []
   (let [internal-registers @(rf/subscribe [:internal-registers])
-        eip-stack @(rf/subscribe [:eip-stack])]
+        eip-stack @(rf/subscribe [:eip-stack])
+        rep-counters @(rf/subscribe [:rep-counters-stack])]
     [:div.registers-container
      [:div.registers-header.header "Internal Registers"]
      [:div.registers-list
@@ -165,14 +166,12 @@
         [:div.header "EIP Stack"]
         [:div
          (for [r (reverse eip-stack)]
-           [:div.eip-stack-value r])]
-        ]
+           [:div.eip-stack-value r])]]
        [:div {:style {:float :right :width 105 :text-align :center}}
-        [:div.header "RP Stack"]]]]]))
-
-(comment (let [eip-stack [1 2 3]]
-           (for [r (reverse eip-stack)]
-             [:div.stack-value r])))
+        [:div.header "RP Stack"]
+        [:div
+         (for [r (reverse rep-counters)]
+           [:div.eip-stack-value r])]]]]]))
 
 ;; Display the stack.
 (defn stack [stack title]
@@ -219,11 +218,12 @@
     [:div.std-out-container
      [:div.header {:style {:text-align :left}}
       [:label {:style {:margin-left 5}}"Output"]
-      [:button.btn.btn-danger.btn.py-0 {:on-click #(rf/dispatch [:clear-output])
-                                        :style    {:font-size    "0.8em"
-                                                   :float        :right
-                                                   :margin-top   2
-                                                   :margin-right 2}}
+      [:button.btn.btn-danger.btn.py-0
+       {:on-click #(rf/dispatch [:clear-output])
+        :style    {:font-size    "0.8em"
+                   :float        :right
+                   :margin-top   2
+                   :margin-right 2}}
        "clear"]]
      [:textarea.std-out {:value output
                          :readOnly  true
