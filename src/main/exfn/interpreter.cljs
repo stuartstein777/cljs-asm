@@ -238,3 +238,22 @@
      (or (= (nth instructions new-eip) [:end]) (> new-eip (count instructions)))
        ;new output
      output]))
+
+(let [db {:breakpoints      #{}
+          :code             [[:mov :a 5] [:mov :b 5] [:mov :c 7]]
+          :finished?        false
+          :has-parsed-code? false
+          :memory           {:eip                0
+                             :registers          {}
+                             :eip-stack          []
+                             :internal-registers {}
+                             :stack              []
+                             :symbol-table       {}
+                             :rep-counters       []
+                             :last-edit-register nil}
+          :on-breakpoint    false
+          :output           "$ Toy Asm Output >"
+          :running?         true
+          :running-speed    700
+          :ticker-handle    nil}]
+  (interpret  (db :code) (db :memory)))
