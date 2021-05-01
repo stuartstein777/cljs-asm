@@ -11,6 +11,7 @@
 mov a 0    ; a = 0
 mov b 1    ; a = 0, b = 1
 mov c 2    ; a = 0, b = 1, c = 2
+prn b
 call foo   ; move eip to foo, push eip to eip-stack
 mul c b    ; a = 0, b = 2, c = 4
 cmp a b    ; :cmp = lt
@@ -24,6 +25,8 @@ nop        ;
 call bar   ; move eip to bar, push eip to eip-stack
 pop d
 pop e
+prn d
+prn e
 xor b b    ; a = 7, b = 0, c = 3
 end        ; a = 7, b = 0, c = 3
 
@@ -92,8 +95,10 @@ ret        ; ret to bar call, pop eip stack"
           (assoc :code parsed)
           (assoc :on-breakpoint false)
           (assoc :has-parsed-code? (pos? (count parsed)))
-          (assoc :finished? false))
-      :scroll-parsed-code-to-top _})))
+          (assoc :finished? false)
+          (assoc :running? false))
+      :scroll-parsed-code-to-top _
+      :end-running (db :ticker-handle)})))
 
 ; Handles when the user clicks the Clear Parsed button
 (rf/reg-event-db
@@ -181,6 +186,11 @@ ret        ; ret to bar call, pop eip stack"
     :toggle-running [(not (db :running?)) (db :ticker-handle) (db :running-speed)]}))
 
 (rf/reg-fx
+ :end-running
+ (fn [handle]
+   (js/clearInterval handle)))
+
+(rf/reg-fx
  :end-if-finished
  (fn [[handle finished?]]
    (when finished?
@@ -221,6 +231,7 @@ ret        ; ret to bar call, pop eip stack"
          db (-> db
                 (assoc :memory memory)
                 (assoc :finished? finished?)
+                (assoc :running? (if finished? false (db :running)))
                 (assoc :output (append-output (db :output) output)))]
      (if (some? (breakpoints (:eip memory)))
        {:db (-> db
@@ -262,32 +273,32 @@ ret        ; ret to bar call, pop eip stack"
  :test-code
  (fn [db _]
    (assoc db :source "; function calls.
-mov a 0    ; a = 0
-mov b 1    ; a = 0, b = 1
-mov c 2    ; a = 0, b = 1, c = 2
+mov :a 0    ; a = 0
+mov :b 1    ; a = 0, b = 1
+mov :c 2    ; a = 0, b = 1, c = 2
 call foo   ; move eip to foo, push eip to eip-stack
-mul c b    ; a = 0, b = 2, c = 4
-cmp a b    ; :cmp = lt
+mul :c :b    ; a = 0, b = 2, c = 4
+cmp :a :b    ; :cmp = lt
 jne quax   ; jump
-mul c 10   ;
+mul :c 10   ;
                       
 
 ;; quax:: call bar and zero :b
 quax:      ;
 nop        ;
 call bar   ; move eip to bar, push eip to eip-stack
-xor b b    ; a = 7, b = 0, c = 3
+xor :b :b    ; a = 7, b = 0, c = 3
 end        ; a = 7, b = 0, c = 3
                       
 
 ;; foo:: increment b
 foo:
-inc b      ; a = 0, b = 2, c = 2
+inc :b      ; a = 0, b = 2, c = 2
 ret        ; ret to foo call, pop eip stack
 
 
 ;; bar:: add 7 to a and decrement c
 bar:
-add a 7    ; a = 7, b = 2, c = 4
-sub c 1    ; a = 7, b = 2, c = 3
+add :a 7    ; a = 7, b = 2, c = 4
+sub :c 1    ; a = 7, b = 2, c = 3
 ret        ; ret to bar call, pop eip stack")))

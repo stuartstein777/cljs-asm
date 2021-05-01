@@ -91,14 +91,14 @@
 (defn cmp-jmp [internal-registers symbol-table eip valid-comps lbl]
   (if (nil? (valid-comps (:cmp internal-registers)))
     (inc eip)
-    (lbl symbol-table)))
+    ((keyword lbl) symbol-table)))
 
 ;;=======================================================================================================
 ;; Handle call instructions.
 ;; We return the eip we want to jump to from the symbol table for the given label.
 ;;=======================================================================================================
 (defn call [symbol-table label]
-  (label symbol-table))
+  ((keyword label) symbol-table))
 
 ;;=======================================================================================================
 ;; Builds a string for the program return value from the arguments to the set: instruction.
