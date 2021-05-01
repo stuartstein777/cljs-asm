@@ -8,39 +8,39 @@
  :initialize
  (fn [_ _]
    {:source      "; function calls.
-mov a 0    ; a = 0
-mov b 1    ; a = 0, b = 1
-mov c 2    ; a = 0, b = 1, c = 2
-prn b
+mov :a 0    ; a = 0
+mov :b 1    ; a = 0, b = 1
+mov :c 2    ; a = 0, b = 1, c = 2
+prn :b
 call foo   ; move eip to foo, push eip to eip-stack
-mul c b    ; a = 0, b = 2, c = 4
-cmp a b    ; :cmp = lt
+mul :c :b    ; a = 0, b = 2, c = 4
+cmp :a :b    ; :cmp = lt
 jne quax   ; jump
-mul c 10   ;
+mul @c 10   ;
 
 
 ;; quax:: call bar and zero :b
 quax:      ;
 nop        ;
 call bar   ; move eip to bar, push eip to eip-stack
-pop d
-pop e
-prn d
-prn e
-xor b b    ; a = 7, b = 0, c = 3
+pop :d
+pop :e
+prn :d
+prn :e
+xor :b :b    ; a = 7, b = 0, c = 3
 end        ; a = 7, b = 0, c = 3
 
 
 ;; foo:: increment b
 foo:
-inc b      ; a = 0, b = 2, c = 2
+inc :b      ; a = 0, b = 2, c = 2
 ret        ; ret to foo call, pop eip stack
 
 
 ;; bar:: add 7 to a and decrement c
 bar:
-add a 7    ; a = 7, b = 2, c = 4
-sub c 1    ; a = 7, b = 2, c = 3
+add :a 7    ; a = 7, b = 2, c = 4
+sub :c 1    ; a = 7, b = 2, c = 3
 push 3
 push 4
 ret        ; ret to bar call, pop eip stack"
@@ -56,7 +56,7 @@ ret        ; ret to bar call, pop eip stack"
              :symbol-table       {}
              :last-edit-register nil}
     :on-breakpoint false
-    :output "$ Toy Asm Output >>"
+    :output "$ Toy Asm Output >"
     :running? false
     :running-speed 700
     :ticker-handle nil}))

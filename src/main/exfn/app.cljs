@@ -95,6 +95,7 @@
          on-breakpoint @(rf/subscribe [:on-breakpoint])
          eip @(rf/subscribe [:eip])]
      [:div.execution-controls
+      [:button.btn.btn-primary.parse-btn {:on-click #(rf/dispatch [:parse])} "Parse"]
       [:button.btn.btn-success.play-pause
        {:on-click #(rf/dispatch [:toggle-running])
         :disabled (and (or finished? (not has-parsed-code?)) (not on-breakpoint))}
@@ -235,8 +236,7 @@
     [:div.col.col-lg-4
      [code]]]
    [:div.row
-    [:button.btn.btn-primary.parse-btn {:on-click #(rf/dispatch [:parse])} "Parse"]]
-   [execution-controls]
+    [execution-controls]]
    [:div.row.eip-container
     [eip]]
    [:div.grid

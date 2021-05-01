@@ -7,12 +7,6 @@ body{
     text-align: center;
 }
 
-.parse-btn {
-    margin-top: 10px;
-    margin-left: 30px;
-    width: 150px;
-}
-
 /*
 ----------------------------------------------------------
 The code editor
@@ -171,16 +165,21 @@ reagent function::          execution-controls
 ----------------------------------------------------------
 */
 
+.parse-btn {
+    margin-right: 10px;
+    width: 150px;
+}
+
 .execution-controls {
     margin: 10px;
     text-align:  left;
 }
 
 .instr-per-sec {
-    margin-left: 40px;
+    margin-left: 10px;
     text-align: right;
     vertical-align: middle;
-    width: 100px;
+    width: 60px;
 }
 
 .next-instruction {
