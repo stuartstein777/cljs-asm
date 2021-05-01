@@ -18,7 +18,13 @@
   (let [source @(rf/subscribe [:source])]
     [:div
      [:div.editor
-      [:div.source-editor-header "Source Editor"]
+      [:div.source-editor-header "Source Editor"
+       [:button.btn.btn-danger.btn.py-0 {:on-click #(rf/dispatch [:clear-source])
+                                         :style    {:font-size    "0.8em"
+                                                    :float        :right
+                                                    :margin-top   2
+                                                    :margin-right 2}}
+        "clear"]]
       [:textarea#lineNos.text-editor-line-nos {:readOnly  true
                                                :value     (h/get-source-line-numbers source)}]
       [:textarea#editor.text-editor {:on-change #(rf/dispatch-sync [:update-source (-> % .-target .-value)])

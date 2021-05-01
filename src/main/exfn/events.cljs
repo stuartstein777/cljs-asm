@@ -146,6 +146,10 @@ ret        ; ret to bar call, pop eip stack"
    {:db (assoc db :scroll-pos scroll-pos)
     :scroll-line-nos scroll-pos}))
 
+(rf/reg-event-db
+ :clear-source
+ (fn [db _]
+   (assoc db :source "")))
 ;; ===================================================================
 ;; Parsed code events
 ;; ===================================================================
