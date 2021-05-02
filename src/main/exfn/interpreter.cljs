@@ -110,25 +110,11 @@
   (assoc-in registers [:internal-registers :return-code] (reduce (fn [s a] (str s (get-value registers a))) args)))
 
 ;;=======================================================================================================
-;; Gets the return value for the program. If its a number, it will parse it to an Integer.
-;; Otherwise just return it as a string.
-;; If return-registers? is set then return a vector of the return value and the registers.
-;;=======================================================================================================
-(defn return-value [registers return-registers?]
-  (let [res (:return-code (:internal-registers registers))
-        ret-value (cond (nil? res) 0
-                        (re-matches #"^[\+\-]?\d*\.?[Ee]?[\+\-]?\d*$" res) (js/Number res)
-                        :else res)]
-    (if return-registers?
-      [ret-value (dissoc registers :internal-registers)]
-      ret-value)))
-
-;;=======================================================================================================
 ;; Process the jump instructions and return the new eip.
 ;;=======================================================================================================
-(defn process-jump [eip instruction registers internal-registers symbol-table eip-stack args]
-  #_(prn "JMP" registers)
+(defn process-jump [eip instruction registers internal-registers symbol-table eip-stack rep-counters-stack args]
   ;; if we are jumping to a label, just return the location of the label in the symbol-table
+  (js/console.log instruction)
   (cond (= :jmp instruction)
         (inc (get symbol-table (first args)))
 
@@ -150,48 +136,72 @@
           -1
           (inc (peek eip-stack)))
 
+        ;; if the top item on the rep-counters-stack is one, move to next line. Otherwise return the top eip-stack.
+        (= :rp instruction)
+        (if (= 1 (peek rep-counters-stack))
+          (inc eip)
+          (inc (peek eip-stack)))
+
         :else
         (inc eip)))
 
 ;;=======================================================================================================
+;; Instruction Handlers
+;;=======================================================================================================
+(defn handle-unary-instruction [memory instruction args]
+  (-> memory
+      (assoc :registers (unary-op (:registers memory) (get-unary-operation instruction) (first args)))
+      (assoc :last-edit-register (first args))))
+
+(defn handle-binary-instruction [memory instruction args]
+  (let [[x y] args]
+    (-> memory
+        (assoc :registers (binary-op (:registers memory) (get-binary-operations instruction) x y))
+        (assoc :last-edit-register x))))
+
+(defn pop-stack [{:keys [registers stack] :as memory} args]
+  (if (empty? stack)
+    (update-in memory [:internal-registers] assoc :err "Popped empty stack.")
+    (-> memory
+        (assoc :registers (mov registers (first args) (peek stack)))
+        (update :stack (if (empty? stack) identity pop))
+        (assoc :last-edit-register (first args)))))
+
+(defn handle-mov-instruction [{:keys [registers] :as memory} args]
+  (let [[x y] args]
+    (-> memory
+        (assoc :registers (mov registers x y))
+        (assoc :last-edit-register x))))
+
+(defn handle-cmp-instruction [{:keys [registers] :as memory} args]
+  (let [[x y] args]
+    (assoc-in memory [:internal-registers :cmp] (cmp registers x y))))
+
+(defn handle-push-instruction [{:keys [registers] :as memory} args]
+  (let [x (get-value registers (first args))]
+    (update memory :stack #(conj % x))))
+
+;;=======================================================================================================
 ;; Process regular instructions and return the new registers.
 ;;=======================================================================================================
-(defn process-instruction [instruction {:keys [registers stack eip] :as memory} args]
-  #_#_(prn "args::" args)
-  (prn "memory::" registers stack)
+(defn process-instruction [instruction {:keys [registers eip] :as memory} args]
   (cond (= :mov instruction)
-        (let [[x y] args]
-          (-> memory
-              (assoc :registers (mov registers x y))
-              (assoc :last-edit-register x)))
+        (handle-mov-instruction memory args)
 
         (#{:inc :dec :not} instruction)
-        (-> memory
-            (assoc :registers (unary-op registers (get-unary-operation instruction) (first args)))
-            (assoc :last-edit-register (first args)))
+        (handle-unary-instruction memory instruction args)
 
         (#{:mul :add :sub :div :xor :and :or :cat} instruction)
-        (let [[x y] args]
-          (prn x y args)
-          (-> memory
-              (assoc :registers (binary-op registers (get-binary-operations instruction) x y))
-              (assoc :last-edit-register x)))
+        (handle-binary-instruction memory instruction args)
 
         (= :cmp instruction)
-        (let [[x y] args]
-          (assoc-in memory [:internal-registers :cmp] (cmp registers x y)))
+        (handle-cmp-instruction memory args)
 
         (= :pop instruction)
-        (if (empty? stack)
-          (update-in memory [:internal-registers] assoc :err "Popped empty stack.")
-          (-> memory
-              (assoc :registers (mov registers (first args) (peek stack)))
-              (update :stack (if (empty? stack) identity pop))
-              (assoc :last-edit-register (first args))))
+        (pop-stack memory args)
 
         (= :push instruction)
-        (let [x (get-value registers (first args))]
-          (update memory :stack #(conj % x)))
+        (handle-push-instruction memory args)
 
         (= :len instruction)
         (update-in memory [:registers] assoc (first args) (count (get-value registers (second args))))
@@ -199,12 +209,22 @@
         (= :msg instruction)
         (assoc memory :registers (apply (partial set-message registers) args))
         
-        ; if rep has no arguments then its going to be returned to with a conditional return so push to eip stack.
-        ; if rep has an argument, its a counter, push it to the rep-counters stack.
         (= :rep instruction)        
         (if (seq args)
-          (update-in memory [:rep-counters-stack] conj (get-value registers (first args)))
-          (update-in memory [:eip-stack] conj eip))))
+          (-> memory
+              (update-in [:rep-counters-stack] conj (get-value registers (first args)))
+              (update-in [:eip-stack] conj eip))
+          (-> memory (update-in [:eip-stack] conj eip)))
+        
+        (= :rp instruction)
+        (let [counter (peek (memory :rep-counters-stack))]
+          (if (= 1 counter) ; decrementing would reduce it to zero.
+            (-> memory
+                (update :rep-counters-stack pop)
+                (update :eip-stack pop))
+            (-> memory
+                (update :rep-counters-stack pop)
+                (update :rep-counters-stack conj (dec counter)))))))
 
 (defn build-symbol-table [asm]
   (reduce (fn [a [i ix]]
@@ -214,18 +234,16 @@
           {}
           (map vector (range) asm)))
 
-
 ;;=======================================================================================================
 ;; The interpreter.
 ;;=======================================================================================================
-(defn interpret [instructions {:keys [eip registers internal-registers symbol-table] :as memory}]
-  #_(js/console.log memory)
+(defn interpret [instructions {:keys [eip registers] :as memory}]
   (let [[instruction & args] (nth instructions eip)
         new-eip              (if (#{:jmp :jnz :jne :je :jgl :jg :jle :jl :jge :ret :call :rp} instruction)
-                               (process-jump eip instruction registers internal-registers symbol-table (:eip-stack memory) args)
+                               (process-jump eip instruction registers (memory :internal-registers) (memory :symbol-table) (:eip-stack memory) (memory :rep-counters-stack) args)
                                (inc eip))
 
-        memory               (if (#{:mov :mul :add :sub :dec :xor :and :or :div :inc :msg :cmp :push :pop :cat :len :not :rep} instruction)
+        memory               (if (#{:mov :mul :add :sub :dec :xor :and :or :div :inc :msg :cmp :push :pop :cat :len :not :rep :rp} instruction)
                                (process-instruction instruction memory args)
                                memory)
 
@@ -243,22 +261,3 @@
      (or (= (nth instructions new-eip) [:end]) (> new-eip (count instructions)))
        ;new output
      output]))
-
-(let [db {:breakpoints      #{}
-          :code             [[:mov :a 5] [:mov :b 5] [:mov :c 7]]
-          :finished?        false
-          :has-parsed-code? false
-          :memory           {:eip                0
-                             :registers          {}
-                             :eip-stack          []
-                             :internal-registers {}
-                             :stack              []
-                             :symbol-table       {}
-                             :rep-counters       []
-                             :last-edit-register nil}
-          :on-breakpoint    false
-          :output           "$ Toy Asm Output >"
-          :running?         true
-          :running-speed    700
-          :ticker-handle    nil}]
-  (interpret  (db :code) (db :memory)))

@@ -23,6 +23,6 @@
 (deftest interpreter-tests
   (testing "Simple mov instruction is interpreted correctly."
     (is (= {:registers {:a 5}}
-           (int)))
-    ))
-  (run-tests)
+           (int)))))
+
+(run-tests)
