@@ -167,7 +167,7 @@
         [:div
          (for [r (reverse eip-stack)]
            [:div.eip-stack-value r])]]
-       [:div {:style {:float :right :width 105 :text-align :center}}
+       [:div {:style {:float :right :width 103 :text-align :center}}
         [:div.header "RP Stack"]
         [:div
          (for [r (reverse rep-counters)]

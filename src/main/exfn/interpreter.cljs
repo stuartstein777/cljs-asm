@@ -20,7 +20,7 @@
 ;; If jump is jl (jump if less than), then valid predicates for cmp are :lt (less than)
 ;;=======================================================================================================
 (defn cmp-jump-predicates [jump-instruction]
-  (condp jump-instruction
+  (condp = jump-instruction
          :jge #{:eq :gt}
          :jg  #{:gt}
          :jne #{:lt :gt}
@@ -387,9 +387,14 @@
 (defn cmp-jmp [{:keys [eip internal-registers symbol-table] :as memory} jump-type [a]]
   (let [cmp              (:cmp internal-registers)
         valid-predicates (cmp-jump-predicates jump-type)]
+    (prn cmp)
+    (prn valid-predicates)
     (assoc memory :eip (if (valid-predicates cmp)
                           (symbol-table (keyword a))
                           (inc eip)))))
+
+
+(comment (cmp-jmp {:eip 3 :internal-registers {:cmp :lt} :symbol-table {:foo 5}} :jne [:foo]))
 
 ;;=======================================================================================================
 ;; call instruction
@@ -415,7 +420,9 @@
 ;; Moves eip pointer to the top eip on the eip-stack
 ;;=======================================================================================================
 (defn ret [{:keys [eip-stack] :as memory}]
-  (assoc memory :eip (if (empty? eip-stack) -1 (inc (peek eip-stack)))))
+  (-> memory
+      (assoc :eip (inc (peek eip-stack)))
+      (update :eip-stack pop)))
 
 ;;=======================================================================================================
 ;; pop instruction
@@ -497,7 +504,48 @@
           (update :rep-counters-stack pop)
           (update :rep-counters-stack conj (dec counter))
           (assoc :eip (inc (peek eip-stack)))))))
-        
+  
+;;=======================================================================================================
+;; rz instruction
+;;
+;; Syntax:
+;; rz a
+;;
+;; Repeats to the eip on the top of the eip stack if `a` is not zero. Otherwise increments the eip.
+;; (Repeat until `a `is not zero)
+;;=======================================================================================================
+(defn rz [{:keys [eip-stack registers] :as memory} [a]]
+  (if (zero? (get-value registers a))
+    (-> memory
+        (update :eip inc)
+        (update :eip-stack pop))
+    (-> memory
+        (assoc :eip (inc (peek eip-stack))))))
+
+;;=======================================================================================================
+;; rnz instruction
+;;
+;; Syntax:
+;; rnz a
+;;
+;; Repeats to the eip on the top of the eip stack if `a` is zero. Otherwise increments the eip.
+;; (Repeat until `a` is not zero)
+;;=======================================================================================================
+(defn rnz [{:keys [eip-stack registers] :as memory} [a]]
+  (if (zero? (get-value registers a))
+    (-> memory
+        (assoc :eip (inc (peek eip-stack))))
+    (-> memory
+        (update :eip inc)
+        (update :eip-stack pop))))
+
+(let [memory {:eip-stack [2 3]
+              :eip 4
+              :registers {:a 0, :b 4}
+              :internal-registers {:cmp :lt}
+              :output "$ Toy Asm Output >"}]
+  (rnz memory [:a]))
+
 ;;=======================================================================================================
 ;; The interpreter.
 ;;=======================================================================================================
@@ -580,6 +628,12 @@
 
                      (= :rp instruction)
                      (rp memory)
+
+                     (= :rz instruction)
+                     (rz memory args)
+
+                     (= :rnz instruction)
+                     (rnz memory args)
 
                      :else
                      memory)]
