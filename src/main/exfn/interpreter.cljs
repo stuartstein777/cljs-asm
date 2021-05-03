@@ -11,18 +11,26 @@
 
 ;;=======================================================================================================
 ;; Return the predicate for cmp jumps that we want the jump check to satisfy.
+;;
+;; If jump is jge (jump if greater than or equal), then valid predicates for cmp are :eq (equal to) or :gt (greater than)
+;; If jump is jge (jump if greater than), then valid predicates for cmp are :gt (greater than)
+;; If jump is jne (jump if not equal), then valid predicates for cmp are :gt (greater than) or :lt (less than)
+;; If jump is je (jump if equal), then valid predicates for cmp are :eq (equal to)
+;; If jump is jle (jump if less than or equal), then valid predicates for cmp are :eq (equal to) or :lt (less than)
+;; If jump is jl (jump if less than), then valid predicates for cmp are :lt (less than)
 ;;=======================================================================================================
 (defn cmp-jump-predicates [jump-instruction]
-  (cond (= :jge jump-instruction) #{:eq :gt}
-        (= :jg  jump-instruction) #{:gt}
-        (= :jne jump-instruction) #{:lt :gt}
-        (= :je  jump-instruction) #{:eq}
-        (= :jle jump-instruction) #{:eq :lt}
-        (= :jl  jump-instruction) #{:lt}))
+  (condp jump-instruction
+         :jge #{:eq :gt}
+         :jg  #{:gt}
+         :jne #{:lt :gt}
+         :je  #{:eq}
+         :jle #{:eq :lt}
+         :jl  #{:lt}))
 
 ;;=======================================================================================================
 ;; Builds the symbol table for jump targets
-;; A jump target is a label like foo:
+;; A jump target is a label of form foo:
 ;;=======================================================================================================
 (defn build-symbol-table [asm]
   (reduce (fn [a [i ix]]
@@ -36,7 +44,7 @@
 ;; Update the existing output with the new line of output.
 ;;=======================================================================================================
 (defn append-output [existing new]
-  (cond (and existing new) ;existing output and new output.
+  (cond (and existing new)
         (str existing "\n" new)
 
         (and existing (not new))
@@ -51,8 +59,8 @@
 ;; Syntax:
 ;; mov a b
 ;;
-;; Moves the contents of `b` (value or registers) into register `a`
-;; Incremens eip to next instruction.
+;; Moves the contents of `b` (value or register) into register `a`
+;; Increments eip to next instruction.
 ;;=======================================================================================================
 (defn mov [{:keys [registers] :as memory} [a b]]
   (-> memory
@@ -80,7 +88,7 @@
 ;; Syntax:
 ;; add a b
 ;;
-;; Adds `a` (registers) and `b` (number or register) and stores the result in `a`
+;; Adds `a` (register) and `b` (number or register) and stores the result in `a`
 ;; Increments eip to next instruction.
 ;;=======================================================================================================
 (defn add [{:keys [registers] :as memory} [a b]]
@@ -94,7 +102,7 @@
 ;; Syntax:
 ;; sub a b
 ;;
-;; Subtracts `b` (number or registers) from `a` (register) and stores the result in `a`
+;; Subtracts `b` (number or register) from `a` (register) and stores the result in `a`
 ;; Increments eip to next instruction.
 ;;=======================================================================================================
 (defn sub [{:keys [registers] :as memory} [a b]]
@@ -320,7 +328,7 @@
 ;; Syntax:
 ;; jnz a b
 ;;
-;; Jumps `b` (number or register) instructions (positive or negative) if `a` (number or registers) is not
+;; Jumps `b` (number or register) instructions (positive or negative) if `a` (number or register) is not
 ;; zero.
 ;; If it is zero, then increments the eip.
 ;;=======================================================================================================

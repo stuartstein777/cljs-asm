@@ -16,7 +16,7 @@ call foo   ; move eip to foo, push eip to eip-stack
 mul :c :b    ; a = 0, b = 2, c = 4
 cmp :a :b    ; :cmp = lt
 jne quax   ; jump
-mul @c 10   ;
+mul :c 10   ;
 
 
 ;; quax:: call bar and zero :b
@@ -244,7 +244,7 @@ ret        ; ret to bar call, pop eip stack"
 (rf/reg-event-db
  :clear-output
  (fn [db _]
-   (assoc db :output "$ Toy Asm Output >")))
+   (assoc-in db [:memory :output] "$ Toy Asm Output >")))
 
  ;;================== DEV TEST EVENTS ==================================
 (rf/reg-event-db
