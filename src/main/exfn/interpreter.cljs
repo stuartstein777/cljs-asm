@@ -539,12 +539,74 @@
         (update :eip inc)
         (update :eip-stack pop))))
 
-(let [memory {:eip-stack [2 3]
-              :eip 4
-              :registers {:a 0, :b 4}
-              :internal-registers {:cmp :lt}
-              :output "$ Toy Asm Output >"}]
-  (rnz memory [:a]))
+;;=======================================================================================================
+;; rgz instruction
+;;
+;; Syntax:
+;; rgz a
+;;
+;; Repeat until `a` is greater than zero. If `a` is not greater than zero, go to eip at top of eip stack, else
+;; increment eip.
+;;=======================================================================================================
+(defn rgz [{:keys [eip-stack registers] :as memory} [a]]
+  (if (<= (get-value registers a) 0)
+    (-> memory
+        (assoc :eip (inc (peek eip-stack))))
+    (-> memory
+        (update :eip inc)
+        (update :eip-stack pop))))
+
+;;=======================================================================================================
+;; rlz instruction
+;;
+;; Syntax:
+;; rlz a
+;;
+;; Repeat until `a` is less than zero. If `a` is not less than zero, go to eip at top of eip stack, else
+;; increment eip.
+;;=======================================================================================================
+(defn rlz [{:keys [eip-stack registers] :as memory} [a]]
+  (if (>= (get-value registers a) 0)
+    (-> memory
+        (assoc :eip (inc (peek eip-stack))))
+    (-> memory
+        (update :eip inc)
+        (update :eip-stack pop))))
+
+;;=======================================================================================================
+;; rgz instruction
+;;
+;; Syntax:
+;; rgez a
+;;
+;; Repeat until `a` is greater than or equal to zero. If `a` is not greater than or equal to zero, go to
+;; eip at top of eip stack, else increment eip.
+;;=======================================================================================================
+(defn rgez [{:keys [eip-stack registers] :as memory} [a]]
+  (if (< (get-value registers a) 0)
+    (-> memory
+        (assoc :eip (inc (peek eip-stack))))
+    (-> memory
+        (update :eip inc)
+        (update :eip-stack pop))))
+
+
+;;=======================================================================================================
+;; rlez instruction
+;;
+;; Syntax:
+;; rlez a
+;;
+;; Repeat until `a` is less than or equal to zero. If `a` is not less than zero, go to eip at top of eip stack, else
+;; increment eip.
+;;=======================================================================================================
+(defn rlez [{:keys [eip-stack registers] :as memory} [a]]
+  (if (> (get-value registers a) 0)
+    (-> memory
+        (assoc :eip (inc (peek eip-stack))))
+    (-> memory
+        (update :eip inc)
+        (update :eip-stack pop))))
 
 ;;=======================================================================================================
 ;; The interpreter.
@@ -635,7 +697,20 @@
                      (= :rnz instruction)
                      (rnz memory args)
 
+                     (= :rgz instruction)
+                     (rgz memory args)
+
+                     (= :rlz instruction)
+                     (rlz memory args)
+
+                     (= :rgez instruction)
+                     (rgez memory args)
+
+                     (= :rlez instruction)
+                     (rlez memory args)
+                     
                      :else
                      memory)]
     {:memory memory
      :finished? (or (= :end instruction) (> (memory :eip) (count instructions)))}))
+
