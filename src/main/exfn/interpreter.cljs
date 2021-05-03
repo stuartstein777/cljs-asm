@@ -21,12 +21,12 @@
 ;;=======================================================================================================
 (defn cmp-jump-predicates [jump-instruction]
   (condp = jump-instruction
-         :jge #{:eq :gt}
-         :jg  #{:gt}
-         :jne #{:lt :gt}
-         :je  #{:eq}
-         :jle #{:eq :lt}
-         :jl  #{:lt}))
+    :jge #{:eq :gt}
+    :jg  #{:gt}
+    :jne #{:lt :gt}
+    :je  #{:eq}
+    :jle #{:eq :lt}
+    :jl  #{:lt}))
 
 ;;=======================================================================================================
 ;; Builds the symbol table for jump targets
@@ -390,8 +390,8 @@
     (prn cmp)
     (prn valid-predicates)
     (assoc memory :eip (if (valid-predicates cmp)
-                          (symbol-table (keyword a))
-                          (inc eip)))))
+                         (symbol-table (keyword a))
+                         (inc eip)))))
 
 
 (comment (cmp-jmp {:eip 3 :internal-registers {:cmp :lt} :symbol-table {:foo 5}} :jne [:foo]))
@@ -456,10 +456,10 @@
 ;; Increments the eip
 ;;=======================================================================================================
 (defn push [{:keys [registers] :as memory} args]
-    (let [x (get-value registers (first args))]
-      (-> memory
-          (update :stack conj x)
-          (update :eip inc))))
+  (let [x (get-value registers (first args))]
+    (-> memory
+        (update :stack conj x)
+        (update :eip inc))))
 
 ;;=======================================================================================================
 ;; rep instruction
@@ -474,7 +474,7 @@
 ;; rp target).
 ;; `a` should be greater than zero. If it's passed zero, it will still run through the loop once.
 ;;=======================================================================================================
-(defn rep [{:keys [eip registers]:as memory} args]
+(defn rep [{:keys [eip registers] :as memory} args]
   (if (seq args)
     (-> memory
         (update-in [:rep-counters-stack] conj (get-value registers (first args)))
@@ -504,109 +504,35 @@
           (update :rep-counters-stack pop)
           (update :rep-counters-stack conj (dec counter))
           (assoc :eip (inc (peek eip-stack)))))))
-  
-;;=======================================================================================================
-;; rz instruction
-;;
-;; Syntax:
-;; rz a
-;;
-;; Repeats to the eip on the top of the eip stack if `a` is not zero. Otherwise increments the eip.
-;; (Repeat until `a `is not zero)
-;;=======================================================================================================
-(defn rz [{:keys [eip-stack registers] :as memory} [a]]
-  (if (zero? (get-value registers a))
-    (-> memory
-        (update :eip inc)
-        (update :eip-stack pop))
-    (-> memory
-        (assoc :eip (inc (peek eip-stack))))))
+
+(defn get-conditional-repeat-function [f]
+  (condp = f
+    :rz (fn [x] (not (zero? x)))
+    :rnz zero?
+    :rlez (fn [x] (> x 0))
+    :rlz (fn [x] (>= x 0))
+    :rgz (fn [x] (<= x 0))
+    :rgez (fn [x] (< x 0))))
 
 ;;=======================================================================================================
-;; rnz instruction
+;; r* conditional repeats
 ;;
 ;; Syntax:
-;; rnz a
-;;
-;; Repeats to the eip on the top of the eip stack if `a` is zero. Otherwise increments the eip.
-;; (Repeat until `a` is not zero)
+;; rz a      Repeats until `a` is zero.
+;; rnz a     Repeats until `a` is not zero.
+;; rlez a    Repeat until `a` is less than or equal to zero.
+;; rgez a    Repeat until `a` is greater than or equal to zero.
+;; rgz a     Repeat until `a` is greater than zero.
+;; rlz a     Repeat until `a` is less than zero.
 ;;=======================================================================================================
-(defn rnz [{:keys [eip-stack registers] :as memory} [a]]
-  (if (zero? (get-value registers a))
-    (-> memory
-        (assoc :eip (inc (peek eip-stack))))
-    (-> memory
-        (update :eip inc)
-        (update :eip-stack pop))))
-
-;;=======================================================================================================
-;; rgz instruction
-;;
-;; Syntax:
-;; rgz a
-;;
-;; Repeat until `a` is greater than zero. If `a` is not greater than zero, go to eip at top of eip stack, else
-;; increment eip.
-;;=======================================================================================================
-(defn rgz [{:keys [eip-stack registers] :as memory} [a]]
-  (if (<= (get-value registers a) 0)
-    (-> memory
-        (assoc :eip (inc (peek eip-stack))))
-    (-> memory
-        (update :eip inc)
-        (update :eip-stack pop))))
-
-;;=======================================================================================================
-;; rlz instruction
-;;
-;; Syntax:
-;; rlz a
-;;
-;; Repeat until `a` is less than zero. If `a` is not less than zero, go to eip at top of eip stack, else
-;; increment eip.
-;;=======================================================================================================
-(defn rlz [{:keys [eip-stack registers] :as memory} [a]]
-  (if (>= (get-value registers a) 0)
-    (-> memory
-        (assoc :eip (inc (peek eip-stack))))
-    (-> memory
-        (update :eip inc)
-        (update :eip-stack pop))))
-
-;;=======================================================================================================
-;; rgz instruction
-;;
-;; Syntax:
-;; rgez a
-;;
-;; Repeat until `a` is greater than or equal to zero. If `a` is not greater than or equal to zero, go to
-;; eip at top of eip stack, else increment eip.
-;;=======================================================================================================
-(defn rgez [{:keys [eip-stack registers] :as memory} [a]]
-  (if (< (get-value registers a) 0)
-    (-> memory
-        (assoc :eip (inc (peek eip-stack))))
-    (-> memory
-        (update :eip inc)
-        (update :eip-stack pop))))
-
-
-;;=======================================================================================================
-;; rlez instruction
-;;
-;; Syntax:
-;; rlez a
-;;
-;; Repeat until `a` is less than or equal to zero. If `a` is not less than zero, go to eip at top of eip stack, else
-;; increment eip.
-;;=======================================================================================================
-(defn rlez [{:keys [eip-stack registers] :as memory} [a]]
-  (if (> (get-value registers a) 0)
-    (-> memory
-        (assoc :eip (inc (peek eip-stack))))
-    (-> memory
-        (update :eip inc)
-        (update :eip-stack pop))))
+(defn conditional-repeat [{:keys [eip-stack registers] :as memory} instruction [a]]
+  (let [condition (get-conditional-repeat-function instruction)]
+    (if (condition (get-value registers a))
+      (-> memory
+          (assoc :eip (inc (peek eip-stack))))
+      (-> memory
+          (update :eip inc)
+          (update :eip-stack pop)))))
 
 ;;=======================================================================================================
 ;; The interpreter.
@@ -691,24 +617,27 @@
                      (= :rp instruction)
                      (rp memory)
 
-                     (= :rz instruction)
-                     (rz memory args)
+                     (#{:rnz :rz :rgz :rlz :rgez :rlez} instruction)
+                     (conditional-repeat memory instruction args)
 
-                     (= :rnz instruction)
-                     (rnz memory args)
+                     #_#_#_#_#_#_#_#_#_#_#_#_(= :rz instruction)
+                                           (rz memory args)
 
-                     (= :rgz instruction)
-                     (rgz memory args)
+                                         (= :rnz instruction)
+                                       (rnz memory args)
 
-                     (= :rlz instruction)
-                     (rlz memory args)
+                                     (= :rgz instruction)
+                                   (rgz memory args)
 
-                     (= :rgez instruction)
-                     (rgez memory args)
+                                 (= :rlz instruction)
+                               (rlz memory args)
 
-                     (= :rlez instruction)
-                     (rlez memory args)
-                     
+                             (= :rgez instruction)
+                           (rgez memory args)
+
+                         (= :rlez instruction)
+                       (rlez memory args)
+
                      :else
                      memory)]
     {:memory memory
