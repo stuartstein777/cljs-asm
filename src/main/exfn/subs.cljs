@@ -84,7 +84,7 @@
 (rf/reg-sub
  :output
  (fn [db _]
-   (db :output)))
+   (-> db :memory :output)))
 
 (rf/reg-sub
  :rep-counters-stack

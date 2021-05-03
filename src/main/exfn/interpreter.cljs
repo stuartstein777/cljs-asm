@@ -10,24 +10,6 @@
     x))
 
 ;;=======================================================================================================
-;; Handle the mov instruction.
-;;=======================================================================================================
-(defn mov [registers x y]
-  (assoc registers x (get-value registers y)))
-
-;;=======================================================================================================
-;; Handle unary operations
-;;=======================================================================================================
-(defn unary-op [registers op x]
-  (update registers x op))
-
-;;=======================================================================================================
-;; Handle binary operations
-;;=======================================================================================================
-(defn binary-op [registers op x y]
-  (assoc registers x (op (get registers x) (get-value registers y))))
-
-;;=======================================================================================================
 ;; Return the predicate for cmp jumps that we want the jump check to satisfy.
 ;;=======================================================================================================
 (defn cmp-jump-predicates [jump-instruction]
@@ -39,225 +21,559 @@
         (= :jl  jump-instruction) #{:lt}))
 
 ;;=======================================================================================================
-;; Return the appropriate binary operation for the given binary instruction.
+;; Builds the symbol table for jump targets
+;; A jump target is a label like foo:
 ;;=======================================================================================================
-(defn get-binary-operations [instruction]
-  (cond (= :add instruction) +
-        (= :sub instruction) -
-        (= :mul instruction) *
-        (= :div instruction) quot
-        (= :xor instruction) bit-xor
-        (= :or  instruction) bit-or
-        (= :and instruction) bit-and
-        (= :cat instruction) str))
-
-;;=======================================================================================================
-;; Return the appropriate unary operation for the given unary instruction.
-;;=======================================================================================================
-(defn get-unary-operation [instruction]
-  (cond (= :inc instruction) inc
-        (= :dec instruction) dec
-        (= :len instruction) count
-        (= :not instruction) bit-not))
-
-;;=======================================================================================================
-;; jump forward or backwards y steps if x is not zero.
-;; x and y can both be registers so we get their value via (get-value).
-;;=======================================================================================================
-(defn jnz [registers x y]
-  (if (zero? (get-value registers x))
-    1
-    (get-value registers y)))
-
-;;=======================================================================================================
-;; compare x and y and store if x > y, x = y or x < y
-;; the result is stored in internal-registers :cmp register.
-;;=======================================================================================================
-(defn cmp [registers x y]
-  (let [x-val (if (keyword? x) (get registers x) x)
-        y-val (if (keyword? y) (get registers y) y)]
-    (cond (= x-val y-val) :eq
-          (> x-val y-val) :gt
-          (< x-val y-val) :lt)))
-
-;;=======================================================================================================
-;; After a cmp either the comparison will be in one of three states, :eq, :gt, :lt
-;;
-;; Therefor
-;; e, to check if we need to jump or not, we simple have to pass in a set of allowed states.
-;; e.g,
-;; jge :: we would pass in #{:eq :gt}, then we can check if the cmp register is either :eq or :gt.
-;;
-;; If it is in the set then we can return the location for the label (lbl) in the symbol table.
-;; Otherwise we just return the eip incremented so we advance to the next instruction.
-;;=======================================================================================================
-(defn cmp-jmp [internal-registers symbol-table eip valid-comps lbl]
-  (if (nil? (valid-comps (:cmp internal-registers)))
-    (inc eip)
-    ((keyword lbl) symbol-table)))
-
-;;=======================================================================================================
-;; Handle call instructions.
-;; We return the eip we want to jump to from the symbol table for the given label.
-;;=======================================================================================================
-(defn call [symbol-table label]
-  ((keyword label) symbol-table))
-
-;;=======================================================================================================
-;; Builds a string for the program return value from the arguments to the set: instruction.
-;;=======================================================================================================
-(defn set-message [registers & args]
-  (assoc-in registers [:internal-registers :return-code] (reduce (fn [s a] (str s (get-value registers a))) args)))
-
-;;=======================================================================================================
-;; Process the jump instructions and return the new eip.
-;;=======================================================================================================
-(defn process-jump [eip instruction registers internal-registers symbol-table eip-stack rep-counters-stack args]
-  ;; if we are jumping to a label, just return the location of the label in the symbol-table
-  (js/console.log instruction)
-  (cond (= :jmp instruction)
-        (inc (get symbol-table (first args)))
-
-        (= :jnz instruction)
-        (let [[x y] args]
-          (+ eip (jnz registers x y)))
-
-        ;; check if its a cmp jump.
-        (#{:jne :je :jge :jg :jle :jl} instruction)
-        (let [pred (cmp-jump-predicates instruction)
-              x    (first args)]
-          (cmp-jmp internal-registers symbol-table eip pred x))
-
-        (= :call instruction)
-        (call symbol-table (first args))
-
-        (= :ret instruction)
-        (if (empty? eip-stack)
-          -1
-          (inc (peek eip-stack)))
-
-        ;; if the top item on the rep-counters-stack is one, move to next line. Otherwise return the top eip-stack.
-        (= :rp instruction)
-        (if (= 1 (peek rep-counters-stack))
-          (inc eip)
-          (inc (peek eip-stack)))
-
-        :else
-        (inc eip)))
-
-;;=======================================================================================================
-;; Instruction Handlers
-;;=======================================================================================================
-(defn handle-unary-instruction [memory instruction args]
-  (-> memory
-      (assoc :registers (unary-op (:registers memory) (get-unary-operation instruction) (first args)))
-      (assoc :last-edit-register (first args))))
-
-(defn handle-binary-instruction [memory instruction args]
-  (let [[x y] args]
-    (-> memory
-        (assoc :registers (binary-op (:registers memory) (get-binary-operations instruction) x y))
-        (assoc :last-edit-register x))))
-
-(defn pop-stack [{:keys [registers stack] :as memory} args]
-  (if (empty? stack)
-    (update-in memory [:internal-registers] assoc :err "Popped empty stack.")
-    (-> memory
-        (assoc :registers (mov registers (first args) (peek stack)))
-        (update :stack (if (empty? stack) identity pop))
-        (assoc :last-edit-register (first args)))))
-
-(defn handle-mov-instruction [{:keys [registers] :as memory} args]
-  (let [[x y] args]
-    (-> memory
-        (assoc :registers (mov registers x y))
-        (assoc :last-edit-register x))))
-
-(defn handle-cmp-instruction [{:keys [registers] :as memory} args]
-  (let [[x y] args]
-    (assoc-in memory [:internal-registers :cmp] (cmp registers x y))))
-
-(defn handle-push-instruction [{:keys [registers] :as memory} args]
-  (let [x (get-value registers (first args))]
-    (update memory :stack #(conj % x))))
-
-;;=======================================================================================================
-;; Process regular instructions and return the new registers.
-;;=======================================================================================================
-(defn process-instruction [instruction {:keys [registers eip] :as memory} args]
-  (cond (= :mov instruction)
-        (handle-mov-instruction memory args)
-
-        (#{:inc :dec :not} instruction)
-        (handle-unary-instruction memory instruction args)
-
-        (#{:mul :add :sub :div :xor :and :or :cat} instruction)
-        (handle-binary-instruction memory instruction args)
-
-        (= :cmp instruction)
-        (handle-cmp-instruction memory args)
-
-        (= :pop instruction)
-        (pop-stack memory args)
-
-        (= :push instruction)
-        (handle-push-instruction memory args)
-
-        (= :len instruction)
-        (update-in memory [:registers] assoc (first args) (count (get-value registers (second args))))
-
-        (= :msg instruction)
-        (assoc memory :registers (apply (partial set-message registers) args))
-        
-        (= :rep instruction)        
-        (if (seq args)
-          (-> memory
-              (update-in [:rep-counters-stack] conj (get-value registers (first args)))
-              (update-in [:eip-stack] conj eip))
-          (-> memory (update-in [:eip-stack] conj eip)))
-        
-        (= :rp instruction)
-        (let [counter (peek (memory :rep-counters-stack))]
-          (if (= 1 counter) ; decrementing would reduce it to zero.
-            (-> memory
-                (update :rep-counters-stack pop)
-                (update :eip-stack pop))
-            (-> memory
-                (update :rep-counters-stack pop)
-                (update :rep-counters-stack conj (dec counter)))))))
-
 (defn build-symbol-table [asm]
   (reduce (fn [a [i ix]]
-        (if (= (first ix) :label)
-            (assoc a (second ix) i)
-            a))
+            (if (= (first ix) :label)
+              (assoc a (second ix) i)
+              a))
           {}
           (map vector (range) asm)))
 
 ;;=======================================================================================================
+;; Update the existing output with the new line of output.
+;;=======================================================================================================
+(defn append-output [existing new]
+  (cond (and existing new) ;existing output and new output.
+        (str existing "\n" new)
+
+        (and existing (not new))
+        existing
+
+        (= "" existing)
+        new))
+
+;;=======================================================================================================
+;; MOV instruction
+;;
+;; Syntax:
+;; mov a b
+;;
+;; Moves the contents of `b` (value or registers) into register `a`
+;; Incremens eip to next instruction.
+;;=======================================================================================================
+(defn mov [{:keys [registers] :as memory} [a b]]
+  (-> memory
+      (update-in [:registers] assoc a (get-value registers b))
+      (assoc :last-edit-register a)
+      (update :eip inc)))
+
+;;=======================================================================================================
+;; PRN instruction
+;;
+;; Syntax:
+;; prn a
+;;
+;; Appends the contents of a (string / number / register) to output
+;; Increments eip to next instruction.
+;;=======================================================================================================
+(defn prnout [{:keys [output registers] :as memory} args]
+  (-> memory
+      (assoc :output (append-output output (get-value registers (first args))))
+      (update :eip inc)))
+
+;;=======================================================================================================
+;; ADD instruction
+;;
+;; Syntax:
+;; add a b
+;;
+;; Adds `a` (registers) and `b` (number or register) and stores the result in `a`
+;; Increments eip to next instruction.
+;;=======================================================================================================
+(defn add [{:keys [registers] :as memory} [a b]]
+  (-> memory
+      (update-in [:registers] assoc a (+ (get-value registers a) (get-value registers b)))
+      (update :eip inc)))
+
+;;=======================================================================================================
+;; SUB instruction
+;;
+;; Syntax:
+;; sub a b
+;;
+;; Subtracts `b` (number or registers) from `a` (register) and stores the result in `a`
+;; Increments eip to next instruction.
+;;=======================================================================================================
+(defn sub [{:keys [registers] :as memory} [a b]]
+  (-> memory
+      (update-in [:registers] assoc a (- (get-value registers a) (get-value registers b)))
+      (update :eip inc)))
+
+;;=======================================================================================================
+;; MUL instruction
+;;
+;; Syntax:
+;; mul a b
+;;
+;; Multiplies `a` and `b` (number or register) and stores the result in `a`
+;; e.g.
+;; 
+;;     mov :a 10
+;;     mov :b 5
+;;     mul :a :b
+;; Will leave :a = 50
+;;
+;; Increments eip to next instruction.
+;;=======================================================================================================
+(defn mul [{:keys [registers] :as memory} [a b]]
+  (-> memory
+      (update-in [:registers] assoc a (* (get-value registers a) (get-value registers b)))
+      (update :eip inc)))
+
+;;=======================================================================================================
+;; DIV instruction
+;;
+;; Syntax:
+;; div a b
+;;
+;; Divides (Integer division) `a` and `b` (number or register) and stores the result in `a`
+;; e.g.
+;; 
+;;     mov :a 10
+;;     mov :b 5
+;;     div :a :b
+;; Will leave :a = 2
+;;
+;; Increments eip to next instruction.
+;;=======================================================================================================
+(defn div [{:keys [registers] :as memory} [a b]]
+  (-> memory
+      (update-in [:registers] assoc a (quot (get-value registers a) (get-value registers b)))
+      (update :eip inc)))
+
+;;=======================================================================================================
+;; XOR instruction
+;;
+;; Syntax:
+;; xor a b
+;;
+;; Bit xor `a` and `b` (number or register) and stores the result in `a`
+;; e.g.
+;; 
+;;     mov :a 10
+;;     mov :b 5
+;;     xor :a :b
+;; Will leave :a = 15
+;;
+;; Increments eip to next instruction.
+;;=======================================================================================================
+(defn xor [{:keys [registers] :as memory} [a b]]
+  (-> memory
+      (update-in [:registers] assoc a (bit-xor (get-value registers a) (get-value registers b)))
+      (update :eip inc)))
+
+;;=======================================================================================================
+;; AND instruction
+;;
+;; Syntax:
+;; and a b
+;;
+;; Bit-and `a` and `b` (number or register) and stores the result in `a`
+;; e.g.
+;; 
+;;     mov :a 1
+;;     mov :b 1
+;;     and :a :b
+;; Will leave :a = 1
+;;
+;; Increments eip to next instruction.
+;;=======================================================================================================
+(defn bitand [{:keys [registers] :as memory} [a b]]
+  (-> memory
+      (update-in [:registers] assoc a (bit-and (get-value registers a) (get-value registers b)))
+      (update :eip inc)))
+
+;;=======================================================================================================
+;; OR instruction
+;;
+;; Syntax:
+;; or a b
+;;
+;; Bit-or `a` and `b` (number or register) and stores the result in `a`
+;; e.g.
+;; 
+;;     mov :a 1
+;;     mov :b 0
+;;     or :a :b
+;; Will leave :a = 1
+;;
+;; Increments eip to next instruction.
+;;=======================================================================================================
+(defn bitor [{:keys [registers] :as memory} [a b]]
+  (-> memory
+      (update-in [:registers] assoc a (bit-and (get-value registers a) (get-value registers b)))
+      (update :eip inc)))
+
+;;=======================================================================================================
+;; cat instruction
+;;
+;; Syntax:
+;; cat a b
+;;
+;; Concatentates two strings `a` (registers) and `b` (registers or string literal), stores the result in `a`
+;; e.g.
+;; 
+;;     mov :a 'hello '
+;;     mov :b 'world'
+;;     cat :a :b
+;; Will leave :a 'hello world'
+;;
+;; Increments eip to next instruction.
+;;=======================================================================================================
+(defn str-cat [{:keys [registers] :as memory} [a b]]
+  (-> memory
+      (update-in [:registers] assoc a (str (get-value registers a) (get-value registers b)))
+      (update :eip inc)))
+
+;;=======================================================================================================
+;; inc instruction
+;;
+;; Syntax:
+;; inc a
+;;
+;; Increments the value in registers `a`, stores the incremented value in `a`
+;; e.g.
+;; 
+;;     mov :a 5
+;;     inc :a
+;; Will leave :a = 6
+;;
+;; Increments eip to next instruction.
+;;=======================================================================================================
+(defn increment [{:keys [registers] :as memory} [a]]
+  (-> memory
+      (update-in [:registers] assoc a (inc (get-value registers a)))
+      (update :eip inc)))
+
+;;=======================================================================================================
+;; dec instruction
+;;
+;; Syntax:
+;; dec a
+;;
+;; Decrements the value in registers `a`, stores the decremented value in `a`
+;; e.g.
+;; 
+;;     mov :a 5
+;;     dec :a
+;; Will leave :a = 4
+;;
+;; Increments eip to next instruction.
+;;=======================================================================================================
+(defn decrement [{:keys [registers] :as memory} [a]]
+  (-> memory
+      (update-in [:registers] assoc a (dec (get-value registers a)))
+      (update :eip inc)))
+
+;;=======================================================================================================
+;; not instruction
+;;
+;; Syntax:
+;; not a
+;;
+;; Performs bit-not on 'a', stores the result in 'a'
+;; e.g.
+;; 
+;;     mov :a 5
+;;     not :a
+;; Will leave :a = -6
+;;
+;; Increments eip to next instruction.
+;;=======================================================================================================
+(defn bitnot [{:keys [registers] :as memory} [a]]
+  (-> memory
+      (update-in [:registers] assoc a (bit-not (get-value registers a)))
+      (update :eip inc)))
+
+;;=======================================================================================================
+;; nop instruction
+;;
+;; Syntax:
+;; nop
+;;
+;; Does nothing. Label instructions are treated as nops.
+;; Increments eip to next instruction.
+;;=======================================================================================================
+(defn nop [memory]
+  (update memory :eip inc))
+
+;;=======================================================================================================
+;; nop instruction
+;;
+;; Syntax:
+;; nop
+;;
+;; Does nothing.
+;; Increments eip to next instruction.
+;;=======================================================================================================
+(defn strlen [{:keys [registers] :as memory} [a b]]
+  (-> memory
+      (update-in [:registers] assoc a (count (get-value registers b)))
+      (update :eip inc)))
+
+;;=======================================================================================================
+;; jnz instruction
+;;
+;; Syntax:
+;; jnz a b
+;;
+;; Jumps `b` (number or register) instructions (positive or negative) if `a` (number or registers) is not
+;; zero.
+;; If it is zero, then increments the eip.
+;;=======================================================================================================
+(defn jnz [{:keys [eip registers] :as memory} [a b]]
+  (let [jmp (if (zero? (get-value registers a)) 1 (get-value registers b))]
+    (assoc memory :eip (+ eip jmp))))
+
+;;=======================================================================================================
+;; jmp instruction
+;;
+;; Syntax:
+;; jmp a
+;;
+;; Moves the execution pointer to the label `a`.
+;; It finds the address for `a` by loking up `a` in the symbol tale.
+;;=======================================================================================================
+(defn jmp [{:keys [symbol-table] :as memory} [a]]
+  (assoc memory :eip (get symbol-table a)))
+
+;;=======================================================================================================
+;; cmp instruction
+;;
+;; Syntax:
+;; cmp a b (a and b can be values or registers.)
+;;
+;; Compares `a` and `b` and stores the result in the :cmp internal register.
+;; A comparison can be :eq (a = b)
+;;                     :gt (a > b)
+;;                     :lt (a < b)
+;; Increments the eip
+;;=======================================================================================================
+(defn cmp [{:keys [registers] :as memory} [a b]]
+  (let [av (get-value registers a)
+        bv (get-value registers b)]
+    (-> memory
+        (assoc-in [:internal-registers :cmp] (cond (= av bv) :eq
+                                                   (> av bv) :gt
+                                                   (< av bv) :lt))
+        (update :eip inc))))
+
+;;=======================================================================================================
+;; Handles jne, jg, jl, jle, jge, je
+;;
+;; jne - jumps to label if previous cmp call was not equal (greater-than or less-than)
+;; je  - jumps to labe if previous cmp call was equal
+;; jg  - jumps to label if previous cmp call was greater-than
+;; jge - jumps to label if previous cmp call was greater-than or equal-to
+;; jl  - jumps to label if previous cmp call was less-than
+;; jle - jumps to label if previous cmp call was less-than or equal-to
+;;
+;; Syntax (syntax is same for all the supported jumps):
+;; jne foo
+;; 
+;; jumps to the label foo if the result of the previous cmp call fufills jmp predicate
+;;=======================================================================================================
+(defn cmp-jmp [{:keys [eip internal-registers symbol-table] :as memory} jump-type [a]]
+  (let [cmp              (:cmp internal-registers)
+        valid-predicates (cmp-jump-predicates jump-type)]
+    (assoc memory :eip (if (valid-predicates cmp)
+                          (symbol-table (keyword a))
+                          (inc eip)))))
+
+;;=======================================================================================================
+;; call instruction
+;;
+;; Syntax:
+;; call foo
+;;
+;; Moves eip pointer to the label foo.
+;; Pushes the eip at the call site to the eip-stack as a ret target.
+;;=======================================================================================================
+(defn call [{:keys [eip symbol-table] :as memory} [a]]
+  (let [target (symbol-table (keyword a))]
+    (-> memory
+        (update :eip-stack conj eip)
+        (assoc :eip target))))
+
+;;=======================================================================================================
+;; ret instruction
+;;
+;; Syntax:
+;; ret
+;;
+;; Moves eip pointer to the top eip on the eip-stack
+;;=======================================================================================================
+(defn ret [{:keys [eip-stack] :as memory}]
+  (assoc memory :eip (if (empty? eip-stack) -1 (inc (peek eip-stack)))))
+
+;;=======================================================================================================
+;; pop instruction
+;;
+;; Syntax:
+;; pop a
+;;
+;; Pops a value off the stack into register a.
+;; Increments the eip
+;;
+;; ERR: Will set :err field to "Popped empty stack" if stack is empty.
+;;=======================================================================================================
+(defn pop-stack [{:keys [stack] :as memory} [a]]
+  (if (empty? stack)
+    (-> memory
+        (update-in [:internal-registers] assoc :err "Popped empty stack.")
+        (update :eip inc))
+    (-> memory
+        (assoc-in [:registers a] (peek stack))
+        (update :stack (if (empty? stack) identity pop))
+        (assoc :last-edit-register a)
+        (update :eip inc))))
+
+;;=======================================================================================================
+;; push instruction
+;;
+;; Syntax:
+;; push a
+;;
+;; Pushes a (register or value) onto the stack.
+;; Increments the eip
+;;=======================================================================================================
+(defn push [{:keys [registers] :as memory} args]
+    (let [x (get-value registers (first args))]
+      (-> memory
+          (update :stack conj x)
+          (update :eip inc))))
+
+;;=======================================================================================================
+;; rep instruction
+;;
+;; Syntax:
+;; rep a
+;; rep
+;;
+;; If a value `a` is supplied (number or register) then rep sets a rep-counter and pushes it to the
+;; rp-stack, also pushes current eip to eip-stack (in this case it is an rp target)
+;; If no args are supplied, it only pushes the current eip to the eip-stack (in this case its a conditional
+;; rp target).
+;; `a` should be greater than zero. If it's passed zero, it will still run through the loop once.
+;;=======================================================================================================
+(defn rep [{:keys [eip registers]:as memory} args]
+  (if (seq args)
+    (-> memory
+        (update-in [:rep-counters-stack] conj (get-value registers (first args)))
+        (update-in [:eip-stack] conj eip)
+        (update :eip inc))
+    (-> memory
+        (update-in [:eip-stack] conj eip)
+        (update :eip inc))))
+
+;;=======================================================================================================
+;; rp instruction
+;;
+;; Syntax:
+;; rp
+;;
+;; Decrements the top item on the RP stack. If it would be zero after decrementing then it increments the
+;; eip. Otherwise it sets eip to the top value of the eip-stack.
+;;=======================================================================================================
+(defn rp [{:keys [eip-stack] :as memory}]
+  (let [counter (peek (memory :rep-counters-stack))]
+    (if (<= counter 1) ; decrementing would reduce it to zero, so increment eip and pop the rp-stack.
+      (-> memory
+          (update :rep-counters-stack pop)
+          (update :eip-stack pop)
+          (update :eip inc))
+      (-> memory ; otherwise decrement the top item on the rp-stack and set eip to top value on eip-stack.
+          (update :rep-counters-stack pop)
+          (update :rep-counters-stack conj (dec counter))
+          (assoc :eip (inc (peek eip-stack)))))))
+        
+;;=======================================================================================================
 ;; The interpreter.
 ;;=======================================================================================================
-(defn interpret [instructions {:keys [eip registers] :as memory}]
+(defn interpret [instructions {:keys [eip] :as memory}]
   (let [[instruction & args] (nth instructions eip)
-        new-eip              (if (#{:jmp :jnz :jne :je :jgl :jg :jle :jl :jge :ret :call :rp} instruction)
-                               (process-jump eip instruction registers (memory :internal-registers) (memory :symbol-table) (:eip-stack memory) (memory :rep-counters-stack) args)
-                               (inc eip))
+        memory (cond (= :mov instruction)
+                     (mov memory args)
 
-        memory               (if (#{:mov :mul :add :sub :dec :xor :and :or :div :inc :msg :cmp :push :pop :cat :len :not :rep :rp} instruction)
-                               (process-instruction instruction memory args)
-                               memory)
+                     (= :add instruction)
+                     (add memory args)
 
-        eip-stack            (cond (= :ret instruction) (pop (:eip-stack memory))
-                                   (= :call instruction) (conj (:eip-stack memory) eip)
-                                   :else (:eip-stack memory))
-        
-        output               (when (= :prn instruction)
-                               (str (get-value registers (first args))))]
-    [; new memory state
-     (-> memory
-         (assoc :eip new-eip)
-         (assoc :eip-stack eip-stack))
-       ; finished?
-     (or (= (nth instructions new-eip) [:end]) (> new-eip (count instructions)))
-       ;new output
-     output]))
+                     (= :sub instruction)
+                     (sub memory args)
+
+                     (= :mul instruction)
+                     (mul memory args)
+
+                     (= :div instruction)
+                     (div memory args)
+
+                     (= :xor instruction)
+                     (xor memory args)
+
+                     (= :and instruction)
+                     (bitand memory args)
+
+                     (= :or instruction)
+                     (bitor memory args)
+
+                     (= :cat instruction)
+                     (str-cat memory args)
+
+                     (= :inc instruction)
+                     (increment memory args)
+
+                     (= :dec instruction)
+                     (decrement memory args)
+
+                     (= :not instruction)
+                     (bitnot memory args)
+
+                     (= :len instruction)
+                     (strlen memory args)
+
+                     (= :nop instruction)
+                     (nop memory)
+
+                     (= :prn instruction)
+                     (prnout memory args)
+
+                     (= :jnz instruction)
+                     (jnz memory args)
+
+                     (= :label instruction)
+                     (nop memory)
+
+                     (= :jmp instruction)
+                     (jmp memory args)
+
+                     (= :cmp instruction)
+                     (cmp memory args)
+
+                     (#{:jne :jg :je :jl :jle :jge} instruction)
+                     (cmp-jmp memory instruction args)
+
+                     (= :call instruction)
+                     (call memory args)
+
+                     (= :ret instruction)
+                     (ret memory)
+
+                     (= :push instruction)
+                     (push memory args)
+
+                     (= :pop instruction)
+                     (pop-stack memory args)
+
+                     (= :rep instruction)
+                     (rep memory args)
+
+                     (= :rp instruction)
+                     (rp memory)
+
+                     :else
+                     memory)]
+    {:memory memory
+     :finished? (or (= :end instruction) (> (memory :eip) (count instructions)))}))

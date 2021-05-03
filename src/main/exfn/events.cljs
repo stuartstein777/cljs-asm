@@ -55,9 +55,9 @@ ret        ; ret to bar call, pop eip stack"
              :stack              []
              :symbol-table       {}
              :rep-counters-stack []
-             :last-edit-register nil}
-    :on-breakpoint false
-    :output "$ Toy Asm Output >"
+             :last-edit-register nil
+             :output "$ Toy Asm Output >"}
+    :on-breakpoint false    
     :running? false
     :running-speed 700
     :ticker-handle nil}))
@@ -93,6 +93,7 @@ ret        ; ret to bar call, pop eip stack"
                           :internal-registers {}
                           :stack              []
                           :rep-counters-stack []
+                          :output             (-> db :memory :output)
                           :symbol-table       symbol-table})
           (assoc :code parsed)
           (assoc :on-breakpoint false)
@@ -213,39 +214,29 @@ ret        ; ret to bar call, pop eip stack"
                             :internal-registers {}
                             :stack              []
                             :rep-counters-stack []
-                            :symbol-table (:symbol-table (:memory db))})
+                            :symbol-table (:symbol-table (:memory db))
+                            :output "$ Toy Asm Output >"})
             (assoc :running? false)
             (assoc :on-breakpoint false)
             (assoc :finished? false))
     :toggle-running [false (db :ticker-handle)]
     :scroll-parsed-code-to-top _}))
 
-(defn append-output [existing new]
-  (cond (and existing new) ;existing output and new output.
-        (str existing "\n" new)
-
-        (and existing (not new))
-        existing
-
-        (= "" existing)
-        new))
-
 (rf/reg-event-fx
  :next-instruction
  (fn [{:keys [db]} _]
-   (let [[memory finished? output] (exfn.interpreter/interpret (db :code) (db :memory))
+   (let [{:keys [memory finished?]} (exfn.interpreter/interpret (db :code) (db :memory))
          breakpoints (db :breakpoints)
          db (-> db
                 (assoc :memory memory)
                 (assoc :finished? finished?)
-                (assoc :running? (if finished? false (db :running?)))
-                (assoc :output (append-output (db :output) output)))]
+                (assoc :running? (if finished? false (db :running?))))]
      (if (some? (breakpoints (:eip memory)))
-       {:db (-> db
-                (assoc :on-breakpoint true)
-                (assoc :running? false))
+       {:db                            (-> db
+                                           (assoc :on-breakpoint true)
+                                           (assoc :running? false))
         :scroll-current-code-into-view (:eip memory)
-        :toggle-running [false (db :ticker-handle)]}
+        :toggle-running                [false (db :ticker-handle)]}
        {:db (assoc db :on-breakpoint false)
         :scroll-current-code-into-view (:eip memory)
         :end-if-finished [(db :ticker-handle) finished?]}))))
