@@ -141,11 +141,108 @@
     s))
 
 (defn parse [asm]
-  (->> (str/split-lines asm)
-       (map #(str/trimr (str/triml %)))
-       (map scrub-comments)
-       (remove #(= "" %))
-       (remove #(str/starts-with? % ";"))
-       (map parse-line-of-code)))
+  (let [source        (->> (str/split-lines asm)
+                           (map #(str/trimr (str/triml %)))
+                           (map scrub-comments)
+                           (remove #(= "" %))
+                           (remove #(str/starts-with? % ";")))]
+    (map parse-line-of-code source)))
 
 (comment (parse-line-of-code "mov :a 5"))
+
+;; WIP on macro expansion.
+(defn get-macros [source]
+  (let [macro-start (.indexOf source ".macros")
+        macro-end (.indexOf source ".code")
+        macros (->> source
+                    (drop (inc macro-start))
+                    (take (- (dec macro-end) macro-start))
+                    (partition-by (fn [n] (= n "%end")))
+                    (remove #(= '("%end") %)))]
+    (zipmap (->> (map first macros)
+                 (map #(subs % 1)))
+            (map rest macros))))
+
+(defn get-code [source] 
+  (let [code-start (.indexOf source ".code")
+        data-start (.indexOf source ".data")
+        code-end (if (= -1 data-start) (count source) data-start)]
+    (->> source
+         (drop (inc code-start))
+         (take (- (dec code-end) code-start)))))
+
+(defn is-macro-call? [macro-names line]
+  (first (filter #(str/starts-with? line %) macro-names)))
+
+;; TODO: This needs to return a map
+;; e.g. {"%1" ":a", "%2" ":b"}
+(defn get-args [line]
+  (let [args (->> (str/split (->> (re-seq #"\((.*?)\)" line)
+                                  (first)
+                                  (rest)
+                                  (first)) ",")
+                  (remove #(= "" %)))]
+     ;; what if args is empty.
+    (when (seq args)
+      (zipmap (->> (range 1 (inc (count args)))
+                   (map (fn [n] (str "%" n))))
+              args))))
+
+(defn replace-macro-args [args macro-line]
+  (let [regex (re-pattern (str/join "|" (keys args)))]
+    (str/replace macro-line regex args)))
+
+;; what if args are empty here? Just return the macro??
+(defn expand
+  [line macro] ;
+  (let [args (get-args line)]
+    (if args
+      (map (partial replace-macro-args args) macro)
+      macro)))
+
+(defn macro-expand-line [macros line]
+  (let [macro-call (is-macro-call? (keys macros) line)]
+    (if macro-call
+      (expand line (macros macro-call)) ; need to pass the macro that matched.
+      line)))
+
+(defn macro-expand-code [code macros]
+  (map (partial macro-expand-line macros) code))
+
+(comment
+  (let [asm    ".macros
+                %square-and-sum
+                   mul %1 %1
+                   mul %2 %2
+                   add %1 %2
+                %end
+                %add-ten
+                   add %1 10
+                %end
+                .code
+                   mov :a 2
+                   mov :b 5
+                   square-and-sum(:a, :b)
+                   add-ten (:a)"
+        source (->> (str/split-lines asm)
+                    (map #(str/trimr (str/triml %)))
+                    (map scrub-comments)
+                    (remove #(= "" %))
+                    (remove #(str/starts-with? % ";")))
+        macros (get-macros source)
+        code (get-code source)]
+    (macro-expand-code code macros)
+    
+    )
+    
+    )
+
+(comment
+  
+  (let [macros {"square-and-sum" '("mul %1 %1" "mul %2 %2" "add %1 %2"),
+                "add-ten" '("add %1 10")}
+        code '("mov :a 2" "mov :b 5" "square-and-sum(:a, :b)" "add-ten (:a)")
+        ]
+    
+    
+    ))

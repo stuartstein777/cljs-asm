@@ -515,7 +515,7 @@
     :rgez (fn [x] (< x 0))))
 
 ;;=======================================================================================================
-;; r* conditional repeats
+;; r*z conditional repeats
 ;;
 ;; Syntax:
 ;; rz a      Repeats until `a` is zero.
@@ -619,24 +619,6 @@
 
                      (#{:rnz :rz :rgz :rlz :rgez :rlez} instruction)
                      (conditional-repeat memory instruction args)
-
-                     #_#_#_#_#_#_#_#_#_#_#_#_(= :rz instruction)
-                                           (rz memory args)
-
-                                         (= :rnz instruction)
-                                       (rnz memory args)
-
-                                     (= :rgz instruction)
-                                   (rgz memory args)
-
-                                 (= :rlz instruction)
-                               (rlz memory args)
-
-                             (= :rgez instruction)
-                           (rgez memory args)
-
-                         (= :rlez instruction)
-                       (rlez memory args)
 
                      :else
                      memory)]
