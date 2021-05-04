@@ -230,8 +230,7 @@ ret        ; ret to bar call, pop eip stack"
          db (-> db
                 (assoc :memory memory)
                 (assoc :finished? finished?)
-                (assoc :running? (if finished? false (db :running?)))
-                (assoc-in [:memory :output] (if (finished? (h/app)))))]
+                (assoc :running? (if finished? false (db :running?))))]
      (if (some? (breakpoints (:eip memory)))
        {:db (-> db
                 (assoc :on-breakpoint true)
