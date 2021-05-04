@@ -116,6 +116,7 @@ ret        ; ret to bar call, pop eip stack"
                        :registers          {}
                        :eip-stack          []
                        :internal-registers {}
+                       :output             (-> db :memory :output)
                        :stack              []
                        :symbol-table       []}))))
 

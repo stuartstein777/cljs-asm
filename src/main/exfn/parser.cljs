@@ -5,7 +5,6 @@
   (boolean (str/starts-with? x ":")))
 
 (defn get-value [x]
-  (prn x)
   (if (is-register? x)
     (keyword (subs x 1))
     x))
@@ -140,17 +139,6 @@
     (str/trimr (subs s 0 (str/index-of s ";")))
     s))
 
-(defn parse [asm]
-  (let [source        (->> (str/split-lines asm)
-                           (map #(str/trimr (str/triml %)))
-                           (map scrub-comments)
-                           (remove #(= "" %))
-                           (remove #(str/starts-with? % ";")))]
-    (map parse-line-of-code source)))
-
-(comment (parse-line-of-code "mov :a 5"))
-
-;; WIP on macro expansion.
 (defn get-macros [source]
   (let [macro-start (.indexOf source ".macros")
         macro-end (.indexOf source ".code")
@@ -179,7 +167,8 @@
                                   (first)
                                   (rest)
                                   (first)) ",")
-                  (remove #(= "" %)))]
+                  (remove #(= "" %))
+                  (map str/trim))]
      ;; what if args is empty.
     (when (seq args)
       (zipmap (->> (range 1 (inc (count args)))
@@ -189,6 +178,7 @@
 (defn replace-macro-args [args macro-line]
   (let [regex (re-pattern (str/join "|" (keys args)))]
     (str/replace macro-line regex args)))
+
 
 ;; what if args are empty here? Just return the macro??
 ;; Need to handle nested macro calls. So bind current result.
@@ -204,11 +194,21 @@
   (let [macro-call (is-macro-call? (keys macros) line)]
     (if macro-call
       (expand line (macros macro-call)) ; need to pass the macro that matched.
-      line)))
+      (list line))))
 
 (defn macro-expand-code [code macros]
-  (->> (map (partial macro-expand-line macros) code)
-       (flatten))) ;; TODO: Get rid of flatten.
+  (->> (mapcat (partial macro-expand-line macros) code)))
+
+(defn parse [asm]
+  (let [source (->> (str/split-lines asm)
+                    (map #(str/trimr (str/triml %)))
+                    (map scrub-comments)
+                    (remove #(= "" %))
+                    (remove #(str/starts-with? % ";")))
+        macros (get-macros source)
+        code (get-code source)]
+    (->> (macro-expand-code code macros)
+         (map parse-line-of-code))))
 
 (comment
   (let [asm    ".macros
@@ -224,26 +224,5 @@
                    mov :a 2
                    mov :b 5
                    square-and-sum(:a, :b)
-                   add-ten (:a)"
-        source (->> (str/split-lines asm)
-                    (map #(str/trimr (str/triml %)))
-                    (map scrub-comments)
-                    (remove #(= "" %))
-                    (remove #(str/starts-with? % ";")))
-        macros (get-macros source)
-        code (get-code source)]
-    (macro-expand-code code macros)
-    
-    )
-    
-    )
-
-(comment
-  
-  (let [macros {"square-and-sum" '("mul %1 %1" "mul %2 %2" "add %1 %2"),
-                "add-ten" '("add %1 10")}
-        code '("mov :a 2" "mov :b 5" "square-and-sum(:a, :b)" "add-ten (:a)")
-        ]
-    (macro-expand-line macros (nth code 3))
-    
-    ))
+                   add-ten (:a)"]
+    (parse asm)))
