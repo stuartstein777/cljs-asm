@@ -133,12 +133,24 @@
          (parse-line-of-code "mov :a 'foo, 'bar', quax'")
          (parse-line-of-code "ret"))
 
+;; ==============================================================================================
+;; Get rid of all comments, this can be either a line that starts with a ; or a line with a
+;; trailing comment, e.g.
+;;
+;; mov :a :b ; this is a comment.
+;; ==============================================================================================
 (defn scrub-comments [s]
   (if (and (not (str/starts-with? s "msg"))
            (str/includes? s ";"))
     (str/trimr (subs s 0 (str/index-of s ";")))
     s))
 
+;; ==============================================================================================
+;; Get all the macros from the macro section.
+;; The input is the source code, split by lines.
+;; Return them in a map keyed on the macro name.
+;; Do not include the % on the start of the name or %end
+;; ==============================================================================================
 (defn get-macros [source]
   (let [macro-start (.indexOf source ".macros")
         macro-end (.indexOf source ".code")
@@ -151,6 +163,13 @@
                  (map #(subs % 1)))
             (map rest macros))))
 
+(comment "get-macros-test"
+         (let [source (list ".macros" "%square-and-sum" "mul %1 %1" "mul %2 %2" "add %1 %2" "%end" "%add-ten" "add %1 10" "%end" ".code" "mov :a 2" "mov :b 5" "square-and-sum(:a, :b)" "add-ten (:a)")]
+           (get-macros source)))
+
+;; ==============================================================================================
+;; Get the code from the .code section.
+;; ==============================================================================================
 (defn get-code [source] 
   (let [code-start (.indexOf source ".code")
         data-start (.indexOf source ".data")
@@ -178,7 +197,6 @@
 (defn replace-macro-args [args macro-line]
   (let [regex (re-pattern (str/join "|" (keys args)))]
     (str/replace macro-line regex args)))
-
 
 ;; what if args are empty here? Just return the macro??
 ;; Need to handle nested macro calls. So bind current result.
@@ -209,20 +227,3 @@
         code (get-code source)]
     (->> (macro-expand-code code macros)
          (map parse-line-of-code))))
-
-(comment
-  (let [asm    ".macros
-                   %square-and-sum
-                      mul %1 %1
-                      mul %2 %2
-                      add %1 %2
-                   %end
-                   %add-ten
-                     add %1 10
-                   %end
-                .code
-                   mov :a 2
-                   mov :b 5
-                   square-and-sum(:a, :b)
-                   add-ten (:a)"]
-    (parse asm)))

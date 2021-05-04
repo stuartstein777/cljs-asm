@@ -23,3 +23,19 @@ bar:
 add a 7    ; a = 7, b = 2, c = 4
 sub c 1    ; a = 7, b = 2, c = 3
 ret        ; ret to bar call, pop eip stack
+
+;; macros
+.macros
+   %square-and-sum
+      mul %1 %1
+      mul %2 %2
+      add %1 %2
+   %end
+   %add-ten
+      add %1 10
+   %end
+.code
+   mov :a 2
+   mov :b 5
+   square-and-sum(:a, :b)
+   add-ten (:a)
