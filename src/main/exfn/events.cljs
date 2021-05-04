@@ -215,7 +215,7 @@ ret        ; ret to bar call, pop eip stack"
                             :stack              []
                             :rep-counters-stack []
                             :symbol-table (:symbol-table (:memory db))
-                            :output "$ Toy Asm Output >"})
+                            :output (-> db :memory :output)})
             (assoc :running? false)
             (assoc :on-breakpoint false)
             (assoc :finished? false))
@@ -230,14 +230,16 @@ ret        ; ret to bar call, pop eip stack"
          db (-> db
                 (assoc :memory memory)
                 (assoc :finished? finished?)
-                (assoc :running? (if finished? false (db :running?))))]
+                (assoc :running? (if finished? false (db :running?)))
+                (assoc-in [:memory :output] (if (finished? (h/app)))))]
      (if (some? (breakpoints (:eip memory)))
-       {:db                            (-> db
-                                           (assoc :on-breakpoint true)
-                                           (assoc :running? false))
+       {:db (-> db
+                (assoc :on-breakpoint true)
+                (assoc :running? false))
         :scroll-current-code-into-view (:eip memory)
-        :toggle-running                [false (db :ticker-handle)]}
-       {:db (assoc db :on-breakpoint false)
+        :toggle-running [false (db :ticker-handle)]}
+       {:db (-> db
+                (assoc :on-breakpoint false))
         :scroll-current-code-into-view (:eip memory)
         :end-if-finished [(db :ticker-handle) finished?]}))))
 
