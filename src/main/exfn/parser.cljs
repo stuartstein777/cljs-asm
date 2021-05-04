@@ -174,8 +174,6 @@
 (defn is-macro-call? [macro-names line]
   (first (filter #(str/starts-with? line %) macro-names)))
 
-;; TODO: This needs to return a map
-;; e.g. {"%1" ":a", "%2" ":b"}
 (defn get-args [line]
   (let [args (->> (str/split (->> (re-seq #"\((.*?)\)" line)
                                   (first)
@@ -193,6 +191,8 @@
     (str/replace macro-line regex args)))
 
 ;; what if args are empty here? Just return the macro??
+;; Need to handle nested macro calls. So bind current result.
+;; call expand again and see if its any different, if its not. we are done.
 (defn expand
   [line macro] ;
   (let [args (get-args line)]
@@ -207,18 +207,19 @@
       line)))
 
 (defn macro-expand-code [code macros]
-  (map (partial macro-expand-line macros) code))
+  (->> (map (partial macro-expand-line macros) code)
+       (flatten))) ;; TODO: Get rid of flatten.
 
 (comment
   (let [asm    ".macros
-                %square-and-sum
-                   mul %1 %1
-                   mul %2 %2
-                   add %1 %2
-                %end
-                %add-ten
-                   add %1 10
-                %end
+                   %square-and-sum
+                      mul %1 %1
+                      mul %2 %2
+                      add %1 %2
+                   %end
+                   %add-ten
+                     add %1 10
+                   %end
                 .code
                    mov :a 2
                    mov :b 5
@@ -243,6 +244,6 @@
                 "add-ten" '("add %1 10")}
         code '("mov :a 2" "mov :b 5" "square-and-sum(:a, :b)" "add-ten (:a)")
         ]
-    
+    (macro-expand-line macros (nth code 3))
     
     ))

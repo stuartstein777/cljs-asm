@@ -1,6 +1,12 @@
 (ns exfn.interpreter)
 
 ;;=======================================================================================================
+;; Returns 1 if n has an even number of 1s in its binary representation, otherwise 0.
+;;=======================================================================================================
+(defn get-parity [n]
+  (if (even? (-> (filter #(= "1" %) (.toString n 2)) count)) 1 0))
+
+;;=======================================================================================================
 ;; if x is a register, returns the value from the registers.
 ;; Otherwise return x (as it's a value not a register).
 ;;=======================================================================================================
@@ -92,9 +98,11 @@
 ;; Increments eip to next instruction.
 ;;=======================================================================================================
 (defn add [{:keys [registers] :as memory} [a b]]
-  (-> memory
-      (update-in [:registers] assoc a (+ (get-value registers a) (get-value registers b)))
-      (update :eip inc)))
+  (let [result (+ (get-value registers a) (get-value registers b))]
+    (-> memory
+        (update-in [:registers] assoc a result)
+        (update :eip inc)
+        (update-in [:internal-registers] assoc :par (get-parity result)))))
 
 ;;=======================================================================================================
 ;; SUB instruction
@@ -106,9 +114,11 @@
 ;; Increments eip to next instruction.
 ;;=======================================================================================================
 (defn sub [{:keys [registers] :as memory} [a b]]
-  (-> memory
-      (update-in [:registers] assoc a (- (get-value registers a) (get-value registers b)))
-      (update :eip inc)))
+  (let [result (- (get-value registers a) (get-value registers b))]
+    (-> memory
+        (update-in [:registers] assoc a result)
+        (update :eip inc)
+        (update-in [:internal-registers] assoc :par (get-parity result)))))
 
 ;;=======================================================================================================
 ;; MUL instruction
@@ -127,9 +137,11 @@
 ;; Increments eip to next instruction.
 ;;=======================================================================================================
 (defn mul [{:keys [registers] :as memory} [a b]]
-  (-> memory
-      (update-in [:registers] assoc a (* (get-value registers a) (get-value registers b)))
-      (update :eip inc)))
+  (let [result (* (get-value registers a) (get-value registers b))]
+    (-> memory
+        (update-in [:registers] assoc a result)
+        (update :eip inc)
+        (update-in [:internal-registers] assoc :par (get-parity result)))))
 
 ;;=======================================================================================================
 ;; DIV instruction
@@ -148,9 +160,11 @@
 ;; Increments eip to next instruction.
 ;;=======================================================================================================
 (defn div [{:keys [registers] :as memory} [a b]]
-  (-> memory
-      (update-in [:registers] assoc a (quot (get-value registers a) (get-value registers b)))
-      (update :eip inc)))
+  (let [result (quot (get-value registers a) (get-value registers b))]
+    (-> memory
+        (update-in [:registers] assoc a result)
+        (update :eip inc)
+        (update-in [:internal-registers] assoc :par (get-parity result)))))
 
 ;;=======================================================================================================
 ;; XOR instruction
@@ -169,9 +183,11 @@
 ;; Increments eip to next instruction.
 ;;=======================================================================================================
 (defn xor [{:keys [registers] :as memory} [a b]]
-  (-> memory
-      (update-in [:registers] assoc a (bit-xor (get-value registers a) (get-value registers b)))
-      (update :eip inc)))
+  (let [result (bit-xor (get-value registers a) (get-value registers b))]
+    (-> memory
+        (update-in [:registers] assoc a result)
+        (update :eip inc)
+        (update-in [:internal-registers] assoc :par (get-parity result)))))
 
 ;;=======================================================================================================
 ;; AND instruction
@@ -190,9 +206,11 @@
 ;; Increments eip to next instruction.
 ;;=======================================================================================================
 (defn bitand [{:keys [registers] :as memory} [a b]]
-  (-> memory
-      (update-in [:registers] assoc a (bit-and (get-value registers a) (get-value registers b)))
-      (update :eip inc)))
+  (let [result (bit-and (get-value registers a) (get-value registers b))]
+    (-> memory
+        (update-in [:registers] assoc a result)
+        (update :eip inc)
+        (update-in [:internal-registers] assoc :par (get-parity result)))))
 
 ;;=======================================================================================================
 ;; OR instruction
@@ -211,9 +229,11 @@
 ;; Increments eip to next instruction.
 ;;=======================================================================================================
 (defn bitor [{:keys [registers] :as memory} [a b]]
-  (-> memory
-      (update-in [:registers] assoc a (bit-and (get-value registers a) (get-value registers b)))
-      (update :eip inc)))
+  (let [result (bit-and (get-value registers a) (get-value registers b))]
+    (-> memory
+        (update-in [:registers] assoc a result)
+        (update :eip inc)
+        (update-in [:internal-registers] assoc :par (get-parity result)))))
 
 ;;=======================================================================================================
 ;; cat instruction
@@ -252,9 +272,11 @@
 ;; Increments eip to next instruction.
 ;;=======================================================================================================
 (defn increment [{:keys [registers] :as memory} [a]]
-  (-> memory
-      (update-in [:registers] assoc a (inc (get-value registers a)))
-      (update :eip inc)))
+  (let [result (inc (get-value registers a))]
+    (-> memory
+        (update-in [:registers] assoc a result)
+        (update :eip inc)
+        (update-in [:internal-registers] assoc :par (get-parity result)))))
 
 ;;=======================================================================================================
 ;; dec instruction
@@ -272,9 +294,11 @@
 ;; Increments eip to next instruction.
 ;;=======================================================================================================
 (defn decrement [{:keys [registers] :as memory} [a]]
-  (-> memory
-      (update-in [:registers] assoc a (dec (get-value registers a)))
-      (update :eip inc)))
+  (let [result (dec (get-value registers a))]
+    (-> memory
+        (update-in [:registers] assoc a result)
+        (update :eip inc)
+        (update-in [:internal-registers] assoc :par (get-parity result)))))
 
 ;;=======================================================================================================
 ;; not instruction
@@ -292,9 +316,11 @@
 ;; Increments eip to next instruction.
 ;;=======================================================================================================
 (defn bitnot [{:keys [registers] :as memory} [a]]
-  (-> memory
-      (update-in [:registers] assoc a (bit-not (get-value registers a)))
-      (update :eip inc)))
+  (let [result (bit-not (get-value registers a))]
+    (-> memory
+        (update-in [:registers] assoc a result)
+        (update :eip inc)
+        (update-in [:internal-registers] assoc :par (get-parity result)))))
 
 ;;=======================================================================================================
 ;; nop instruction
@@ -624,4 +650,3 @@
                      memory)]
     {:memory memory
      :finished? (or (= :end instruction) (> (memory :eip) (count instructions)))}))
-
