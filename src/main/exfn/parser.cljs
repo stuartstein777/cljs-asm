@@ -199,10 +199,24 @@
          (drop (inc code-start))
          (take (- (dec code-end) code-start)))))
 
-;; + macro expansion ====================================================================
+;; + macro expansion ============================================================================
 
-(defn get-macro-call? [macro-names line]
+;; ==============================================================================================
+;; Gets the macro call (if it is a macro-call) from the collection of macro names for that line of
+;; code. Returns nil if the line of code is not a macro call.
+;; ==============================================================================================
+(defn get-macro-call [macro-names line]
   (first (filter #(str/starts-with? line %) macro-names)))
+
+(comment "get-macro-call examples"
+         "returns sum-and-square, since the line starts with sum-and-square, which is in our macro list"
+         (get-macro-call ["sum-and-square" "add-ten"] "sum-and-square(:a, :b)")
+         "returns nill since mov :a :b is not a macro"
+         (get-macro-call ["sum-and-square" "add-ten"] "mov :a :b")
+         "returns nill, looks like macro but it's not in the list."
+         (get-macro-call ["sum-and-square" "add-ten"] "foo(:a)")
+         "returns add-ten"
+         (get-macro-call ["sum-and-square" "add-ten"] "add-ten(:a)"))
 
 (defn get-args [line]
   (let [args (->> (str/split (->> (re-seq #"\((.*?)\)" line)
@@ -216,9 +230,30 @@
                    (map (fn [n] (str "%" n))))
               args))))
 
+;; ==============================================================================================
+;; Replaces the %1, %2 etc arguments in macro code with the actual arguments from the source call.
+;; e.g.
+;; %sum-and-square
+;;    mul %1 %1
+;;    mul %2 %2
+;;    add %1 %2
+;; %end
+;; .code
+;;   sum-and-square(:a, :b)
+;;
+;; The first line will have to macro expand to:
+;;    mul :a :a
+;;
+;; Takes in the args as keys, these are ordered as positional in the source call. e.g.
+;; sum-and-square(:a, :b) args will be {"%1" :a, "%2" :b}
+;; ==============================================================================================
 (defn replace-macro-args [args macro-line]
   (let [regex (re-pattern (str/join "|" (keys args)))]
     (str/replace macro-line regex args)))
+
+(comment "replacing macro argse example"
+         (replace-macro-args {"%1" :a, "%2", :b} "mul %1 %1")
+         (replace-macro-args {"%1" :a, "%2", :b} "add %1 %2"))
 
 ;; what if args are empty here? Just return the macro??
 ;; Need to handle nested macro calls. So bind current result.
@@ -231,7 +266,7 @@
       macro)))
 
 (defn macro-expand-line [macros line]
-  (let [macro-call (get-macro-call? (keys macros) line)]
+  (let [macro-call (get-macro-call (keys macros) line)]
     (if macro-call
       (expand line (macros macro-call))
       (list line))))

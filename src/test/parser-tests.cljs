@@ -2,6 +2,7 @@
   (:require [cljs.test :refer-macros [deftest is testing run-tests]]
             [exfn.parser :refer [format-arg
                                  format-arguments
+                                 get-macro-call
                                  get-macros
                                  get-value
                                  is-register?
@@ -44,24 +45,32 @@
     (is (= [:rep 5] (format-arguments ["rep" "5"])))))
 
 (deftest parse-line-of-code-tests
-  (testing "[mov :a 5] to [:mov :a 5]"
+  (testing "mov :a 5 to [:mov :a 5]"
     (is (= [:mov :a 5] (parse-line-of-code "mov :a 5"))))
-  (testing "[mov :a b] to [:mov :a :b]"
+  (testing "mov :a b to [:mov :a :b]"
     (is (= [:mov :a :b] (parse-line-of-code "mov :a b"))))
-  (testing "[inc :a] to [:inc :a]"
+  (testing "inc :a to [:inc :a]"
     (is (= [:inc :a] (parse-line-of-code "inc :a"))))
-  (testing "[dec :a] to [:dec :a]"
+  (testing "dec :a to [:dec :a]"
     (is (= [:dec :a] (parse-line-of-code "dec :a"))))
-  (testing "[sub :x :y] to [:sub :x :y]"
+  (testing "sub :x :y to [:sub :x :y]"
     (is (= [:sub :x :y] (parse-line-of-code "sub :x :y"))))
-  (testing "[jne lbl] to [:jne :lbl]"
+  (testing "jne lbl to [:jne :lbl]"
     (is (= [:jne :lbl] (parse-line-of-code "jne lbl"))))
-  (testing "[function:] to [:lbl function]"
+  (testing "function: to [:lbl function]"
     (is (= [:label :function] (parse-line-of-code "function:"))))
-  (testing "[ret] to [:ret]"
+  (testing "ret to [:ret]"
     (is (= [:ret] (parse-line-of-code "ret"))))
-  (testing "[end] to [:end]"
-    (is (= [:end] (parse-line-of-code "end")))))
+  (testing "end to [:end]"
+    (is (= [:end] (parse-line-of-code "end"))))
+  (testing "rep to [:rep]"
+    (is (= [:rep] (parse-line-of-code "rep"))))
+  (testing "rep 5 to [:rep 5]"
+    (is (= [:rep 5] (parse-line-of-code "rep 5"))))
+  (testing "rep :a to [:rep :a]"
+    (is (= [:rep :a] (parse-line-of-code "rep :a"))))
+  (testing "rp to [:rp]"
+    (is (= [:rp] (parse-line-of-code "rp")))))
 
 (deftest is-register?-tests
   (testing "a should return true"
@@ -123,6 +132,14 @@
             "add-ten" ["add %1 10"]}
            (get-macros prepared-source)))
     (is (= {} (get-macros prepared-source-no-macros)))))
+
+(deftest get-macro-call-tests
+  (is (= "sum-and-square" (get-macro-call ["sum-and-square" "add-ten"] "sum-and-square(:a, :b)")))
+  (is (= nil (get-macro-call ["sum-and-square" "add-ten"] "mov :a 5")))
+  (is (= nil (get-macro-call ["sum-and-square" "add-ten"] "foo(:a, 5)")))
+  (is (= "add-ten" (get-macro-call ["sum-and-square" "add-ten"] "add-ten(:a)")))
+  (testing "handles empty macro list"
+    (is (= nil (get-macro-call [] "add-ten(:a)")))))
 
 (deftest complex-parser
   (is (= (parse "; function calls.
