@@ -79,6 +79,30 @@
          (format-arguments ["ret"])
          (format-arguments ["rep 5"]))
 
+(defn get-first-arg [args]
+  (cond
+    ; first argument is a register
+    (str/starts-with? args ":")
+    (->> args
+         (re-find #"^(\:\w+)")
+         (first))
+
+    ; first argument is a string
+    (str/starts-with? args "`")
+    (first (re-find #"([`])(?:(?=(\\?))\2.)*?\1" args))
+
+    ; first argument is a string
+    (str/starts-with? args "'")
+    (first (re-find #"(['])(?:(?=(\\?))\2.)*?\1" args))
+
+    ; first argument is a number.
+    (re-find #"^\d" args)
+    (first (re-find #"(\d+)" args))
+
+    ; first argument is a label
+    :else
+    (first (re-find #"(\w+)" args))))
+
 ;; ==============================================================================================
 ;; A line will look like this:
 ;;
@@ -110,29 +134,7 @@
     [:label (keyword (subs line 0 (dec (count line))))]
     (let [instruction (first (re-find #"^(\w+)" line))
           args (subs line (inc (count instruction)))
-          first-arg (cond
-                      ; first argument is a register
-                      (str/starts-with? args ":")
-                      (->> args
-                           (re-find #"^(\:\w+)")
-                           (first))
-
-                      ; first argument is a string
-                      (str/starts-with? args "`")
-                      (first (re-find #"([`])(?:(?=(\\?))\2.)*?\1" args))
-
-                      ; first argument is a string
-                      (str/starts-with? args "'")
-                      (first (re-find #"(['])(?:(?=(\\?))\2.)*?\1" args))
-
-                      ; first argument is a number.
-                      (re-find #"^\d" args)
-                      (first (re-find #"(\d+)" args))
-
-                      ; first argument is a label
-                      :else
-                      (first (re-find #"(\w+)" args)))
-          
+          first-arg (get-first-arg args)
           second-arg (str/trim (subs args (count first-arg)))]
       (-> (cond (and (nil? first-arg) (= second-arg ""))
                 [instruction]
@@ -191,7 +193,7 @@
 ;; ==============================================================================================
 ;; Get the code from the .code section.
 ;; ==============================================================================================
-(defn get-code [source] 
+(defn get-code [source]
   (let [code-start (.indexOf source ".code")
         data-start (.indexOf source ".data")
         code-end (if (= -1 data-start) (count source) data-start)]
@@ -218,6 +220,18 @@
          "returns add-ten"
          (get-macro-call ["sum-and-square" "add-ten"] "add-ten(:a)"))
 
+;; ==============================================================================================
+;; Get the arguments for the macro call.
+;; Takes a line of source for a macro call, e.g,
+;;     sum-and-square(:a, :b)
+;; This method needs to extract the args :a and :b.
+;; This then gets put into a sort of positional map, so the first the arg is :a, it will be keyed
+;; on "%1", :b is the second arg so it is keyed on "%2".
+;; Input: sum-and-square (:a, :b)
+;; Output: {"%1" :a, "%2" :b}
+;; This is used as the map input to str/replace for the macro expansion.
+;; If no args, return nil.
+;; ==============================================================================================
 (defn get-args [line]
   (let [args (->> (str/split (->> (re-seq #"\((.*?)\)" line)
                                   (first)
@@ -229,6 +243,10 @@
       (zipmap (->> (range 1 (inc (count args)))
                    (map (fn [n] (str "%" n))))
               args))))
+
+(comment "get-args examples:"
+         (get-args "sum-and-square(:a, :b)")
+         (get-args "foo()"))
 
 ;; ==============================================================================================
 ;; Replaces the %1, %2 etc arguments in macro code with the actual arguments from the source call.
@@ -252,10 +270,9 @@
     (str/replace macro-line regex args)))
 
 (comment "replacing macro argse example"
-         (replace-macro-args {"%1" :a, "%2", :b} "mul %1 %1")
-         (replace-macro-args {"%1" :a, "%2", :b} "add %1 %2"))
+         (replace-macro-args {"%1" ":a", "%2", ":b"} "mul %1 %1")
+         (replace-macro-args {"%1" ":a", "%2", ":b"} "add %1 %2"))
 
-;; what if args are empty here? Just return the macro??
 ;; Need to handle nested macro calls. So bind current result.
 ;; call expand again and see if its any different, if its not. we are done.
 (defn expand
@@ -265,11 +282,21 @@
       (map (partial replace-macro-args args) macro)
       macro)))
 
+(comment "expand example:"
+         (expand "sum-and-square(:a, :b)" ["mul %1 %1" "mul %2 %2" "add %1 %2"])
+         "if no arguments, just return the macro"
+         (expand "foo()" ["foo :a 6" "foo :b 7" "add :a :b"]))
+
 (defn macro-expand-line [macros line]
   (let [macro-call (get-macro-call (keys macros) line)]
     (if macro-call
       (expand line (macros macro-call))
       (list line))))
+
+(comment "If the line is a macro, expand it, otherwise just return the line (as a list) as we
+          use mapcat to concatenat all the results from macro-expand-line"
+         
+         )
 
 (defn macro-expand-code [code macros]
   (->> (mapcat (partial macro-expand-line macros) code)))
