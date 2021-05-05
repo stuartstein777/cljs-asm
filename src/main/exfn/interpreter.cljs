@@ -89,147 +89,29 @@
       (update :eip inc)))
 
 ;;=======================================================================================================
-;; ADD instruction
-;;
-;; Syntax:
-;; add a b
-;;
-;; Adds `a` (register) and `b` (number or register) and stores the result in `a`
-;; Increments eip to next instruction.
+;; Gets the function to apply for the given instruction f.
 ;;=======================================================================================================
-(defn add [{:keys [registers] :as memory} [a b]]
-  (let [result (+ (get-value registers a) (get-value registers b))]
-    (-> memory
-        (update-in [:registers] assoc a result)
-        (update :eip inc)
-        (update-in [:internal-registers] assoc :par (get-parity result)))))
+(defn get-math-fun [f]
+  (condp = f
+    :add +
+    :sub -
+    :div quot
+    :mul *
+    :xor bit-xor
+    :and bit-and
+    :or bit-or))
 
 ;;=======================================================================================================
-;; SUB instruction
+;; math instruction, covers add, sub, div, mul, xor, and, or
 ;;
 ;; Syntax:
-;; sub a b
+;; instruction a b
 ;;
-;; Subtracts `b` (number or register) from `a` (register) and stores the result in `a`
-;; Increments eip to next instruction.
+;; Performs the math operation for instruction passing `a` and `b` as args. Stores the result in `a`.
+;; Sets the parity flag if result in `a` has even number of bits in its binary representation.
 ;;=======================================================================================================
-(defn sub [{:keys [registers] :as memory} [a b]]
-  (let [result (- (get-value registers a) (get-value registers b))]
-    (-> memory
-        (update-in [:registers] assoc a result)
-        (update :eip inc)
-        (update-in [:internal-registers] assoc :par (get-parity result)))))
-
-;;=======================================================================================================
-;; MUL instruction
-;;
-;; Syntax:
-;; mul a b
-;;
-;; Multiplies `a` and `b` (number or register) and stores the result in `a`
-;; e.g.
-;; 
-;;     mov :a 10
-;;     mov :b 5
-;;     mul :a :b
-;; Will leave :a = 50
-;;
-;; Increments eip to next instruction.
-;;=======================================================================================================
-(defn mul [{:keys [registers] :as memory} [a b]]
-  (let [result (* (get-value registers a) (get-value registers b))]
-    (-> memory
-        (update-in [:registers] assoc a result)
-        (update :eip inc)
-        (update-in [:internal-registers] assoc :par (get-parity result)))))
-
-;;=======================================================================================================
-;; DIV instruction
-;;
-;; Syntax:
-;; div a b
-;;
-;; Divides (Integer division) `a` and `b` (number or register) and stores the result in `a`
-;; e.g.
-;; 
-;;     mov :a 10
-;;     mov :b 5
-;;     div :a :b
-;; Will leave :a = 2
-;;
-;; Increments eip to next instruction.
-;;=======================================================================================================
-(defn div [{:keys [registers] :as memory} [a b]]
-  (let [result (quot (get-value registers a) (get-value registers b))]
-    (-> memory
-        (update-in [:registers] assoc a result)
-        (update :eip inc)
-        (update-in [:internal-registers] assoc :par (get-parity result)))))
-
-;;=======================================================================================================
-;; XOR instruction
-;;
-;; Syntax:
-;; xor a b
-;;
-;; Bit xor `a` and `b` (number or register) and stores the result in `a`
-;; e.g.
-;; 
-;;     mov :a 10
-;;     mov :b 5
-;;     xor :a :b
-;; Will leave :a = 15
-;;
-;; Increments eip to next instruction.
-;;=======================================================================================================
-(defn xor [{:keys [registers] :as memory} [a b]]
-  (let [result (bit-xor (get-value registers a) (get-value registers b))]
-    (-> memory
-        (update-in [:registers] assoc a result)
-        (update :eip inc)
-        (update-in [:internal-registers] assoc :par (get-parity result)))))
-
-;;=======================================================================================================
-;; AND instruction
-;;
-;; Syntax:
-;; and a b
-;;
-;; Bit-and `a` and `b` (number or register) and stores the result in `a`
-;; e.g.
-;; 
-;;     mov :a 1
-;;     mov :b 1
-;;     and :a :b
-;; Will leave :a = 1
-;;
-;; Increments eip to next instruction.
-;;=======================================================================================================
-(defn bitand [{:keys [registers] :as memory} [a b]]
-  (let [result (bit-and (get-value registers a) (get-value registers b))]
-    (-> memory
-        (update-in [:registers] assoc a result)
-        (update :eip inc)
-        (update-in [:internal-registers] assoc :par (get-parity result)))))
-
-;;=======================================================================================================
-;; OR instruction
-;;
-;; Syntax:
-;; or a b
-;;
-;; Bit-or `a` and `b` (number or register) and stores the result in `a`
-;; e.g.
-;; 
-;;     mov :a 1
-;;     mov :b 0
-;;     or :a :b
-;; Will leave :a = 1
-;;
-;; Increments eip to next instruction.
-;;=======================================================================================================
-(defn bitor [{:keys [registers] :as memory} [a b]]
-  (let [result (bit-and (get-value registers a) (get-value registers b))]
+(defn math-func [instruction {:keys [registers] :as memory} [a b]]
+  (let [result ((get-math-fun instruction) (get-value registers a) (get-value registers b))]
     (-> memory
         (update-in [:registers] assoc a result)
         (update :eip inc)
@@ -571,26 +453,8 @@
         memory (cond (= :mov instruction)
                      (mov memory args)
 
-                     (= :add instruction)
-                     (add memory args)
-
-                     (= :sub instruction)
-                     (sub memory args)
-
-                     (= :mul instruction)
-                     (mul memory args)
-
-                     (= :div instruction)
-                     (div memory args)
-
-                     (= :xor instruction)
-                     (xor memory args)
-
-                     (= :and instruction)
-                     (bitand memory args)
-
-                     (= :or instruction)
-                     (bitor memory args)
+                     (#{:add :sub :mul :div :xor :and :or} instruction)
+                     (math-func instruction memory args)
 
                      (= :cat instruction)
                      (str-cat memory args)
