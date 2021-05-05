@@ -1,6 +1,47 @@
 (ns test.parser-tests
   (:require [cljs.test :refer-macros [deftest is testing run-tests]]
-            [exfn.parser :refer [parse is-register? parse-line-of-code scrub-comments]]))
+            [exfn.parser :refer [format-arg
+                                 format-arguments
+                                 get-macros
+                                 get-value
+                                 is-register?
+                                 parse
+                                 parse-line-of-code
+                                 scrub-comments]]))
+;; is-register tests
+;; a register starts with :
+(deftest is-register-tests?
+  (is (true? (is-register? ":x")))
+  (is (false? (is-register? "5")))
+  (is (false? (is-register? "foo")))
+  (is (false? (is-register? "b_010101"))))
+
+(deftest get-value-tests
+  (testing "tests that if its a register, return as keyword, else return as value"
+    (is (= "5" (get-value "5")))
+    (is (= :foo (get-value ":foo")))
+    (is (= "foo" (get-value "foo")))))
+
+(deftest format-arg-tests
+  (testing "format-arg handles strings"
+    (is (= "foo bar quax" (format-arg "'foo bar quax'")))
+    (is (= "foo bar quax" (format-arg "`foo bar quax`"))))
+  (testing "testing formats numberes"
+    (is (= 5 (format-arg "5")))
+    (is (= 5.5 (format-arg "5.5"))))
+  (testing "registers are formatted to keywords"
+    (is (= :foo (format-arg ":foo"))))
+  (testing "if none of the above, make it a keyword"
+    (is (= :foo (format-arg "foo")))))
+
+(deftest format-arguments-tests
+  (testing "2 argument instructions"
+    (is (= [:mov :a 5] (format-arguments ["mov" ":a" "5"])))
+    (is (= [:mov :a :b] (format-arguments ["mov" ":a" ":b"])))
+    (is (= [:ret] (format-arguments ["ret"])))
+    (is (= [:call :foo] (format-arguments ["call" "foo"])))
+    (is (= [:inc :a] (format-arguments ["inc" ":a"])))
+    (is (= [:rep 5] (format-arguments ["rep" "5"])))))
 
 (deftest parse-line-of-code-tests
   (testing "[mov :a 5] to [:mov :a 5]"
@@ -58,9 +99,30 @@
 
 (deftest scrubbing-comments-tests
   (is (= "inc a" (scrub-comments "inc a   ; some comment")))
+  (is (= "" (scrub-comments "; full line comment")))
   (testing "we don't scrub comments from msg fields"
     (is (= "msg '(5+1)/2 = ' a ; another comment." (scrub-comments "msg '(5+1)/2 = ' a ; another comment.")))))
 
+(deftest get-macro-tests
+  (let [prepared-source (list ".macros"
+                              "%square-and-sum"
+                              "mul %1 %1"
+                              "mul %2 %2"
+                              "add %1 %2"
+                              "%end"
+                              "%add-ten"
+                              "add %1 10"
+                              "%end"
+                              ".code"
+                              "mov :a 2"
+                              "mov :b 5"
+                              "square-and-sum(:a, :b)"
+                              "add-ten (:a)")
+        prepared-source-no-macros (list ".code" "mov :a 2" "mov :b 5")]
+    (is (= {"square-and-sum" ["mul %1 %1" "mul %2 %2" "add %1 %2"],
+            "add-ten" ["add %1 10"]}
+           (get-macros prepared-source)))
+    (is (= {} (get-macros prepared-source-no-macros)))))
 
 (deftest complex-parser
   (is (= (parse "; function calls.
@@ -107,5 +169,65 @@
           [:add :a 7]
           [:sub :c 1]
           [:ret]])))
+
+(deftest macro-expansion-tests
+  (testing "macro-expansion"
+    (let [source ".macros
+                  %initialize
+                     mov %1 0
+                     mov %2 0
+                  %end
+                  %square-and-sum
+                     mul %1 %1
+                     mul %2 %2
+                     add %1 %2
+                  %end
+                  %add-ten
+                     add %1 10
+                  %end
+                  .code
+                    initialize(:a, :b)
+                    mov :a 2
+                    mov :b 5
+                    mov :c 4
+                    square-and-sum(:a, :b)
+                    square-and-sum(:a, :c)
+                    call foo
+                    mov :s 'a = '
+                    cat :s :a
+                    prn :s
+                    end
+
+
+                    foo:
+                       call bar
+                       ret
+
+                    bar:
+                       add-ten (:a)
+                       ret"]
+       (is (= '([:mov :a 0]
+                [:mov :b 0]
+                [:mov :a 2]
+                [:mov :b 5]
+                [:mov :c 4]
+                [:mul :a :a]
+                [:mul :b :b]
+                [:add :a :b]
+                [:mul :a :a]
+                [:mul :c :c]
+                [:add :a :c]
+                [:call :foo]
+                [:mov :s "a = "]
+                [:cat :s :a]
+                [:prn :s]
+                [:end]
+                [:label :foo]
+                [:call :bar]
+                [:ret]
+                [:label :bar]
+                [:add :a 10]
+                [:ret])
+              (parse source))))))
 
 (run-tests)

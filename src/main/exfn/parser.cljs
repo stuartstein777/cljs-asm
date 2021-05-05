@@ -40,6 +40,16 @@
                   :else
                   (recur (rest to-parse) res in-quote? (str current-string (str i))))))))))
 
+;; ==============================================================================================
+;; Takes the arguments for a line of source code and formats them depending on their
+;; type.
+;;
+;; Valid argument types:
+;;    keyword - meaning its a register.
+;;    number  - meaning its a number.
+;;    string  - starts with ` or '
+;;    else return it as a keyword.
+;; ==============================================================================================
 (defn format-arg [arg]
   (cond (is-register? arg)
         (keyword (subs arg 1))
@@ -53,10 +63,21 @@
         :else
         (keyword arg)))
 
+;; ==============================================================================================
+;; Formats the arguments, handles if their are 0, 1 or 2 args.
+;; ==============================================================================================
 (defn format-arguments [[instruction arg1 arg2]]
   (cond-> [(keyword instruction)]
     arg1 (conj (format-arg arg1))
     (and (some? arg2) (not= "" arg2)) (conj (format-arg arg2))))
+
+(comment "format-argument takes instruction and its args as a vector. Returns them formatted for
+          interpreter. Handles 0, 1 or 2 args. e.g:"
+         (format-arguments ["mov" ":a" "5"])
+         (format-arguments ["mov" ":a" ":b"])
+         (format-arguments ["call" "foo"])
+         (format-arguments ["ret"])
+         (format-arguments ["rep 5"]))
 
 ;; ==============================================================================================
 ;; A line will look like this:
@@ -164,8 +185,8 @@
             (map rest macros))))
 
 (comment "get-macros-test"
-         (let [source (list ".macros" "%square-and-sum" "mul %1 %1" "mul %2 %2" "add %1 %2" "%end" "%add-ten" "add %1 10" "%end" ".code" "mov :a 2" "mov :b 5" "square-and-sum(:a, :b)" "add-ten (:a)")]
-           (get-macros source)))
+         (let [prepared-source (list ".macros" "%square-and-sum" "mul %1 %1" "mul %2 %2" "add %1 %2" "%end" "%add-ten" "add %1 10" "%end" ".code" "mov :a 2" "mov :b 5" "square-and-sum(:a, :b)" "add-ten (:a)")]
+           (get-macros prepared-source)))
 
 ;; ==============================================================================================
 ;; Get the code from the .code section.
@@ -178,7 +199,9 @@
          (drop (inc code-start))
          (take (- (dec code-end) code-start)))))
 
-(defn is-macro-call? [macro-names line]
+;; + macro expansion ====================================================================
+
+(defn get-macro-call? [macro-names line]
   (first (filter #(str/starts-with? line %) macro-names)))
 
 (defn get-args [line]
@@ -188,7 +211,6 @@
                                   (first)) ",")
                   (remove #(= "" %))
                   (map str/trim))]
-     ;; what if args is empty.
     (when (seq args)
       (zipmap (->> (range 1 (inc (count args)))
                    (map (fn [n] (str "%" n))))
@@ -209,20 +231,25 @@
       macro)))
 
 (defn macro-expand-line [macros line]
-  (let [macro-call (is-macro-call? (keys macros) line)]
+  (let [macro-call (get-macro-call? (keys macros) line)]
     (if macro-call
-      (expand line (macros macro-call)) ; need to pass the macro that matched.
+      (expand line (macros macro-call))
       (list line))))
 
 (defn macro-expand-code [code macros]
   (->> (mapcat (partial macro-expand-line macros) code)))
 
+;; - macro expansion ====================================================================
+
+(defn prepare-source [asm]
+  (->> (str/split-lines asm)
+       (map #(str/trimr (str/triml %)))
+       (map scrub-comments)
+       (remove #(= "" %))
+       (remove #(str/starts-with? % ";"))))
+
 (defn parse [asm]
-  (let [source (->> (str/split-lines asm)
-                    (map #(str/trimr (str/triml %)))
-                    (map scrub-comments)
-                    (remove #(= "" %))
-                    (remove #(str/starts-with? % ";")))
+  (let [source (prepare-source asm)
         macros (get-macros source)
         code (get-code source)]
     (->> (macro-expand-code code macros)
