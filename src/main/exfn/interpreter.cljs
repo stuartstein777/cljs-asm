@@ -70,7 +70,7 @@
 ;;=======================================================================================================
 (defn mov [{:keys [registers] :as memory} [a b]]
   (-> memory
-      (update-in [:registers] assoc a (get-value registers b))
+      (update :registers assoc a (get-value registers b))
       (assoc :last-edit-register a)
       (update :eip inc)))
 
@@ -101,6 +101,12 @@
     :and bit-and
     :or bit-or))
 
+(defn add-error [memory err-no err-msg]
+  (-> memory
+      (update-in [:internal-registers] assoc :err err-no)
+      (update-in [:internal-registers] assoc :errmsg err-msg)
+      (update :eip inc)))
+
 ;;=======================================================================================================
 ;; math instruction, covers add, sub, div, mul, xor, and, or
 ;;
@@ -111,11 +117,16 @@
 ;; Sets the parity flag if result in `a` has even number of bits in its binary representation.
 ;;=======================================================================================================
 (defn math-func [instruction {:keys [registers] :as memory} [a b]]
-  (let [result ((get-math-fun instruction) (get-value registers a) (get-value registers b))]
-    (-> memory
-        (update-in [:registers] assoc a result)
-        (update :eip inc)
-        (update-in [:internal-registers] assoc :par (get-parity result)))))
+  (let [av (get-value registers a)
+        bv (get-value registers b)]
+    (if (or (not (number? av)) (not (number? bv)))
+      (add-error memory 1 (str "Math operation " instruction " performed on non number arguments." a " and " b))
+      (let [result ((get-math-fun instruction) av bv)]
+        (-> memory
+            (update-in [:registers] assoc a result)
+            (assoc :last-edit-register a)
+            (update :eip inc)
+            (update-in [:internal-registers] assoc :par (get-parity result)))))))
 
 ;;=======================================================================================================
 ;; cat instruction
