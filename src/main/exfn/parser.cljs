@@ -129,8 +129,8 @@
 ;; if arg starts with a ' it's a string.
 ;; else arg is a number.
 ;; ==============================================================================================
-(defn parse-line-of-code [line]
-  (if (re-find #"\w+:$" line)
+(defn parse-line-of-code [line]  
+  (if (re-find #"\w+:$" line) ; if the line is foo: then its a label.
     [:label (keyword (subs line 0 (dec (count line))))]
     (let [instruction (first (re-find #"^(\w+)" line))
           args (subs line (inc (count instruction)))
@@ -295,13 +295,32 @@
 
 (comment "If the line is a macro, expand it, otherwise just return the line (as a list) as we
           use mapcat to concatenat all the results from macro-expand-line"
-         
-         )
+         (macro-expand-line {"square-and-sum" ["mul %1 %1" "mul %2 %2" "add %1 %2"], "add-ten" ["add %1 10"]}
+                            "square-and-sum(:a, :b)")
+         (macro-expand-line {"square-and-sum" ["mul %1 %1" "mul %2 %2" "add %1 %2"], "add-ten" ["add %1 10"]}
+                            "mov :a 5"))
 
 (defn macro-expand-code [code macros]
   (->> (mapcat (partial macro-expand-line macros) code)))
 
 ;; - macro expansion ====================================================================
+
+(defn get-data [source]
+  (let [data-start (.indexOf source ".data")
+        data-end (count source)]
+    (when (not= -1 data-start)
+      (->> source
+           (drop (inc data-start))
+           (take (- (dec data-end) data-start))))))
+
+(defn parse-data-entry [data]
+  (let [[_ reg value] (re-find #"^(\w+) (.+)" data)]
+    [(keyword reg) (format-arg value)]))
+
+(comment "parse-data-entry"
+     (parse-data-entry "foo 42")
+     (parse-data-entry "bar `this is a string`")
+     (parse-data-entry "quax 'another string'"))
 
 (defn prepare-source [asm]
   (->> (str/split-lines asm)
@@ -313,6 +332,32 @@
 (defn parse [asm]
   (let [source (prepare-source asm)
         macros (get-macros source)
-        code (get-code source)]
-    (->> (macro-expand-code code macros)
-         (map parse-line-of-code))))
+        code (get-code source)
+        data (get-data source)]
+    {:code (->> (macro-expand-code code macros)
+                (map parse-line-of-code))
+     :data (mapv parse-data-entry data)}))
+
+(comment
+  {:code ([:mov :a 2] [:mov :b 5] [:mul :a :a] [:mul :b :b] [:add :a :b] [:add :a 10])
+   :data ["foo 42" "quax `this is a string`" "bar 'abc `def` ghi'"]}
+
+  (parse ";; macros
+          .macros
+          %square-and-sum
+            mul %1 %1
+            mul %2 %2
+            add %1 %2
+          %end
+          %add-ten
+            add %1 10
+          %end
+          .code
+              mov :a 2
+              mov :b 5
+              square-and-sum(:a, :b)
+              add-ten (:a)
+          .data
+              foo 42
+              quax `this is a string`
+              bar 'abc `def` ghi'"))

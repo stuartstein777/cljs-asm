@@ -79,25 +79,30 @@ ret        ; ret to bar call, pop eip stack"
        (.-scrollTop)
        (set! 0))))
 
+(defn fill-data [data]
+  (zipmap (map first data) (map second data)))
+
+(fill-data ["foo 42" "quax `this is a string`" "bar 'abc `def` ghi'"])
+
 ;; Handles when the user clicks the Parse button.
 (rf/reg-event-fx
  :parse
  (fn [{:keys [db]} _]
    (let [parsed (parse (db :source))
-         symbol-table (interp/build-symbol-table parsed)]
+         symbol-table (interp/build-symbol-table (parsed :code))]
      {:db
       (-> db
           (assoc :memory {:eip                0
-                          :registers          {}
+                          :registers (fill-data (parsed :data))
                           :eip-stack          []
                           :internal-registers {}
                           :stack              []
                           :rep-counters-stack []
                           :output             (-> db :memory :output)
                           :symbol-table       symbol-table})
-          (assoc :code parsed)
+          (assoc :code (parsed :code))
           (assoc :on-breakpoint false)
-          (assoc :has-parsed-code? (pos? (count parsed)))
+          (assoc :has-parsed-code? (pos? (count (parsed :code))))
           (assoc :finished? false)
           (assoc :running? false))
       :scroll-parsed-code-to-top _

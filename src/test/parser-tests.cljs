@@ -5,6 +5,7 @@
                                  format-arguments
                                  get-args
                                  get-code
+                                 get-data
                                  get-macro-call
                                  get-macros
                                  get-value
@@ -98,20 +99,20 @@
             [:label :function]
             [:div :a 2]
             [:ret]]
-           (parse "; my first program
+           (:code (parse "; my first program
                    mov :a 5
                    inc :a
                    call function
                    end
                    function:
                    div :a 2
-                   ret")))))
+                   ret"))))))
 
 (deftest parser-with-long-register-names
   (is (= [[:mov :abc 5]
           [:inc :abc]]
-         (parse "mov :abc 5
-                 inc :abc"))))
+         (:code (parse "mov :abc 5
+                 inc :abc")))))
 
 (deftest scrubbing-comments-tests
   (is (= "inc a" (scrub-comments "inc a   ; some comment")))
@@ -195,6 +196,9 @@
   (is (= "add-ten" (get-macro-call ["sum-and-square" "add-ten"] "add-ten(:a)")))
   (testing "handles empty macro list"
     (is (= nil (get-macro-call [] "add-ten(:a)")))))
+
+(deftest get-data-tests)
+
 
 (deftest get-args-tests
   (is (= {"%1" ":a" "%2" ":b"} (get-args "sum-and-square(:a, :b)")))
@@ -327,7 +331,7 @@
            (prepare-source source-with-macros)))))
 
 (deftest complex-parser
-  (is (= (parse "; function calls.
+  (is (= (:code (parse "; function calls.
                  mov :a 0    ; a = 0
                  mov :b 1    ; a = 0, b = 1
                  mov :c 2    ; a = 0, b = 1, c = 2
@@ -350,7 +354,7 @@
                  bar:
                  add :a 7    ; a = 7, b = 2, c = 4
                  sub :c 1    ; a = 7, b = 2, c = 3
-                 ret        ; ret to bar call, pop eip stack")
+                 ret        ; ret to bar call, pop eip stack"))
          [[:mov :a 0]
           [:mov :b 1]
           [:mov :c 2]
@@ -430,6 +434,6 @@
                 [:label :bar]
                 [:add :a 10]
                 [:ret])
-              (parse source))))))
+              (:code (parse source)))))))
 
 (run-tests)

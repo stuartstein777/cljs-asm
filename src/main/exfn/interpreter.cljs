@@ -560,6 +560,9 @@
           (update :eip inc)
           (update :eip-stack pop)))))
 
+(comment (defn set-message [registers & args]
+           (assoc-in registers [:internal-registers :return-code] (reduce (fn [s a] (str s (get-value registers a))) args))))
+
 ;;=======================================================================================================
 ;; The interpreter.
 ;;=======================================================================================================
