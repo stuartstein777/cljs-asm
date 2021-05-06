@@ -48,15 +48,16 @@ ret        ; ret to bar call, pop eip stack"
     :code        []
     :finished? false
     :has-parsed-code? false
-    :memory {:eip                0
-             :registers          {}
-             :eip-stack          []
-             :internal-registers {}
-             :stack              []
-             :symbol-table       {}
-             :rep-counters-stack []
-             :last-edit-register nil
-             :output "$ Toy Asm Output >"}
+    :memory {:eip                 0
+             :registers           {}
+             :eip-stack           []
+             :internal-registers  {}
+             :stack               []
+             :termination-message ""
+             :symbol-table        {}
+             :rep-counters-stack  []
+             :last-edit-register  nil
+             :output              "$ Toy Asm Output >"}
     :on-breakpoint false    
     :running? false
     :running-speed 700
@@ -98,6 +99,7 @@ ret        ; ret to bar call, pop eip stack"
                           :internal-registers {}
                           :stack              []
                           :rep-counters-stack []
+                          :termination-message ""
                           :output             (-> db :memory :output)
                           :symbol-table       symbol-table})
           (assoc :code (parsed :code))
@@ -214,14 +216,15 @@ ret        ; ret to bar call, pop eip stack"
  :reset
  (fn [{:keys [db]} _]
    {:db (-> db
-            (assoc :memory {:eip                0
-                            :registers          {}
-                            :eip-stack          []
-                            :internal-registers {}
-                            :stack              []
-                            :rep-counters-stack []
-                            :symbol-table (:symbol-table (:memory db))
-                            :output (-> db :memory :output)})
+            (assoc :memory {:eip                 0
+                            :registers           {}
+                            :eip-stack           []
+                            :internal-registers  {}
+                            :stack               []
+                            :termination-message ""
+                            :rep-counters-stack  []
+                            :symbol-table        (:symbol-table (:memory db))
+                            :output              (-> db :memory :output)})
             (assoc :running? false)
             (assoc :on-breakpoint false)
             (assoc :finished? false))
@@ -231,22 +234,45 @@ ret        ; ret to bar call, pop eip stack"
 (rf/reg-event-fx
  :next-instruction
  (fn [{:keys [db]} _]
-   (let [{:keys [memory finished?]} (exfn.interpreter/interpret (db :code) (db :memory))
+   (let [{:keys [memory finished? terminated?]} (exfn.interpreter/interpret (db :code) (db :memory))
          breakpoints (db :breakpoints)
          db (-> db
                 (assoc :memory memory)
                 (assoc :finished? finished?)
                 (assoc :running? (if finished? false (db :running?))))]
-     (if (some? (breakpoints (:eip memory)))
+     (cond
+       ;; We are on a breakpoint.
+       (some? (breakpoints (:eip memory)))
+       {:db                            (-> db
+                                           (assoc :on-breakpoint true)
+                                           (assoc :running? false))
+        :scroll-current-code-into-view (:eip memory)
+        :toggle-running                [false (db :ticker-handle)]}
+
+       ;; Program eip was moved beyond last instruction.
+       terminated?
        {:db (-> db
-                (assoc :on-breakpoint true)
+                (assoc :terminated? terminated?)
+                (assoc :on-breakpoint false)
+                (assoc :finished? true)
+                (assoc :termination-message "EIP moved beyond last instruction. Program terminated.")
                 (assoc :running? false))
+        :end-if-finished               [(db :ticker-handle) (or finished? terminated?)]}
+
+       ;; Program finished by hitting an :end instruction.
+       finished?
+       {:db              (-> db
+                             (assoc :terminated? false)
+                             (assoc :on-breakpoint false)
+                             (assoc :finished? true)
+                             (assoc :running? false))
+        :end-if-finished [(db :ticker-handle) (or finished? terminated?)]}
+
+       ;; Otherwise it's ok to continue.
+       :else
+       {:db                            (assoc db :on-breakpoint false)
         :scroll-current-code-into-view (:eip memory)
-        :toggle-running [false (db :ticker-handle)]}
-       {:db (-> db
-                (assoc :on-breakpoint false))
-        :scroll-current-code-into-view (:eip memory)
-        :end-if-finished [(db :ticker-handle) finished?]}))))
+        :end-if-finished               [(db :ticker-handle) (or finished? terminated?)]}))))
 
 (rf/reg-event-db
  :clear-output

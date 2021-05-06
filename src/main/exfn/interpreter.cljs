@@ -199,10 +199,15 @@
 ;;
 ;;=======================================================================================================
 (defn bitnot [{:keys [registers] :as memory} [a]]
-  (let [result (bit-not (get-value registers a))]
+  (prn "a:" a)
+  (if (number? a)
+    (let [result (bit-not (get-value registers a))]
+      (-> memory
+          (update-in [:registers] assoc a result)
+          (update-in [:internal-registers] assoc :par (get-parity result))
+          (assoc :last-edit-register a)))
     (-> memory
-        (update-in [:registers] assoc a result)
-        (update-in [:internal-registers] assoc :par (get-parity result)))))
+        (update-in [:internal-registers] assoc :err 1))))
 
 ;;=======================================================================================================
 ;; strlen
@@ -226,8 +231,9 @@
 ;; zero.
 ;; If it is zero, then increments the eip.
 ;;=======================================================================================================
-(defn jnz [{:keys [eip registers] :as memory} [a b]]
-  (let [jmp (if (zero? (get-value registers a)) 1 (get-value registers b))]
+(defn jnz [{:keys [eip registers] :as memory} [a]]
+  (let [a (get-value registers a)
+        jmp (if (zero? a) 1 a)]
     (assoc memory :eip (+ eip jmp))))
 
 ;;=======================================================================================================
@@ -260,8 +266,7 @@
     (-> memory
         (assoc-in [:internal-registers :cmp] (cond (= av bv) :eq
                                                    (> av bv) :gt
-                                                   (< av bv) :lt))
-        (update :eip inc))))
+                                                   (< av bv) :lt)))))
 
 ;;=======================================================================================================
 ;; Handles jne, jg, jl, jle, jge, je
@@ -332,13 +337,11 @@
 (defn pop-stack [{:keys [stack] :as memory} [a]]
   (if (empty? stack)
     (-> memory
-        (update-in [:internal-registers] assoc :err "Popped empty stack.")
-        (update :eip inc))
+        (update-in [:internal-registers] assoc :err "Popped empty stack."))
     (-> memory
         (assoc-in [:registers a] (peek stack))
         (update :stack (if (empty? stack) identity pop))
-        (assoc :last-edit-register a)
-        (update :eip inc))))
+        (assoc :last-edit-register a))))
 
 ;;=======================================================================================================
 ;; push instruction
@@ -347,13 +350,11 @@
 ;; push a
 ;;
 ;; Pushes a (register or value) onto the stack.
-;; Increments the eip
 ;;=======================================================================================================
 (defn push [{:keys [registers] :as memory} args]
   (let [x (get-value registers (first args))]
     (-> memory
-        (update :stack conj x)
-        (update :eip inc))))
+        (update :stack conj x))))
 
 ;;=======================================================================================================
 ;; rep instruction
@@ -372,11 +373,9 @@
   (if (seq args)
     (-> memory
         (update-in [:rep-counters-stack] conj (get-value registers (first args)))
-        (update-in [:eip-stack] conj eip)
-        (update :eip inc))
+        (update-in [:eip-stack] conj eip))
     (-> memory
-        (update-in [:eip-stack] conj eip)
-        (update :eip inc))))
+        (update-in [:eip-stack] conj eip))))
 
 ;;=======================================================================================================
 ;; rp instruction
@@ -428,9 +427,6 @@
           (update :eip inc)
           (update :eip-stack pop)))))
 
-(comment (defn set-message [registers & args]
-           (assoc-in registers [:internal-registers :return-code] (reduce (fn [s a] (str s (get-value registers a))) args))))
-
 ;;=======================================================================================================
 ;; The interpreter.
 ;;=======================================================================================================
@@ -463,8 +459,7 @@
 
                      (= :not instruction)
                      (-> (bitnot memory args)
-                         (update :eip inc)
-                         (assoc :last-edit-register (first args)))
+                         (update :eip inc))
 
                      (= :len instruction)
                      (-> (strlen memory args)
@@ -485,7 +480,9 @@
                      (jmp memory args)
 
                      (= :cmp instruction)
-                     (cmp memory args)
+                     (-> memory
+                         (cmp args)
+                         (update :eip inc))
 
                      (#{:jne :jg :je :jl :jle :jge} instruction)
                      (cmp-jmp memory instruction args)
@@ -497,13 +494,19 @@
                      (ret memory)
 
                      (= :push instruction)
-                     (push memory args)
+                     (-> memory
+                         (push args)
+                         (update :eip inc))
 
                      (= :pop instruction)
-                     (pop-stack memory args)
+                     (-> memory
+                         (pop-stack args)
+                         (update :eip inc))
 
                      (= :rep instruction)
-                     (rep memory args)
+                     (-> memory
+                         (rep args)
+                         (update :eip inc))
 
                      (= :rp instruction)
                      (rp memory)
@@ -512,7 +515,10 @@
                      (conditional-repeat memory instruction args)
 
                      :else
-                     memory)]
-    
-    {:memory memory
-     :finished? (or (= :end instruction) (> (memory :eip) (count instructions)))}))
+                     memory)
+        terminated? (> (memory :eip) (dec (count instructions)))]
+      {:memory (if terminated? 
+                 (assoc memory :output (append-output (memory :output) "*** Program terminated: EIP past last instruction. ***"))
+                 memory)
+       :terminated? terminated?
+       :finished? (= :end instruction)}))
