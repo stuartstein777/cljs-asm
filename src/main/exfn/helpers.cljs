@@ -12,6 +12,9 @@
                      (->> (str/split source #"\r?\n" -1)
                           (map str/trim)))))
 
+(defn keyed-collection [col]
+  (zipmap (range (count col)) col))
+
 (defn get-supported-instructions []
   [{:instruction "mov"
     :example      "mov :a :b"

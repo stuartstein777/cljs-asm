@@ -77,7 +77,7 @@
             [:span
              [:label.instruction (first code-line)]
              (let [arguments (rest code-line)]
-               (for [i (zipmap (range (count arguments)) arguments)]
+               (for [i (h/keyed-collection arguments)]
                  (if (keyword? (val i))
                    [:label.register {:key (key i)} (val i)]
                    [:label.value {:key (key i)} (val i)])))]]])]]]
@@ -131,7 +131,7 @@
      [:div.registers-header.header "Registers"]
      [:div.registers-list
       (when (not= registers {})
-        (for [[k [name v]] (zipmap (range (count registers)) registers)]
+        (for [[k [name v]] (h/keyed-collection registers)]
           [:div.row {:key k}
            [:div.col-col-lg6.register-name {:key (str k "reg:name")} name]
            (if (keyword-identical? name last-edit-register)
@@ -156,22 +156,22 @@
      [:div.registers-header.header "Internal Registers"]
      [:div.registers-list
       (when (not= internal-registers {})
-        (for [[reg v] internal-registers]
-          [:div.row
-           [:div.col-col-lg6.register-name reg]
-           [:div.col-col-lg6.register-value
+        (for [[k [reg v]] (h/keyed-collection internal-registers)]
+          [:div.row {:key k}
+           [:div.col-col-lg6.register-name {:key (str "irgn-" k)} reg]
+           [:div.col-col-lg6.register-value {:key (str "irgv-" k)}
             (cmp-values v)]]))
       [:div
        [:div {:style {:float :left :width 103 :text-align :center}}
         [:div.header "EIP Stack"]
         [:div
-         (for [r (reverse eip-stack)]
-           [:div.eip-stack-value r])]]
+         (for [[k r] (h/keyed-collection (reverse eip-stack))]
+           [:div.eip-stack-value {:key k} r])]]
        [:div {:style {:float :right :width 103 :text-align :center}}
         [:div.header "RP Stack"]
-        [:div
-         (for [r (reverse rep-counters)]
-           [:div.eip-stack-value r])]]]]]))
+        [:div 
+         (for [[k r] (h/keyed-collection (reverse rep-counters))]
+           [:div.eip-stack-value {:key k} r])]]]]]))
 
 ;; Display the stack.
 (defn stack [stack title]
@@ -180,9 +180,9 @@
      [:div.stack-header.header title]
      [:div.stack-list
       (when (not= stack {})
-        (for [r (reverse stack)]
-          [:div.row
-           [:div.col-col-lg6.stack-value r]]))]]))
+        (for [[k r] (h/keyed-collection (reverse stack))]
+          [:div.row {:key k}
+           [:div.col-col-lg6.stack-value {:key (str "stack-val-" k)} r]]))]]))
 
 ;; Display the symbol table.
 (defn symbol-table []
@@ -191,10 +191,10 @@
      [:div.symbol-table-header.header "Symbol Table"]
      [:div.symbol-table
       (when (not= {} symbols)
-        (for [s symbols]
-          [:div.row
-           [:div.col-col-lg6.symbol-name (key s)]
-           [:div.col-col-lg6.symbol-value (val s)]]))]]))
+        (for [[k s] (h/keyed-collection symbols)]
+          [:div.row {:key k}
+           [:div.col-col-lg6.symbol-name {:key (str "symbols-name-" k)} (key s)]
+           [:div.col-col-lg6.symbol-value {:key (str "symbols-value-" k)} (val s)]]))]]))
 
 (defn supported-instructions []
   [:div
@@ -206,12 +206,13 @@
       [:th {:style {:text-align :left :padding 10}} "Example"]
       [:th {:style {:text-align :left :padding 10}} "Description"]]]
     [:tbody
-     (for [{:keys [instruction example description]} (h/get-supported-instructions)]
-       [:tr {:style {:border "1px solid black"}}
-        [:td {:style {:width 150 :text-align :left :border-right "1px solid black"}}instruction]
-        [:td {:style {:width 200 :text-align :left :border-right "1px solid black"}}
-         example]
-        [:td {:style {:width 500 :text-align :left}} description]])]]])
+     (let [instructions (h/get-supported-instructions)]
+       (for [[k {:keys [instruction example description]}] (h/keyed-collection instructions)]
+         [:tr {:key k :style {:border "1px solid black"}}
+          [:td {:style {:width 150 :text-align :left :border-right "1px solid black"}} instruction]
+          [:td {:style {:width 200 :text-align :left :border-right "1px solid black"}}
+           example]
+          [:td {:style {:width 500 :text-align :left}} description]]))]]])
 
 (defn output []
   (let [output @(rf/subscribe [:output])]
