@@ -106,11 +106,12 @@
        [:i.fas.fa-forward]]
       [:button.btn.btn-danger.stop-button
        {:on-click #(rf/dispatch [:reset])}
-       [:i.fas.fa-stop]]
-      [:input.instr-per-sec {:on-change   #(rf/dispatch-sync [:update-running-speed (-> % .-target .-value)])
+       (if finished? [:i.fas.fa-redo] [:i.fas.fa-stop])]
+      [:input.instr-per-sec {:disabled    is-running?
+                             :on-change   #(rf/dispatch-sync [:update-running-speed (-> % .-target .-value)])
                              :placeholder "1000"
                              :type        "text"
-                             :value running-speed}]
+                             :value       running-speed}]
       [:label.speed-label "speed (msecs / instruction.)"]
       [:label.breakpoint-label
        {:style {:visibility (if on-breakpoint :visible :hidden)}}
@@ -141,7 +142,6 @@
              [:div.col-col-lg6.register-value {:id (str "reg" name) :key (str k "reg:value")} v])]))]]))
 
 (defn cmp-values [cmp]
-  (prn "cmp: " cmp)
   (cond (keyword-identical? cmp :lt) "<"
         (keyword-identical? cmp :gt) ">"
         (keyword-identical? cmp :eq) "="
