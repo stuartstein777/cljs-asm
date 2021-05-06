@@ -70,9 +70,7 @@
 ;;=======================================================================================================
 (defn mov [{:keys [registers] :as memory} [a b]]
   (-> memory
-      (update :registers assoc a (get-value registers b))
-      (assoc :last-edit-register a)
-      (update :eip inc)))
+      (update :registers assoc a (get-value registers b))))
 
 ;;=======================================================================================================
 ;; PRN instruction
@@ -85,8 +83,7 @@
 ;;=======================================================================================================
 (defn prnout [{:keys [output registers] :as memory} args]
   (-> memory
-      (assoc :output (append-output output (get-value registers (first args))))
-      (update :eip inc)))
+      (assoc :output (append-output output (get-value registers (first args))))))
 
 ;;=======================================================================================================
 ;; Gets the function to apply for the given instruction f.
@@ -104,8 +101,7 @@
 (defn add-error [memory err-no err-msg]
   (-> memory
       (update-in [:internal-registers] assoc :err err-no)
-      (update-in [:internal-registers] assoc :errmsg err-msg)
-      (update :eip inc)))
+      (update-in [:internal-registers] assoc :errmsg err-msg)))
 
 ;;=======================================================================================================
 ;; math instruction, covers add, sub, div, mul, xor, and, or
@@ -124,8 +120,6 @@
       (let [result ((get-math-fun instruction) av bv)]
         (-> memory
             (update-in [:registers] assoc a result)
-            (assoc :last-edit-register a)
-            (update :eip inc)
             (update-in [:internal-registers] assoc :par (get-parity result)))))))
 
 ;;=======================================================================================================
@@ -146,8 +140,7 @@
 ;;=======================================================================================================
 (defn str-cat [{:keys [registers] :as memory} [a b]]
   (-> memory
-      (update-in [:registers] assoc a (str (get-value registers a) (get-value registers b)))
-      (update :eip inc)))
+      (update-in [:registers] assoc a (str (get-value registers a) (get-value registers b)))))
 
 ;;=======================================================================================================
 ;; inc instruction
@@ -168,7 +161,6 @@
   (let [result (inc (get-value registers a))]
     (-> memory
         (update-in [:registers] assoc a result)
-        (update :eip inc)
         (update-in [:internal-registers] assoc :par (get-parity result)))))
 
 ;;=======================================================================================================
@@ -190,7 +182,6 @@
   (let [result (dec (get-value registers a))]
     (-> memory
         (update-in [:registers] assoc a result)
-        (update :eip inc)
         (update-in [:internal-registers] assoc :par (get-parity result)))))
 
 ;;=======================================================================================================
@@ -206,40 +197,24 @@
 ;;     not :a
 ;; Will leave :a = -6
 ;;
-;; Increments eip to next instruction.
 ;;=======================================================================================================
 (defn bitnot [{:keys [registers] :as memory} [a]]
   (let [result (bit-not (get-value registers a))]
     (-> memory
         (update-in [:registers] assoc a result)
-        (update :eip inc)
         (update-in [:internal-registers] assoc :par (get-parity result)))))
 
 ;;=======================================================================================================
-;; nop instruction
+;; strlen
 ;;
 ;; Syntax:
-;; nop
+;; strlen a b
 ;;
-;; Does nothing. Label instructions are treated as nops.
-;; Increments eip to next instruction.
-;;=======================================================================================================
-(defn nop [memory]
-  (update memory :eip inc))
-
-;;=======================================================================================================
-;; nop instruction
-;;
-;; Syntax:
-;; nop
-;;
-;; Does nothing.
-;; Increments eip to next instruction.
+;; Stores the length of string `b` in `a`
 ;;=======================================================================================================
 (defn strlen [{:keys [registers] :as memory} [a b]]
   (-> memory
-      (update-in [:registers] assoc a (count (get-value registers b)))
-      (update :eip inc)))
+      (update-in [:registers] assoc a (count (get-value registers b)))))
 
 ;;=======================================================================================================
 ;; jnz instruction
@@ -462,37 +437,49 @@
 (defn interpret [instructions {:keys [eip] :as memory}]
   (let [[instruction & args] (nth instructions eip)
         memory (cond (= :mov instruction)
-                     (mov memory args)
+                     (-> (mov memory args)
+                         (assoc :last-edit-register (first args))
+                         (update :eip inc))
 
                      (#{:add :sub :mul :div :xor :and :or} instruction)
-                     (math-func instruction memory args)
+                     (-> (math-func instruction memory args)
+                         (assoc :last-edit-register (first args))
+                         (update :eip inc))
 
                      (= :cat instruction)
-                     (str-cat memory args)
+                     (-> (str-cat memory args)
+                         (assoc :last-edit-register (first args))
+                         (update :eip inc))
 
                      (= :inc instruction)
-                     (increment memory args)
+                     (-> (increment memory args)
+                         (assoc :last-edit-register (first args))
+                         (update :eip inc))
 
                      (= :dec instruction)
-                     (decrement memory args)
+                     (-> (decrement memory args)
+                         (assoc :last-edit-register (first args))
+                         (update :eip inc))
 
                      (= :not instruction)
-                     (bitnot memory args)
+                     (-> (bitnot memory args)
+                         (update :eip inc)
+                         (assoc :last-edit-register (first args)))
 
                      (= :len instruction)
-                     (strlen memory args)
+                     (-> (strlen memory args)
+                         (assoc :last-edit-register (first args))
+                         (update :eip inc))
 
-                     (= :nop instruction)
-                     (nop memory)
+                     (#{:nop :label} instruction)
+                     (update memory :eip inc)
 
                      (= :prn instruction)
-                     (prnout memory args)
+                     (-> (prnout memory args)
+                         (update :eip inc))
 
                      (= :jnz instruction)
                      (jnz memory args)
-
-                     (= :label instruction)
-                     (nop memory)
 
                      (= :jmp instruction)
                      (jmp memory args)
@@ -526,5 +513,6 @@
 
                      :else
                      memory)]
+    
     {:memory memory
      :finished? (or (= :end instruction) (> (memory :eip) (count instructions)))}))
