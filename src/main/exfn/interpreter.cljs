@@ -230,9 +230,10 @@
 ;; zero.
 ;; If it is zero, then increments the eip.
 ;;=======================================================================================================
-(defn jnz [{:keys [eip registers] :as memory} [a]]
+(defn jnz [{:keys [eip registers] :as memory} [a b]]
   (let [a (get-value registers a)
-        jmp (if (zero? a) 1 a)]
+        b (get-value registers b)
+        jmp (if (zero? a) 1 b)]
     (assoc memory :eip (+ eip jmp))))
 
 ;;=======================================================================================================
