@@ -93,7 +93,7 @@
          has-parsed-code? @(rf/subscribe [:has-parsed-code?])
          running-speed @(rf/subscribe [:running-speed])
          on-breakpoint @(rf/subscribe [:on-breakpoint])
-         valid-running-speed (re-matches #"^\d+" running-speed)]
+         valid-running-speed (re-matches #"^\d+" (str running-speed))]
      [:div.execution-controls
       [:button.btn.btn-primary.parse-btn {:on-click #(rf/dispatch [:parse])} "Parse"]
       [:button.btn.btn-success.play-pause
