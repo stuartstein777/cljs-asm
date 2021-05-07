@@ -7,9 +7,21 @@
 (rf/reg-event-db
  :initialize
  (fn [_ _]
-   {:source      "; function calls.
+   {:source      ".macros
+   %square-and-sum
+      mul %1 %1
+      mul %2 %2
+      add %1 %2
+   %end
+   %add-ten
+      add %1 10
+   %end
+
+.code
+; function calls.
 mov :a 0    ; a = 0
 mov :b 1    ; a = 0, b = 1
+square-and-sum(:a, :b)
 mov :c 2    ; a = 0, b = 1, c = 2
 prn :b
 call foo   ; move eip to foo, push eip to eip-stack
@@ -43,7 +55,10 @@ add :a 7    ; a = 7, b = 2, c = 4
 sub :c 1    ; a = 7, b = 2, c = 3
 push 3
 push 4
-ret        ; ret to bar call, pop eip stack"
+ret        ; ret to bar call, pop eip stack
+
+.data
+xyz 123"
     :breakpoints #{}
     :code        []
     :finished? false
@@ -60,7 +75,7 @@ ret        ; ret to bar call, pop eip stack"
              :output              "$ Toy Asm Output >"}
     :on-breakpoint false    
     :running? false
-    :running-speed 700
+    :running-speed 250
     :ticker-handle nil}))
 
 (defn dispatch-timer-event []

@@ -400,3 +400,11 @@ reagent function::          memory, eip
     padding: 10px;
     width: 400px;    
 }
+
+.speed-value-error {
+    background-color: red;
+    border-radius: 5px;
+    color: black;
+    margin-left: 5px;
+    padding: 5px;
+}

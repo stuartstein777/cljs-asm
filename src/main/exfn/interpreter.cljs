@@ -199,7 +199,6 @@
 ;;
 ;;=======================================================================================================
 (defn bitnot [{:keys [registers] :as memory} [a]]
-  (prn "a:" a)
   (if (number? a)
     (let [result (bit-not (get-value registers a))]
       (-> memory

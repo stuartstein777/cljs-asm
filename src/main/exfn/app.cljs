@@ -93,12 +93,12 @@
          has-parsed-code? @(rf/subscribe [:has-parsed-code?])
          running-speed @(rf/subscribe [:running-speed])
          on-breakpoint @(rf/subscribe [:on-breakpoint])
-         eip @(rf/subscribe [:eip])]
+         valid-running-speed (re-matches #"^\d+" running-speed)]
      [:div.execution-controls
       [:button.btn.btn-primary.parse-btn {:on-click #(rf/dispatch [:parse])} "Parse"]
       [:button.btn.btn-success.play-pause
        {:on-click #(rf/dispatch [:toggle-running])
-        :disabled (and (or finished? (not has-parsed-code?)) (not on-breakpoint))}
+        :disabled (and (or finished? (not has-parsed-code?) (not valid-running-speed)) (not on-breakpoint))}
        (if is-running? [:i.fas.fa-pause] [:i.fas.fa-play])]
       [:button.btn.btn-success.next-instruction
        {:on-click #(rf/dispatch [:next-instruction])
@@ -113,9 +113,9 @@
                              :type        "text"
                              :value       running-speed}]
       [:label.speed-label "speed (msecs / instruction.)"]
-      [:label.breakpoint-label
-       {:style {:visibility (if on-breakpoint :visible :hidden)}}
-       (str "on-breakpoint: " eip)]])])
+      [:label.speed-value-error
+       {:style {:visibility (if valid-running-speed :hidden :visible)}}
+       "Speed should be a whole number."]])])
 
 ;; Display the current eip when running.
 (defn eip []
