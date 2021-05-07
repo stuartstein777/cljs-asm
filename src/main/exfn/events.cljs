@@ -95,10 +95,8 @@ xyz 123"
        (.-scrollTop)
        (set! 0))))
 
-(defn fill-data [data]
+(defn fill-data-registers [data]
   (zipmap (map first data) (map second data)))
-
-(fill-data ["foo 42" "quax `this is a string`" "bar 'abc `def` ghi'"])
 
 ;; Handles when the user clicks the Parse button.
 (rf/reg-event-fx
@@ -109,11 +107,11 @@ xyz 123"
      {:db
       (-> db
           (assoc :memory {:eip                0
-                          :registers (fill-data (parsed :data))
+                          :registers (fill-data-registers (parsed :data))
                           :eip-stack          []
                           :internal-registers {}
                           :stack              []
-                          :rep-counters-stack []
+                           :rep-counters-stack []
                           :termination-message ""
                           :output             (-> db :memory :output)
                           :symbol-table       symbol-table})
