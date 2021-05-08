@@ -504,12 +504,18 @@
                          (assoc memory :eip -1)
                          memory))
 
+                     (= :jz instruction)
+                     (let [{:keys [eip] :as memory} (jz memory args)]
+                       (if (> eip (count instructions))
+                         (assoc memory :eip -1)
+                         memory))
+
                      (= :jmp instruction)
                      (let [{:keys [eip] :as memory} (jmp memory args)]
                        (if (> eip (count instructions))
                          (assoc memory :eip -1)
                          memory))
-                     
+
 
                      (= :cmp instruction)
                      (-> memory
@@ -520,7 +526,7 @@
                      (let [{:keys [eip] :as memory} (cmp-jmp memory instruction args)]
                        (if (> eip (count instructions))
                          (assoc memory :eip -1)
-                         memory))                     
+                         memory))
 
                      (= :call instruction)
                      (call memory args)
