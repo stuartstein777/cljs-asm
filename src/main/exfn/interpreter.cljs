@@ -516,7 +516,6 @@
                          (assoc memory :eip -1)
                          memory))
 
-
                      (= :cmp instruction)
                      (-> memory
                          (cmp args)

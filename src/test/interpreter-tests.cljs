@@ -3,6 +3,7 @@
             [exfn.interpreter :refer [append-output
                                       bitnot
                                       build-symbol-table
+                                      cmp
                                       decrement
                                       get-math-fun
                                       increment
@@ -183,5 +184,19 @@
          (jmp {:symbol-table {:foo 55} :eip 2} [:foo])))
   (is (= {:symbol-table {} :eip -2}
          (jmp {:symbol-table {} :eip 2} [:foo]))))
+
+(deftest cmp-tests
+  (is (= {:registers {:a 5 :b 6} :internal-registers {:cmp :lt}}
+         (cmp {:registers {:a 5 :b 6}} [:a :b])))
+  (is (= {:registers {:a 5} :internal-registers {:cmp :lt}}
+         (cmp {:registers {:a 5}} [:a 6])))
+  (is (= {:registers {:a 6 :b 6} :internal-registers {:cmp :eq}}
+         (cmp {:registers {:a 6 :b 6}} [:a :b])))
+  (is (= {:registers {:a 6} :internal-registers {:cmp :eq}}
+         (cmp {:registers {:a 6}} [:a 6])))
+  (is (= {:registers {:a 7 :b 6} :internal-registers {:cmp :gt}}
+         (cmp {:registers {:a 7 :b 6}} [:a :b])))
+  (is (= {:registers {:a 7} :internal-registers {:cmp :gt}}
+         (cmp {:registers {:a 7}} [:a 6]))))
 
 (run-tests)
