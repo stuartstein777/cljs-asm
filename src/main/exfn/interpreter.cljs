@@ -55,7 +55,7 @@
 
         (and existing (not new))
         existing
-        
+
         :else
         new))
 
@@ -196,10 +196,9 @@
 ;;     mov :a 5
 ;;     not :a
 ;; Will leave :a = -6
-;;
 ;;=======================================================================================================
 (defn bitnot [{:keys [registers] :as memory} [a]]
-  (if (number? a)
+  (if (number? (get-value registers a))
     (let [result (bit-not (get-value registers a))]
       (-> memory
           (update-in [:registers] assoc a result)
@@ -237,6 +236,22 @@
     (assoc memory :eip (+ eip jmp))))
 
 ;;=======================================================================================================
+;; jz instruction
+;;
+;; Syntax:
+;; jz a b
+;;
+;; Jumps `b` (number or register) instructions (positive or negative) if `a` (number or register) is
+;; zero.
+;; If it is not zero, then increments the eip.
+;;=======================================================================================================
+(defn jz [{:keys [eip registers] :as memory} [a b]]
+  (let [a (get-value registers a)
+        b (get-value registers b)
+        jmp (if (not (zero? a)) 1 b)]
+    (assoc memory :eip (+ eip jmp))))
+
+;;=======================================================================================================
 ;; jmp instruction
 ;;
 ;; Syntax:
@@ -246,7 +261,7 @@
 ;; It finds the address for `a` by loking up `a` in the symbol tale.
 ;;=======================================================================================================
 (defn jmp [{:keys [symbol-table] :as memory} [a]]
-  (assoc memory :eip (get symbol-table a)))
+  (assoc memory :eip (get symbol-table a -2)))
 
 ;;=======================================================================================================
 ;; cmp instruction
@@ -428,6 +443,16 @@
           (update :eip-stack pop)))))
 
 ;;=======================================================================================================
+;; if eip = -1: jump past last instruction  
+;;    eip = -2: jump to non existent label.
+;;=======================================================================================================
+(defn get-termination-cause [eip]
+  (condp = eip
+    -1 "Terminated: EIP jumped past last instruction."
+    -2 "Terminated: Jump to non existant label."
+    "Program exited without :end"))
+
+;;=======================================================================================================
 ;; The interpreter.
 ;;=======================================================================================================
 (defn interpret [instructions {:keys [eip] :as memory}]
@@ -474,10 +499,17 @@
                          (update :eip inc))
 
                      (= :jnz instruction)
-                     (jnz memory args)
+                     (let [{:keys [eip] :as memory} (jnz memory args)]
+                       (if (> eip (count instructions))
+                         (assoc memory :eip -1)
+                         memory))
 
                      (= :jmp instruction)
-                     (jmp memory args)
+                     (let [{:keys [eip] :as memory} (jmp memory args)]
+                       (if (> eip (count instructions))
+                         (assoc memory :eip -1)
+                         memory))
+                     
 
                      (= :cmp instruction)
                      (-> memory
@@ -485,7 +517,10 @@
                          (update :eip inc))
 
                      (#{:jne :jg :je :jl :jle :jge} instruction)
-                     (cmp-jmp memory instruction args)
+                     (let [{:keys [eip] :as memory} (cmp-jmp memory instruction args)]
+                       (if (> eip (count instructions))
+                         (assoc memory :eip -1)
+                         memory))                     
 
                      (= :call instruction)
                      (call memory args)
@@ -516,9 +551,11 @@
 
                      :else
                      memory)
-        terminated? (> (memory :eip) (dec (count instructions)))]
-      {:memory (if terminated? 
-                 (assoc memory :output (append-output (memory :output) "*** Program terminated: EIP past last instruction. ***"))
-                 memory)
-       :terminated? terminated?
-       :finished? (= :end instruction)}))
+        terminated? (or (> (memory :eip) (dec (count instructions)))
+                       (neg? (memory :eip)))
+        finished? (= :end instruction)]
+    {:memory (cond-> memory
+               terminated? (assoc :output (append-output (memory :output) (get-termination-cause (memory :eip))))
+               finished?   (assoc :output (append-output (memory :output) "Exited.")))
+     :terminated? terminated?
+     :finished? finished?}))
