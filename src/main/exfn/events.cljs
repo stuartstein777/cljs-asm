@@ -111,9 +111,11 @@ xyz 123"
                           :eip-stack          []
                           :internal-registers {}
                           :stack              []
-                           :rep-counters-stack []
+                          :rep-counters-stack []
                           :termination-message ""
-                          :output             (-> db :memory :output)
+                          :output             (if (db :running?)
+                                                (str (-> db :memory :output) "\nUser terminated.")
+                                                (-> db :memory :output))
                           :symbol-table       symbol-table})
           (assoc :code (parsed :code))
           (assoc :on-breakpoint false)
@@ -124,21 +126,24 @@ xyz 123"
       :end-running (db :ticker-handle)})))
 
 ; Handles when the user clicks the Clear Parsed button
-(rf/reg-event-db
+(rf/reg-event-fx
  :clear-parsed
- (fn [db _]
-   (-> db
-       (assoc :code [])
-       (assoc :running? false)
-       (assoc :has-parsed-code? false)
-       (assoc :on-breakpoint false)
-       (assoc :memory {:eip                0
-                       :registers          {}
-                       :eip-stack          []
-                       :internal-registers {}
-                       :output             (-> db :memory :output)
-                       :stack              []
-                       :symbol-table       []}))))
+ (fn [{:keys [db]} _]
+   {:db (-> db
+            (assoc :code [])
+            (assoc :running? false)
+            (assoc :has-parsed-code? false)
+            (assoc :on-breakpoint false)
+            (assoc :memory {:eip                0
+                            :registers          {}
+                            :eip-stack          []
+                            :internal-registers {}
+                            :output             (if (db :running?)
+                                                   (str (-> db :memory :output) "\nUser terminated.")
+                                                   (-> db :memory :output))
+                            :stack              []
+                            :symbol-table       []}))
+    :end-running (db :ticker-handle)}))
 
 ; Handles when the user clicks Clear Breakpoints button
 (rf/reg-event-db
@@ -234,10 +239,11 @@ xyz 123"
                             :eip-stack           []
                             :internal-registers  {}
                             :stack               []
-                            :termination-message ""
                             :rep-counters-stack  []
                             :symbol-table        (:symbol-table (:memory db))
-                            :output              (-> db :memory :output)})
+                            :output              (if (db :running?)
+                                                   (str (-> db :memory :output) "\nUser terminated.")
+                                                   (-> db :memory :output))})
             (assoc :running? false)
             (assoc :on-breakpoint false)
             (assoc :finished? false))
@@ -268,7 +274,6 @@ xyz 123"
                 (assoc :terminated? terminated?)
                 (assoc :on-breakpoint false)
                 (assoc :finished? true)
-                (assoc :termination-message "EIP moved beyond last instruction. Program terminated.")
                 (assoc :running? false))
         :end-if-finished               [(db :ticker-handle) (or finished? terminated?)]}
 

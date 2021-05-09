@@ -305,13 +305,6 @@
                          (symbol-table (keyword a))
                          (inc eip)))))
 
-
-(comment (cmp-jmp {:eip 3 :internal-registers {:cmp :lt} :symbol-table {:foo 5}}
-                  :jne
-                  [:foo])
-         
-         )
-
 ;;=======================================================================================================
 ;; call instruction
 ;;
@@ -420,16 +413,18 @@
 ;; eip. Otherwise it sets eip to the top value of the eip-stack.
 ;;=======================================================================================================
 (defn rp [{:keys [eip-stack] :as memory}]
-  (let [counter (peek (memory :rep-counters-stack))]
-    (if (<= counter 1) ; decrementing would reduce it to zero, so increment eip and pop the rp-stack.
-      (-> memory
-          (update :rep-counters-stack pop)
-          (update :eip-stack pop)
-          (update :eip inc))
-      (-> memory ; otherwise decrement the top item on the rp-stack and set eip to top value on eip-stack.
-          (update :rep-counters-stack pop)
-          (update :rep-counters-stack conj (dec counter))
-          (assoc :eip (inc (peek eip-stack)))))))
+  (if (empty? (memory :rep-counters-stack))
+    (add-error memory -4 "rp called with empty rep counters stack")
+    (let [counter (peek (memory :rep-counters-stack))]
+      (if (<= counter 1) ; decrementing would reduce it to zero, so increment eip and pop the rp-stack.
+        (-> memory
+            (update :rep-counters-stack pop)
+            (update :eip-stack pop)
+            (update :eip inc))
+        (-> memory ; otherwise decrement the top item on the rp-stack and set eip to top value on eip-stack.
+            (update :rep-counters-stack pop)
+            (update :rep-counters-stack conj (dec counter))
+            (assoc :eip (inc (peek eip-stack))))))))
 
 (defn get-conditional-repeat-function [f]
   (condp = f
