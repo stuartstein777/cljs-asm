@@ -1,6 +1,7 @@
 (ns exfn.app
   (:require
    [reagent.dom :as dom]
+   [re-frame-flow.core :as re-flow]
    [exfn.subs]
    [exfn.events]
    [exfn.helpers :as h]
@@ -22,8 +23,7 @@
        [:button.btn.btn-danger.btn.py-0 {:on-click #(rf/dispatch [:clear-source])
                                          :style    {:font-size    "0.8em"
                                                     :float        :right
-                                                    :margin-top   2
-                                                    :margin-right 2}}
+                                                    :margin-right 5}}
         "clear"]]
       [:textarea#lineNos.text-editor-line-nos {:readOnly  true
                                                :value     (h/get-source-line-numbers source)}]
@@ -50,14 +50,16 @@
        [:div {:style {:text-align   :left
                       :padding-left 5}}
         [:i.fas.fa-trash-alt {:style    {:color  :red
-                                         :cursor :pointer}
+                                         :cursor :pointer
+                                         :font-size 17
+                                         :padding-top 3}
                               :on-click #(rf/dispatch [:clear-breakpoints])}]
         [:label {:style {:margin-left 10}} "Parsed Code"]
         [:button.btn.btn-danger.btn.py-0 {:on-click #(rf/dispatch [:clear-parsed])
                                           :style    {:font-size    "0.8em"
                                                      :float        :right
-                                                     :margin-top   2
-                                                     :margin-right 2}}
+                                                     :margin-top   5
+                                                     :margin-right 5}}
          "clear"]]]]
      [:div#code-container.code-container
       [:table#code.code
@@ -71,7 +73,7 @@
            [:td.code-eip
             [:i.fas.fa-angle-double-right
              {:style {:visibility (if (= eip line-no) :visible :hidden)}}]]
-           [:td.line-number [:div {:style {:height 25}}
+           [:td.line-number [:div {:style {:height 20}}
                              line-no]]
            [:td
             [:span
@@ -275,8 +277,8 @@
 ;; Initialize the initial db state.
 (defn ^:dev/after-load start
   []
-  (dom/render [app]
-              (.getElementById js/document "app")))
+  (re-flow/clear-cache!)
+  (dom/render [app] (.getElementById js/document "app")))
 
 (defn ^:export init []
   (start))
