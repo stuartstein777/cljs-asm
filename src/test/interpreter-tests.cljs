@@ -16,6 +16,7 @@
                                       math-func
                                       mov
                                       prnout
+                                      ret
                                       str-cat
                                       strlen]]))
 
@@ -298,9 +299,14 @@
 
 (deftest call-tests
   (is (= {:eip 10 :symbol-table {:foo 10} :eip-stack [6]}
-         (call {:eip 6 :symbol-table {:foo 10} :eip-stack []} ["foo"])
-         ))
+         (call {:eip 6 :symbol-table {:foo 10} :eip-stack []} ["foo"])))
   (is (= {:eip -3 :symbol-table {:foo 10} :eip-stack [] :internal-registers {:err 1}}
          (call {:eip 6 :symbol-table {:foo 10} :eip-stack []} ["bar"]))))
+
+(deftest ret-tests
+  (is (= {:eip 7 :eip-stack []}
+         (ret {:eip 10 :eip-stack [6]})))
+  (is (= {:eip -4 :eip-stack []}
+         (ret {:eip 10 :eip-stack []}))))
 
 (run-tests)

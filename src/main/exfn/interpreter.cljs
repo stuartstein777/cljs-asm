@@ -340,9 +340,15 @@
 ;; Moves eip pointer to the top eip on the eip-stack
 ;;=======================================================================================================
 (defn ret [{:keys [eip-stack] :as memory}]
-  (-> memory
-      (assoc :eip (inc (peek eip-stack)))
-      (update :eip-stack pop)))
+  (let [target (peek eip-stack)]
+    (if target
+      (-> memory
+          (assoc :eip (inc (peek eip-stack)))
+          (update :eip-stack pop))
+      (-> memory
+          (assoc :eip -4)))))
+
+
 
 ;;=======================================================================================================
 ;; pop instruction
@@ -457,6 +463,7 @@
     -1 "Terminated: EIP jumped past last instruction."
     -2 "Terminated: Jump to non existant label."
     -3 "Called non-existent function."
+    -4 "Encoutered ret, with no value on eip stack."
     "Program exited without :end"))
 
 ;;=======================================================================================================
