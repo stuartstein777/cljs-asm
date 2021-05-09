@@ -13,11 +13,12 @@
 
  :nrepl    {:port 3333}
  :dev-http {8080 "public"}
- :builds   {:app {:target           :browser
-                  :output-dir       "public/js"
-                  :modules          {:main {:init-fn exfn.app/init}}
-                  :compiler-options {:closure-defines {re-frame.trace/trace-enabled?        true
-                                                       day8.re-frame.tracing/trace-enabled? true}}
-                  :devtools {:http-root "public"
-                             :http-port 3000
-                             :preloads [day8.re-frame-10x.preload]}}}}
+ :builds   {:app {:target     :browser
+                  :output-dir "public/js"
+                  :modules    {:main {:init-fn exfn.app/init}}
+                  :dev        {:compiler-options {:closure-defines {re-frame.trace/trace-enabled?        true
+                                                                    day8.re-frame.tracing/trace-enabled? true}}}
+                  :devtools   {:http-root "public"
+                               :http-port 3000
+                               :preloads  [day8.re-frame-10x.preload]}
+                  :release    {:build-options {:ns-aliases {day8.re-frame.tracing day8.re-frame.tracing-stubs}}}}}}
