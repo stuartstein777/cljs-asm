@@ -301,14 +301,16 @@
 (defn cmp-jmp [{:keys [eip internal-registers symbol-table] :as memory} jump-type [a]]
   (let [cmp              (:cmp internal-registers)
         valid-predicates (cmp-jump-predicates jump-type)]
-    (prn cmp)
-    (prn valid-predicates)
     (assoc memory :eip (if (valid-predicates cmp)
                          (symbol-table (keyword a))
                          (inc eip)))))
 
 
-(comment (cmp-jmp {:eip 3 :internal-registers {:cmp :lt} :symbol-table {:foo 5}} :jne [:foo]))
+(comment (cmp-jmp {:eip 3 :internal-registers {:cmp :lt} :symbol-table {:foo 5}}
+                  :jne
+                  [:foo])
+         
+         )
 
 ;;=======================================================================================================
 ;; call instruction

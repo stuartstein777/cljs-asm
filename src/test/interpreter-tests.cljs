@@ -4,6 +4,7 @@
                                       bitnot
                                       build-symbol-table
                                       cmp
+                                      cmp-jmp
                                       decrement
                                       get-math-fun
                                       increment
@@ -198,5 +199,100 @@
          (cmp {:registers {:a 7 :b 6}} [:a :b])))
   (is (= {:registers {:a 7} :internal-registers {:cmp :gt}}
          (cmp {:registers {:a 7}} [:a 6]))))
+
+(deftest cmp-jmp-tests
+  (testing "cmp-jmp: jge"
+    (is (= {:eip 6 :internal-registers {:cmp :lt} :symbol-table {:foo 10}}
+           (cmp-jmp {:eip 5 :internal-registers {:cmp :lt} :symbol-table {:foo 10}}
+                    :jge
+                    [:foo])))
+    (is (= {:eip 10 :internal-registers {:cmp :eq} :symbol-table {:foo 10}}
+           (cmp-jmp {:eip 6 :internal-registers {:cmp :eq} :symbol-table {:foo 10}}
+                    :jge
+                    [:foo])))
+    (is (= {:eip 10 :internal-registers {:cmp :gt} :symbol-table {:foo 10}}
+           (cmp-jmp {:eip 6 :internal-registers {:cmp :gt} :symbol-table {:foo 10}}
+                    :jge
+                    [:foo]))))
+  
+  (testing "cmp-jmp jg"
+    (is (= {:eip 6 :internal-registers {:cmp :lt} :symbol-table {:foo 10}}
+           (cmp-jmp {:eip 5 :internal-registers {:cmp :lt} :symbol-table {:foo 10}}
+                    :jg
+                    [:foo])))
+    (is (= {:eip 6 :internal-registers {:cmp :eq} :symbol-table {:foo 10}}
+           (cmp-jmp {:eip                5
+                     :internal-registers {:cmp :eq}
+                     :symbol-table       {:foo 10}}
+                    :jg
+                    [:foo])))
+    (is (= {:eip 10 :internal-registers {:cmp :gt} :symbol-table {:foo 10}}
+           (cmp-jmp {:eip 6 :internal-registers {:cmp :gt} :symbol-table {:foo 10}}
+                    :jg
+                    [:foo]))))
+  
+  (testing "cmp-jmp jne"
+    (is (= {:eip 10 :internal-registers {:cmp :lt} :symbol-table {:foo 10}}
+           (cmp-jmp {:eip 5 :internal-registers {:cmp :lt} :symbol-table {:foo 10}}
+                    :jne
+                    [:foo])))
+    (is (= {:eip 6 :internal-registers {:cmp :eq} :symbol-table {:foo 10}}
+           (cmp-jmp {:eip                5
+                     :internal-registers {:cmp :eq}
+                     :symbol-table       {:foo 10}}
+                    :jne
+                    [:foo])))
+    (is (= {:eip 10 :internal-registers {:cmp :gt} :symbol-table {:foo 10}}
+           (cmp-jmp {:eip 6 :internal-registers {:cmp :gt} :symbol-table {:foo 10}}
+                    :jne
+                    [:foo]))))
+  
+  (testing "cmp-jmp je"
+    (is (= {:eip 6 :internal-registers {:cmp :lt} :symbol-table {:foo 10}}
+           (cmp-jmp {:eip 5 :internal-registers {:cmp :lt} :symbol-table {:foo 10}}
+                    :je
+                    [:foo])))
+    (is (= {:eip 10 :internal-registers {:cmp :eq} :symbol-table {:foo 10}}
+           (cmp-jmp {:eip                5
+                     :internal-registers {:cmp :eq}
+                     :symbol-table       {:foo 10}}
+                    :je
+                    [:foo])))
+    (is (= {:eip 6 :internal-registers {:cmp :gt} :symbol-table {:foo 10}}
+           (cmp-jmp {:eip 5 :internal-registers {:cmp :gt} :symbol-table {:foo 10}}
+                    :je
+                    [:foo]))))
+  
+  (testing "cmp-jmp jle"
+    (is (= {:eip 10 :internal-registers {:cmp :lt} :symbol-table {:foo 10}}
+           (cmp-jmp {:eip 5 :internal-registers {:cmp :lt} :symbol-table {:foo 10}}
+                    :jle
+                    [:foo])))
+    (is (= {:eip 10 :internal-registers {:cmp :eq} :symbol-table {:foo 10}}
+           (cmp-jmp {:eip                5
+                     :internal-registers {:cmp :eq}
+                     :symbol-table       {:foo 10}}
+                    :jle
+                    [:foo])))
+    (is (= {:eip 6 :internal-registers {:cmp :gt} :symbol-table {:foo 10}}
+           (cmp-jmp {:eip 5 :internal-registers {:cmp :gt} :symbol-table {:foo 10}}
+                    :jle
+                    [:foo]))))
+  
+  (testing "cmp-jmp jl"
+    (is (= {:eip 10 :internal-registers {:cmp :lt} :symbol-table {:foo 10}}
+           (cmp-jmp {:eip 5 :internal-registers {:cmp :lt} :symbol-table {:foo 10}}
+                    :jl
+                    [:foo])))
+    (is (= {:eip 6 :internal-registers {:cmp :eq} :symbol-table {:foo 10}}
+           (cmp-jmp {:eip                5
+                     :internal-registers {:cmp :eq}
+                     :symbol-table       {:foo 10}}
+                    :jl
+                    [:foo])))
+    (is (= {:eip 6 :internal-registers {:cmp :gt} :symbol-table {:foo 10}}
+           (cmp-jmp {:eip 5 :internal-registers {:cmp :gt} :symbol-table {:foo 10}}
+                    :jl
+                    [:foo])))))
 
 (run-tests)
