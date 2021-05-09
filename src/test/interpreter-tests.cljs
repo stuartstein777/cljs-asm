@@ -3,6 +3,7 @@
             [exfn.interpreter :refer [append-output
                                       bitnot
                                       build-symbol-table
+                                      call
                                       cmp
                                       cmp-jmp
                                       decrement
@@ -294,5 +295,12 @@
            (cmp-jmp {:eip 5 :internal-registers {:cmp :gt} :symbol-table {:foo 10}}
                     :jl
                     [:foo])))))
+
+(deftest call-tests
+  (is (= {:eip 10 :symbol-table {:foo 10} :eip-stack [6]}
+         (call {:eip 6 :symbol-table {:foo 10} :eip-stack []} ["foo"])
+         ))
+  (is (= {:eip -3 :symbol-table {:foo 10} :eip-stack [] :internal-registers {:err 1}}
+         (call {:eip 6 :symbol-table {:foo 10} :eip-stack []} ["bar"]))))
 
 (run-tests)

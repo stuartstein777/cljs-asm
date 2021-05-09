@@ -323,9 +323,13 @@
 ;;=======================================================================================================
 (defn call [{:keys [eip symbol-table] :as memory} [a]]
   (let [target (symbol-table (keyword a))]
-    (-> memory
-        (update :eip-stack conj eip)
-        (assoc :eip target))))
+    (if target
+      (-> memory
+          (update :eip-stack conj eip)
+          (assoc :eip target))
+      (-> memory
+          (update-in [:internal-registers] assoc :err 1)
+          (assoc :eip -3)))))
 
 ;;=======================================================================================================
 ;; ret instruction
@@ -452,6 +456,7 @@
   (condp = eip
     -1 "Terminated: EIP jumped past last instruction."
     -2 "Terminated: Jump to non existant label."
+    -3 "Called non-existent function."
     "Program exited without :end"))
 
 ;;=======================================================================================================
