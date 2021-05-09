@@ -9,8 +9,10 @@
   },
   "dependencies": {
     "create-react-class": "^15.6.3",
+    "dagre": "0.8.5",
     "highlight.js": "9.18.1",
     "react": "17.0.1",
-    "react-dom": "17.0.1"
+    "react-dom": "17.0.1",
+    "react-flow-renderer": "9.5.4"
   }
 }
