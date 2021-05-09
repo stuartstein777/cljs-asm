@@ -15,6 +15,7 @@
                                       jz
                                       math-func
                                       mov
+                                      pop-stack
                                       prnout
                                       ret
                                       str-cat
@@ -308,5 +309,13 @@
          (ret {:eip 10 :eip-stack [6]})))
   (is (= {:eip -4 :eip-stack []}
          (ret {:eip 10 :eip-stack []}))))
+
+(deftest pop-tests
+  (is (= {:eip 6 :internal-registers {:err -5 :errmsg "Popped empty stack."}}
+         (pop-stack {:eip 6} [:a])))
+  (is (= {:eip 6 :stack [5] :internal-registers {:err -6 :errmsg "Invalid pop target."}}
+         (pop-stack {:eip 6 :stack [5]} [7])))
+  (is (= {:eip 6 :registers {:a 9} :stack [] :last-edit-register :a}
+         (pop-stack {:eip 6 :stack [9]} [:a]))))
 
 (run-tests)

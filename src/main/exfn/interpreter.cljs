@@ -362,13 +362,17 @@
 ;; ERR: Will set :err field to "Popped empty stack" if stack is empty.
 ;;=======================================================================================================
 (defn pop-stack [{:keys [stack] :as memory} [a]]
-  (if (empty? stack)
-    (-> memory
-        (update-in [:internal-registers] assoc :err "Popped empty stack."))
-    (-> memory
-        (assoc-in [:registers a] (peek stack))
-        (update :stack (if (empty? stack) identity pop))
-        (assoc :last-edit-register a))))
+  (cond (empty? stack)
+        (add-error memory -5 "Popped empty stack.")
+
+        (not (keyword? a))
+        (add-error memory -6 "Invalid pop target.")
+
+        :else
+        (-> memory
+            (assoc-in [:registers a] (peek stack))
+            (update :stack (if (empty? stack) identity pop))
+            (assoc :last-edit-register a))))
 
 ;;=======================================================================================================
 ;; push instruction
