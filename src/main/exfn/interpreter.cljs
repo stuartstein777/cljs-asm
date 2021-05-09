@@ -402,11 +402,13 @@
 ;;=======================================================================================================
 (defn rep [{:keys [eip registers] :as memory} args]
   (if (seq args)
-    (-> memory
-        (update-in [:rep-counters-stack] conj (get-value registers (first args)))
-        (update-in [:eip-stack] conj eip))
-    (-> memory
-        (update-in [:eip-stack] conj eip))))
+    (let [rep-ctr (get-value registers (first args))]
+      (if (number? rep-ctr)
+        (-> memory
+            (update-in [:rep-counters-stack] conj rep-ctr)
+            (update-in [:eip-stack] conj eip))
+        (add-error memory -2 (str "Invalid argument {" rep-ctr "} to rep"))))
+    (update-in memory [:eip-stack] conj eip)))
 
 ;;=======================================================================================================
 ;; rp instruction

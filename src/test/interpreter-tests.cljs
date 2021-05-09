@@ -17,6 +17,8 @@
                                       mov
                                       pop-stack
                                       prnout
+                                      push
+                                      rep
                                       ret
                                       str-cat
                                       strlen]]))
@@ -317,5 +319,28 @@
          (pop-stack {:eip 6 :stack [5]} [7])))
   (is (= {:eip 6 :registers {:a 9} :stack [] :last-edit-register :a}
          (pop-stack {:eip 6 :stack [9]} [:a]))))
+
+(deftest push-tests
+  (is (= {:eip 6 :registers {:a 5} :stack [5]}
+         (push {:eip 6 :registers {:a 5}} [:a])))
+  (is (= {:eip 6 :stack [10]}
+         (push {:eip 6} [10]))))
+
+(deftest rep-tests
+  (testing "valid argument to rep, either register or literal"
+    (is (= {:eip 6 :registers {:a 5} :eip-stack '(6) :rep-counters-stack '(5)}
+           (rep {:eip 6 :registers {:a 5}} [:a])))
+    (is (= {:eip 6 :eip-stack '(6) :rep-counters-stack '(5)}
+           (rep {:eip 6} [5]))))
+  
+  (testing "Invalid argument to rep, argument is not a number"
+    (is (= {:eip 6 :registers {:a "foo"} :internal-registers {:err -2 :errmsg "Invalid argument {foo} to rep"}}
+           (rep {:eip 6 :registers {:a "foo"}} [:a])))
+    (is (= {:eip 6 :internal-registers {:err -2 :errmsg "Invalid argument {foo} to rep"}}
+           (rep {:eip 6} ["foo"]))))
+  
+  (testing "No arguments to rep"
+    (is (= {:eip 6 :eip-stack [6]}
+           (rep {:eip 6} [])))))
 
 (run-tests)
