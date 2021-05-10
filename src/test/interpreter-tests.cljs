@@ -525,6 +525,37 @@
             :memory {:eip 2, :internal-registers {:par 1}, :last-edit-register :a, :registers {:a 6}}
             :terminated? false}
            (interpret [[:mov :a 5] [:inc :a] [:end]] {:eip 1 :registers {:a 5}}))))
-  )
+  
+  (testing "jmp instruction at eip 1"
+    (is (= {:finished? false
+            :memory {:eip 3,
+                     :registers {:a 5}
+                     :symbol-table {:foo 3}}
+            :terminated? false}
+           (interpret [[:mov :a 5] [:jmp :foo] [:end] [:label :foo] [:prn :a] [:ret]]
+                      {:eip 1 :registers {:a 5} :symbol-table {:foo 3}}))))
+  
+  (testing "rep instruction at eip 1"
+    (is (= {:finished? false
+            :memory {:eip 2
+                     :eip-stack [1]
+                     :rep-counters-stack [5]
+                     :registers {:a 5}}
+            :terminated? false}
+           (interpret [[:mov :a 5] [:rep 5] [:dec :a] [:rp] [:end]]
+                      {:eip 1 :registers {:a 5}}))))
+  
+  (testing "rp instruction at eip 3"
+    (is (= {:finished? false
+            :memory {:eip 2
+                     :eip-stack [1]
+                     :rep-counters-stack [4]
+                     :registers {:a 5}}
+            :terminated? false}
+           (interpret [[:mov :a 5] [:rep 5] [:dec :a] [:rp] [:end]]
+                      {:eip 3
+                       :eip-stack [1]
+                       :rep-counters-stack [5]
+                       :registers {:a 5}})))))
 
 (run-tests)
