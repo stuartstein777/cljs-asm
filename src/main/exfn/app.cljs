@@ -151,7 +151,7 @@
 
 ;; Display the internal registers.
 (defn internal-registers []
-  (let [internal-registers (dissoc @(rf/subscribe [:internal-registers]) :errmsg)
+  (let [internal-registers (dissoc @(rf/subscribe [:internal-registers]) :err-msg)
         eip-stack @(rf/subscribe [:eip-stack])
         rep-counters @(rf/subscribe [:rep-counters-stack])]
     [:div.registers-container

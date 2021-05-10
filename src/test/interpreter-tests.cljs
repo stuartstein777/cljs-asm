@@ -4,6 +4,7 @@
                                       bitnot
                                       build-symbol-table
                                       call
+                                      cer
                                       cmp
                                       cmp-jmp
                                       conditional-repeat
@@ -161,31 +162,61 @@
   (is (= {:registers {:a "foobar"}} (str-cat {:registers {:a "foo" }} [:a "bar"]))))
 
 (deftest increment-decrement-tests
-  (is (= {:registers {:a 5} :internal-registers {:par 1}} (increment {:registers {:a 4}} [:a])))
-  (is (= {:registers {:a 2} :internal-registers {:par 0}} (decrement {:registers {:a 3}} [:a]))))
+  (testing "inc"
+    (is (= {:registers {:a 5} :internal-registers {:par 1}} (increment {:registers {:a 4}} [:a])))
+    (is (= {:registers {:a "foo"}
+            :internal-registers {:err 203 :err-msg "Can only increment numbers."}}
+           (increment {:registers {:a "foo"}} [:a]))))
+  (testing "dec"
+    (is (= {:registers {:a 2} :internal-registers {:par 0}} (decrement {:registers {:a 3}} [:a])))
+    (is (= {:registers {:a "foo"}
+            :internal-registers {:err 204 :err-msg "Can only decrement numbers."}}
+           (decrement {:registers {:a "foo"}} [:a])))))
 
 (deftest bit-not-tests
-  (is (= {:registers {:a -6}
-          :internal-registers {:par 1}
-          :last-edit-register :a}
-         (bitnot {:registers {:a 5}} [:a]))))
+  (testing "Happy path"
+    (is (= {:registers {:a -6}
+            :internal-registers {:par 1}
+            :last-edit-register :a}
+           (bitnot {:registers {:a 5}} [:a]))))
+  (testing "Invalid arguments to not"
+    (is (= {:registers {:a "foo"}
+            :internal-registers {:err 205 :err-msg "not instruction argument not a number."}}
+           (bitnot {:registers {:a "foo"}} [:a])))))
+
+(deftest cer-tests
+  (is (= {:eip 1
+          :registers {:a 5}
+          :internal-registers {}}
+         (cer {:eip 1
+               :registers {:a 5}
+               :internal-registers {:err 1 :err-msg "foobar"}})))
+  (is (= {:eip 1
+          :registers {:a 5}}
+         (cer {:eip 1
+               :registers {:a 5}}))))
 
 (deftest strlen-tests
   (is (= {:registers {:a 6 :b "foobar"}}
          (strlen {:registers {:b "foobar"}} [:a :b])))
   (is (= {:registers {:a 0 :b ""}}
-         (strlen {:registers {:b ""}} [:a :b]))))
+         (strlen {:registers {:b ""}} [:a :b])))
+  (is (= {:registers {:a 0 :b 5}
+          :internal-registers {:err 301 :err-msg "len passed non-string argument."}}
+         (strlen {:registers {:a 0 :b 5}} [:a :b]))))
 
 (deftest jnz-jz-tests
-  (is (= {:registers {:a 0 :b 5} :eip 3} 
-         (jnz {:registers {:a 0 :b 5} :eip 2} [:a :b])))
-  (is (= {:registers {:a 1 :b 5} :eip 7}
-         (jnz {:registers {:a 1 :b 5} :eip 2} [:a :b])))
+  (testing "jnz"
+    (is (= {:registers {:a 0 :b 5} :eip 3}
+           (jnz {:registers {:a 0 :b 5} :eip 2} [:a :b])))
+    (is (= {:registers {:a 1 :b 5} :eip 7}
+           (jnz {:registers {:a 1 :b 5} :eip 2} [:a :b]))))
   
-  (is (= {:registers {:a 0 :b 5} :eip 7}
-         (jz {:registers {:a 0 :b 5} :eip 2} [:a :b])))
-  (is (= {:registers {:a 1 :b 5} :eip 3}
-         (jz {:registers {:a 1 :b 5} :eip 2} [:a :b]))))
+  (testing "jz"
+    (is (= {:registers {:a 0 :b 5} :eip 7}
+           (jz {:registers {:a 0 :b 5} :eip 2} [:a :b])))
+    (is (= {:registers {:a 1 :b 5} :eip 3}
+           (jz {:registers {:a 1 :b 5} :eip 2} [:a :b])))))
 
 (deftest jmp-tests
   (is (= {:symbol-table {:foo 55} :eip 55}
@@ -315,9 +346,9 @@
          (ret {:eip 10 :eip-stack []}))))
 
 (deftest pop-tests
-  (is (= {:eip 6 :internal-registers {:err -5 :errmsg "Popped empty stack."}}
+  (is (= {:eip 6 :internal-registers {:err 401 :err-msg "Popped empty stack."}}
          (pop-stack {:eip 6} [:a])))
-  (is (= {:eip 6 :stack [5] :internal-registers {:err -6 :errmsg "Invalid pop target."}}
+  (is (= {:eip 6 :stack [5] :internal-registers {:err 402 :err-msg "Invalid pop target."}}
          (pop-stack {:eip 6 :stack [5]} [7])))
   (is (= {:eip 6 :registers {:a 9} :stack [] :last-edit-register :a}
          (pop-stack {:eip 6 :stack [9]} [:a]))))
@@ -338,10 +369,10 @@
            (rep {:eip 6} [5]))))
   
   (testing "Invalid argument to rep, argument is not a number"
-    (is (= {:eip 6 :registers {:a "foo"} :internal-registers {:err -2 :errmsg "Invalid argument {foo} to rep"}}
+    (is (= {:eip 6 :registers {:a "foo"} :internal-registers {:err 501 :err-msg "Invalid argument {foo} to rep"}}
            (rep {:eip 6 :registers {:a "foo"}} [:a])))
   
-    (is (= {:eip 6 :internal-registers {:err -2 :errmsg "Invalid argument {foo} to rep"}}
+    (is (= {:eip 6 :internal-registers {:err 501 :err-msg "Invalid argument {foo} to rep"}}
            (rep {:eip 6} ["foo"]))))
   
   (testing "No arguments to rep"
@@ -360,7 +391,7 @@
   (testing "rep counters stack is empty"
     (is (= {:eip 6
             :eip-stack [2]
-            :internal-registers {:err -4, :errmsg "rp called with empty rep counters stack"}
+            :internal-registers {:err 502, :err-msg "rp called with empty rep counters stack"}
             :rep-counters-stack []}
            (rp {:eip 6 :eip-stack [2] :rep-counters-stack []})))))
 

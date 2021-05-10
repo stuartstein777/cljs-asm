@@ -16,6 +16,15 @@
     x))
 
 ;;=======================================================================================================
+;; An error is an error number and an error message.
+;; This methods add both to the memory.
+;;=======================================================================================================
+(defn add-error [memory err-no err-msg]
+  (-> memory
+      (update-in [:internal-registers] assoc :err err-no)
+      (update-in [:internal-registers] assoc :err-msg err-msg)))
+
+;;=======================================================================================================
 ;; Return the predicate for cmp jumps that we want the jump check to satisfy.
 ;;
 ;; If jump is jge (jump if greater than or equal), then valid predicates for cmp are :eq (equal to) or :gt (greater than)
@@ -69,8 +78,10 @@
 ;; Increments eip to next instruction.
 ;;=======================================================================================================
 (defn mov [{:keys [registers] :as memory} [a b]]
-  (-> memory
-      (update :registers assoc a (get-value registers b))))
+  (if (keyword a)
+    (-> memory
+        (update :registers assoc a (get-value registers b)))
+    (add-error memory 101 "First argument to mov must be a register.")))
 
 ;;=======================================================================================================
 ;; PRN instruction
@@ -98,11 +109,6 @@
     :and bit-and
     :or bit-or))
 
-(defn add-error [memory err-no err-msg]
-  (-> memory
-      (update-in [:internal-registers] assoc :err err-no)
-      (update-in [:internal-registers] assoc :errmsg err-msg)))
-
 ;;=======================================================================================================
 ;; math instruction, covers add, sub, div, mul, xor, and, or
 ;;
@@ -115,8 +121,14 @@
 (defn math-func [instruction {:keys [registers] :as memory} [a b]]
   (let [av (get-value registers a)
         bv (get-value registers b)]
-    (if (or (not (number? av)) (not (number? bv)))
-      (add-error memory 1 (str "Math operation " instruction " performed on non number arguments." a " and " b))
+    (cond
+      (not (keyword? a))
+      (add-error memory 202 (str "First argument to math operation " instruction " must be a register. Invalid {" a "}"))
+
+      (or (not (number? av)) (not (number? bv)))
+      (add-error memory 201 (str "Math operation " instruction " performed on non number arguments." a " and " b))
+
+      :else
       (let [result ((get-math-fun instruction) av bv)]
         (-> memory
             (update-in [:registers] assoc a result)
@@ -158,10 +170,12 @@
 ;; Increments eip to next instruction.
 ;;=======================================================================================================
 (defn increment [{:keys [registers] :as memory} [a]]
-  (let [result (inc (get-value registers a))]
-    (-> memory
-        (update-in [:registers] assoc a result)
-        (update-in [:internal-registers] assoc :par (get-parity result)))))
+  (let [target (get-value registers a)]
+    (if (number? target)
+      (-> memory
+          (update-in [:registers] assoc a (inc target))
+          (update-in [:internal-registers] assoc :par (get-parity (inc target))))
+      (add-error memory 203 "Can only increment numbers."))))
 
 ;;=======================================================================================================
 ;; dec instruction
@@ -179,10 +193,12 @@
 ;; Increments eip to next instruction.
 ;;=======================================================================================================
 (defn decrement [{:keys [registers] :as memory} [a]]
-  (let [result (dec (get-value registers a))]
-    (-> memory
-        (update-in [:registers] assoc a result)
-        (update-in [:internal-registers] assoc :par (get-parity result)))))
+  (let [target (get-value registers a)]
+    (if (number? target)
+      (-> memory
+          (update-in [:registers] assoc a (dec target))
+          (update-in [:internal-registers] assoc :par (get-parity (dec target))))
+      (add-error memory 204 "Can only decrement numbers."))))
 
 ;;=======================================================================================================
 ;; not instruction
@@ -204,8 +220,7 @@
           (update-in [:registers] assoc a result)
           (update-in [:internal-registers] assoc :par (get-parity result))
           (assoc :last-edit-register a)))
-    (-> memory
-        (update-in [:internal-registers] assoc :err 1))))
+    (add-error memory 205 "not instruction argument not a number.")))
 
 ;;=======================================================================================================
 ;; strlen
@@ -216,8 +231,11 @@
 ;; Stores the length of string `b` in `a`
 ;;=======================================================================================================
 (defn strlen [{:keys [registers] :as memory} [a b]]
-  (-> memory
-      (update-in [:registers] assoc a (count (get-value registers b)))))
+  (let [v (get-value registers b)]
+    (if (string? v)
+      (-> memory
+          (update-in [:registers] assoc a (count v)))
+      (add-error memory 301 "len passed non-string argument."))))
 
 ;;=======================================================================================================
 ;; jnz instruction
@@ -258,7 +276,7 @@
 ;; jmp a
 ;;
 ;; Moves the execution pointer to the label `a`.
-;; It finds the address for `a` by loking up `a` in the symbol tale.
+;; It finds the address for `a` by loking up `a` in the symbol table.
 ;;=======================================================================================================
 (defn jmp [{:keys [symbol-table] :as memory} [a]]
   (assoc memory :eip (get symbol-table a -2)))
@@ -355,10 +373,10 @@
 ;;=======================================================================================================
 (defn pop-stack [{:keys [stack] :as memory} [a]]
   (cond (empty? stack)
-        (add-error memory -5 "Popped empty stack.")
+        (add-error memory 401 "Popped empty stack.")
 
         (not (keyword? a))
-        (add-error memory -6 "Invalid pop target.")
+        (add-error memory 402 "Invalid pop target.")
 
         :else
         (-> memory
@@ -399,8 +417,22 @@
         (-> memory
             (update-in [:rep-counters-stack] conj rep-ctr)
             (update-in [:eip-stack] conj eip))
-        (add-error memory -2 (str "Invalid argument {" rep-ctr "} to rep"))))
+        (add-error memory 501 (str "Invalid argument {" rep-ctr "} to rep"))))
     (update-in memory [:eip-stack] conj eip)))
+
+;;=======================================================================================================
+;; cer instruction.
+;;
+;; Clears the error flags in :internal-registers
+;;   :err
+;;   :err-msg
+;;=======================================================================================================
+(defn cer [memory]
+  (if (:internal-registers memory)
+    (-> memory
+        (update-in [:internal-registers] dissoc :err)
+        (update-in [:internal-registers] dissoc :err-msg))
+    memory))
 
 ;;=======================================================================================================
 ;; rp instruction
@@ -410,10 +442,14 @@
 ;;
 ;; Decrements the top item on the RP stack. If it would be zero after decrementing then it increments the
 ;; eip. Otherwise it sets eip to the top value of the eip-stack.
+;;
+;; Errors:
+;; If the rep counters stack is empty the error flag is set to 502 and error message is set to
+;; "rp called with empty rep counters stack"
 ;;=======================================================================================================
 (defn rp [{:keys [eip-stack] :as memory}]
   (if (empty? (memory :rep-counters-stack))
-    (add-error memory -4 "rp called with empty rep counters stack")
+    (add-error memory 502 "rp called with empty rep counters stack")
     (let [counter (peek (memory :rep-counters-stack))]
       (if (<= counter 1) ; decrementing would reduce it to zero, so increment eip and pop the rp-stack.
         (-> memory
@@ -425,6 +461,9 @@
             (update :rep-counters-stack conj (dec counter))
             (assoc :eip (inc (peek eip-stack))))))))
 
+;;=======================================================================================================
+;; Get the conditional function for the r*z instructions.
+;;=======================================================================================================
 (defn get-conditional-repeat-function [f]
   (condp = f
     :rz (fn [x] (not (zero? x)))
@@ -444,15 +483,24 @@
 ;; rgez a    Repeat until `a` is greater than or equal to zero.
 ;; rgz a     Repeat until `a` is greater than zero.
 ;; rlz a     Repeat until `a` is less than zero.
+;;
+;; Errors:
+;; If the argument to r*z is not a number then eip is icremented and error flag is set to 503 with
+;; error message: {instruction} called with non numeric argument.
 ;;=======================================================================================================
 (defn conditional-repeat [{:keys [eip-stack registers] :as memory} instruction [a]]
-  (let [condition (get-conditional-repeat-function instruction)]
-    (if (condition (get-value registers a))
+  (let [condition (get-conditional-repeat-function instruction)
+        v (get-value registers a)]
+    (if (number? v)
+      (if (condition v)
+        (-> memory
+            (assoc :eip (inc (peek eip-stack))))
+        (-> memory
+            (update :eip inc)
+            (update :eip-stack pop)))
       (-> memory
-          (assoc :eip (inc (peek eip-stack))))
-      (-> memory
-          (update :eip inc)
-          (update :eip-stack pop)))))
+          (add-error 503 (str instruction " called with non numeric argument."))
+          (update :eip inc)))))
 
 ;;=======================================================================================================
 ;; if eip = -1: jump past last instruction  
@@ -484,6 +532,10 @@
                      (= :cat instruction)
                      (-> (str-cat memory args)
                          (assoc :last-edit-register (first args))
+                         (update :eip inc))
+
+                     (= :cer instruction)
+                     (-> (cer memory)
                          (update :eip inc))
 
                      (= :inc instruction)
