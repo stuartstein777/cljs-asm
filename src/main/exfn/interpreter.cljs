@@ -321,7 +321,6 @@
           (update :eip-stack conj eip)
           (assoc :eip target))
       (-> memory
-          (update-in [:internal-registers] assoc :err 1)
           (assoc :eip -3)))))
 
 ;;=======================================================================================================

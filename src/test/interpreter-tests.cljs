@@ -305,7 +305,7 @@
 (deftest call-tests
   (is (= {:eip 10 :symbol-table {:foo 10} :eip-stack [6]}
          (call {:eip 6 :symbol-table {:foo 10} :eip-stack []} ["foo"])))
-  (is (= {:eip -3 :symbol-table {:foo 10} :eip-stack [] :internal-registers {:err 1}}
+  (is (= {:eip -3 :symbol-table {:foo 10} :eip-stack []}
          (call {:eip 6 :symbol-table {:foo 10} :eip-stack []} ["bar"]))))
 
 (deftest ret-tests
@@ -503,6 +503,28 @@
                      :output "Terminated: Jump to non existant label."}
             :terminated? true}
            (interpret [[:nop] [:jmp "foo"] [:end]] {:eip 1}))))
+  
+  (testing "jmp past end of instructions terminates program."
+    (is (= {:finished? true
+            :memory {:eip -1
+                     :output "Terminated: EIP jumped past last instruction."
+                     :registers {:a 5}}
+            :terminated? true}
+           (interpret [[:mov :a 5] [:jnz :a 5] [:end]] {:eip 1 :registers {:a 5}}))))
+  
+  (testing "jmp to label that doesnt exist, terminates program."
+    (is (= {:finished? true
+            :memory {:eip -3
+                     :output "Called non-existent function."
+                     :symbol-table {}}
+            :terminated? true}
+           (interpret [[:call :bar] [:end]] {:eip 0 :symbol-table {}}))))
+  
+  (testing "inc instruction at eip 1"
+    (is (= {:finished? false
+            :memory {:eip 2, :internal-registers {:par 1}, :last-edit-register :a, :registers {:a 6}}
+            :terminated? false}
+           (interpret [[:mov :a 5] [:inc :a] [:end]] {:eip 1 :registers {:a 5}}))))
   )
 
 (run-tests)
