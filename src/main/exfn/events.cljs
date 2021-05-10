@@ -106,17 +106,17 @@ xyz 123"
          symbol-table (interp/build-symbol-table (parsed :code))]
      {:db
       (-> db
-          (assoc :memory {:eip                0
-                          :registers (fill-data-registers (parsed :data))
-                          :eip-stack          []
-                          :internal-registers {}
-                          :stack              []
-                          :rep-counters-stack []
-                          :termination-message ""
-                          :output             (if (db :running?)
-                                                (str (-> db :memory :output) "\nUser terminated.")
-                                                (-> db :memory :output))
-                          :symbol-table       symbol-table})
+          (assoc :memory {:eip                 0
+                          :eip-stack           []
+                          :internal-registers  {}
+                          :output              (if (db :running?)
+                                                 (str (-> db :memory :output) "\nUser terminated.")
+                                                 (-> db :memory :output))
+                          :registers           (fill-data-registers (parsed :data))
+                          :rep-counters-stack  []
+                          :stack               []
+                          :symbol-table        symbol-table
+                          :termination-message ""})
           (assoc :code (parsed :code))
           (assoc :on-breakpoint false)
           (assoc :has-parsed-code? (pos? (count (parsed :code))))
@@ -262,28 +262,28 @@ xyz 123"
      (cond
        ;; We are on a breakpoint.
        (some? (breakpoints (:eip memory)))
-       {:db                            (-> db
-                                           (assoc :on-breakpoint true)
-                                           (assoc :running? false))
+       {:db (-> db
+                (assoc :on-breakpoint true)
+                (assoc :running? false))
         :scroll-current-code-into-view (:eip memory)
-        :toggle-running                [false (db :ticker-handle)]}
+        :toggle-running [false (db :ticker-handle)]}
 
-       ;; Program eip was moved beyond last instruction.
+       ;; Program was terminated.
        terminated?
        {:db (-> db
                 (assoc :terminated? terminated?)
                 (assoc :on-breakpoint false)
                 (assoc :finished? true)
                 (assoc :running? false))
-        :end-if-finished               [(db :ticker-handle) (or finished? terminated?)]}
+        :end-if-finished [(db :ticker-handle) (or finished? terminated?)]}
 
-       ;; Program finished by hitting an :end instruction.
+       ;; Program finished by hitting an :end instruction (since it wasn't terminated.)
        finished?
-       {:db              (-> db
-                             (assoc :terminated? false)
-                             (assoc :on-breakpoint false)
-                             (assoc :finished? true)
-                             (assoc :running? false))
+       {:db (-> db
+                (assoc :terminated? false)
+                (assoc :on-breakpoint false)
+                (assoc :finished? true)
+                (assoc :running? false))
         :end-if-finished [(db :ticker-handle) (or finished? terminated?)]}
 
        ;; Otherwise it's ok to continue.

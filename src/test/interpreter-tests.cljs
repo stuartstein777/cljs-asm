@@ -6,6 +6,7 @@
                                       call
                                       cmp
                                       cmp-jmp
+                                      conditional-repeat
                                       decrement
                                       get-math-fun
                                       increment
@@ -20,6 +21,7 @@
                                       push
                                       rep
                                       ret
+                                      rp
                                       str-cat
                                       strlen]]))
 
@@ -323,6 +325,7 @@
 (deftest push-tests
   (is (= {:eip 6 :registers {:a 5} :stack [5]}
          (push {:eip 6 :registers {:a 5}} [:a])))
+  
   (is (= {:eip 6 :stack [10]}
          (push {:eip 6} [10]))))
 
@@ -330,17 +333,176 @@
   (testing "valid argument to rep, either register or literal"
     (is (= {:eip 6 :registers {:a 5} :eip-stack '(6) :rep-counters-stack '(5)}
            (rep {:eip 6 :registers {:a 5}} [:a])))
+  
     (is (= {:eip 6 :eip-stack '(6) :rep-counters-stack '(5)}
            (rep {:eip 6} [5]))))
   
   (testing "Invalid argument to rep, argument is not a number"
     (is (= {:eip 6 :registers {:a "foo"} :internal-registers {:err -2 :errmsg "Invalid argument {foo} to rep"}}
            (rep {:eip 6 :registers {:a "foo"}} [:a])))
+  
     (is (= {:eip 6 :internal-registers {:err -2 :errmsg "Invalid argument {foo} to rep"}}
            (rep {:eip 6} ["foo"]))))
   
   (testing "No arguments to rep"
     (is (= {:eip 6 :eip-stack [6]}
            (rep {:eip 6} [])))))
+
+(deftest rp-tests
+  (testing "rp counter is not being decremented to zero"
+    (is (= {:eip 3 :eip-stack [2] :rep-counters-stack [4]}
+           (rp {:eip 6 :eip-stack [2] :rep-counters-stack [5]}))))
+  
+  (testing "rp counter is being decremented to zero"
+    (is (= {:eip 7 :eip-stack [] :rep-counters-stack []}
+           (rp {:eip 6 :eip-stack [2] :rep-counters-stack [1]}))))
+  
+  (testing "rep counters stack is empty"
+    (is (= {:eip 6
+            :eip-stack [2]
+            :internal-registers {:err -4, :errmsg "rp called with empty rep counters stack"}
+            :rep-counters-stack []}
+           (rp {:eip 6 :eip-stack [2] :rep-counters-stack []})))))
+
+(deftest conditional-repeat-tests
+  (testing "rz"
+    (is (= {:eip 3
+            :eip-stack [2]
+            :registers {:a 1}}
+           (conditional-repeat  {:eip 5, :eip-stack [2], :registers {:a 1}}
+                                :rz
+                                [:a])))
+    
+    (is (= {:eip 6
+            :eip-stack []
+            :registers {:a 0}}
+           (conditional-repeat  {:eip 5, :eip-stack [2], :registers {:a 0}}
+                                :rz
+                                [:a]))))
+  
+  (testing "rnz"
+    (is (= {:eip 6
+            :eip-stack []
+            :registers {:a 1}}
+           (conditional-repeat  {:eip 5, :eip-stack [2], :registers {:a 1}}
+                                :rnz
+                                [:a])))
+
+    (is (= {:eip 3
+            :eip-stack [2]
+            :registers {:a 0}}
+           (conditional-repeat  {:eip 5, :eip-stack [2], :registers {:a 0}}
+                                :rnz
+                                [:a]))))
+  
+  (testing "rlez"
+    (is (= {:eip 3
+            :eip-stack [2]
+            :registers {:a 1}}
+           (conditional-repeat  {:eip 5, :eip-stack [2], :registers {:a 1}}
+                                :rlez
+                                [:a])))
+
+    (is (= {:eip 6
+            :eip-stack []
+            :registers {:a 0}}
+           (conditional-repeat  {:eip 5, :eip-stack [2], :registers {:a 0}}
+                                :rlez
+                                [:a])))
+    
+    (is (= {:eip 6
+            :eip-stack []
+            :registers {:a -1}}
+           (conditional-repeat  {:eip 5, :eip-stack [2], :registers {:a -1}}
+                                :rlez
+                                [:a]))))
+  
+  (testing "rgez"
+    (is (= {:eip 6
+            :eip-stack []
+            :registers {:a 1}}
+           (conditional-repeat  {:eip 5, :eip-stack [2], :registers {:a 1}}
+                                :rgez
+                                [:a])))
+
+    (is (= {:eip 3
+            :eip-stack [2]
+            :registers {:a -1}}
+           (conditional-repeat  {:eip 5, :eip-stack [2], :registers {:a -1}}
+                                :rgez
+                                [:a])))
+    
+    (is (= {:eip 6
+            :eip-stack []
+            :registers {:a 0}}
+           (conditional-repeat  {:eip 5, :eip-stack [2], :registers {:a 0}}
+                                :rgez
+                                [:a]))))
+  
+  (testing "rgz"
+    (is (= {:eip 6
+            :eip-stack []
+            :registers {:a 1}}
+           (conditional-repeat  {:eip 5, :eip-stack [2], :registers {:a 1}}
+                                :rgz
+                                [:a])))
+
+    (is (= {:eip 3
+            :eip-stack [2]
+            :registers {:a -1}}
+           (conditional-repeat  {:eip 5, :eip-stack [2], :registers {:a -1}}
+                                :rgz
+                                [:a])))
+
+    (is (= {:eip 3
+            :eip-stack [2]
+            :registers {:a 0}}
+           (conditional-repeat  {:eip 5, :eip-stack [2], :registers {:a 0}}
+                                :rgz
+                                [:a]))))
+  
+  (testing "rlz"
+    (is (= {:eip 3
+            :eip-stack [2]
+            :registers {:a 1}}
+           (conditional-repeat  {:eip 5, :eip-stack [2], :registers {:a 1}}
+                                :rlz
+                                [:a])))
+
+    (is (= {:eip 3
+            :eip-stack [2]
+            :registers {:a 0}}
+           (conditional-repeat  {:eip 5, :eip-stack [2], :registers {:a 0}}
+                                :rlz
+                                [:a])))
+
+    (is (= {:eip 6
+            :eip-stack []
+            :registers {:a -1}}
+           (conditional-repeat  {:eip 5, :eip-stack [2], :registers {:a -1}}
+                                :rlz
+                                [:a])))))
+
+(deftest interpret-tests
+  (testing "mov instruction at eip 0"
+           (is (= {:finished? false
+                   :memory {:eip 1, :registers {:a 5} :last-edit-register :a}
+                   :terminated? false}
+                (interpret [[:mov :a 5] [:end]] {:eip 0}))))
+  
+  (testing "end instruction should cause program to be finished."
+    (is (= {:finished? true
+            :memory {:eip 1
+                     :output "Exited."}
+            :terminated? false}
+           (interpret [[:nop] [:end]] {:eip 1}))))
+  
+  (testing "jmp to label that doesnt exist, terminates program."
+    (is (= {:finished? true
+            :memory {:eip -2
+                     :output "Terminated: Jump to non existant label."}
+            :terminated? true}
+           (interpret [[:nop] [:jmp "foo"] [:end]] {:eip 1}))))
+  )
 
 (run-tests)

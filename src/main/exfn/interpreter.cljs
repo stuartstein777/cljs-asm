@@ -578,4 +578,4 @@
                terminated? (assoc :output (append-output (memory :output) (get-termination-cause (memory :eip))))
                finished?   (assoc :output (append-output (memory :output) "Exited.")))
      :terminated? terminated?
-     :finished? finished?}))
+     :finished? (or finished? terminated?)}))
