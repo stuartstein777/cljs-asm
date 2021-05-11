@@ -41,10 +41,7 @@
         code-with-lines (zipmap (range (count code)) code)
         eip             @(rf/subscribe [:eip])
         on-breakpoint?  @(rf/subscribe [:on-breakpoint])]
-    [:div {:style {:margin 10
-                   :height 455
-                   :overflow-y :none
-                   :width  1000}}
+    [:div.parsed-code-container
      [:div.parsed-code-header.header
       [:div
        [:div {:style {:text-align   :left
@@ -55,11 +52,12 @@
                                          :padding-top 3}
                               :on-click #(rf/dispatch [:clear-breakpoints])}]
         [:label {:style {:margin-left 10}} "Parsed Code"]
-        [:button.btn.btn-danger.btn.py-0 {:on-click #(rf/dispatch [:clear-parsed])
-                                          :style    {:font-size    "0.8em"
-                                                     :float        :right
-                                                     :margin-top   5
-                                                     :margin-right 5}}
+        [:button.btn.btn-danger.btn.py-0
+         {:on-click #(rf/dispatch [:clear-parsed])
+          :style    {:font-size    "0.8em"
+                    :float        :right
+                    :margin-top   5
+                    :margin-right 5}}
          "clear"]]]]
      [:div#code-container.code-container
       [:table#code.code
@@ -219,8 +217,10 @@
 (defn output []
   (let [output @(rf/subscribe [:output])]
     [:div.std-out-container
-     [:div.header {:style {:text-align :left}}
-      [:label {:style {:margin-left 5}}"Output"]
+     [:div.std-out-header
+      [:label
+       {:style {:margin-left 5}}
+       "Output"]
       [:button.btn.btn-danger.btn.py-0
        {:on-click #(rf/dispatch [:clear-output])
         :style    {:font-size    "0.8em"
@@ -238,8 +238,10 @@
    [:div.row
     [:div.col.col-lg-4
      [code-editor]]
-    [:div.col.col-lg-4
-     [code]]]
+    [:div.col.col-lg-5
+     [code]]
+    [:div.col.col-lg-3
+     [output]]]
    [:div.row
     [execution-controls]]
    [:div.row.eip-container
@@ -252,9 +254,7 @@
     [:div
      [stack :stack "Stack"]]
     [:div
-     [symbol-table]]
-    [:div
-     [output]]]   
+     [symbol-table]]]   
    [:div
     [supported-instructions]]])
 
