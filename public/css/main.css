@@ -26,7 +26,7 @@ reagent function::          code-editor
 .editor {
     height: 400px;
     margin: 10px;
-    width: 600px;
+    width: 100%;
 }
 
 .source-editor-header {
@@ -35,6 +35,7 @@ reagent function::          code-editor
     padding-top: 4px;
     text-align: left;
     vertical-align: middle;
+    width:100%;
 }
 
 .text-editor-line-nos {
@@ -48,7 +49,7 @@ reagent function::          code-editor
     overflow: hidden;
     resize: none;
     text-align: center;
-    width: 45px;
+    width: 10%;
 }
 
 .text-editor {
@@ -60,7 +61,7 @@ reagent function::          code-editor
     height: 100%;
     margin: 0 auto;
     resize: none;
-    width: 555px;
+    width:90%;
 }
 
 textarea:focus { 
