@@ -196,24 +196,6 @@
            [:div.col-col-lg6.symbol-name {:key (str "symbols-name-" k)} (key s)]
            [:div.col-col-lg6.symbol-value {:key (str "symbols-value-" k)} (val s)]]))]]))
 
-(defn supported-instructions []
-  [:div
-   [:h2 "Supported Instructions"]
-   [:table.table.table-striped.table-hover {:style {:margin 10 :border "1px solid black"}}
-    [:thead.table {:style {:background-color "rgb(18, 18, 19)" :color :white}}
-     [:tr
-      [:th {:style {:text-align :left :padding 10}} "Instruction"]
-      [:th {:style {:text-align :left :padding 10}} "Example"]
-      [:th {:style {:text-align :left :padding 10}} "Description"]]]
-    [:tbody
-     (let [instructions (h/get-supported-instructions)]
-       (for [[k {:keys [instruction example description]}] (h/keyed-collection instructions)]
-         [:tr {:key k :style {:border "1px solid black"}}
-          [:td {:style {:width 150 :text-align :left :border-right "1px solid black"}} instruction]
-          [:td {:style {:width 200 :text-align :left :border-right "1px solid black"}}
-           example]
-          [:td {:style {:width 500 :text-align :left}} description]]))]]])
-
 (defn output []
   (let [output @(rf/subscribe [:output])]
     [:div.std-out-container
@@ -234,7 +216,7 @@
 
 ;; -- App ---------------------------------------------------------------------------
 (defn app []
-  [:div.content
+  [:div.container
    [:div.row
     [:div.col.col-lg-4
      [code-editor]]
@@ -254,9 +236,7 @@
     [:div
      [stack :stack "Stack"]]
     [:div
-     [symbol-table]]]   
-   [:div
-    [supported-instructions]]])
+     [symbol-table]]]])
 
 ;; -- Dev Helpers -------------------------------------------------------------------
 (comment (rf/dispatch-sync [:initialize]))

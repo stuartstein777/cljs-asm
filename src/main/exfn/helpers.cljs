@@ -1,6 +1,11 @@
 (ns exfn.helpers
   (:require [clojure.string :as str]))
 
+(def valid-instructions #{"mov" "add" "sub" "div" "mul" "call" "ret" "rep" "rza"
+                          "prn" "end" "and" "or" "xor" "jmp" "jgz" "push" "pop" "nop"
+                          "inc" "dec" "jne" "jge" "jg" "je" "jle" "jl" "rnz" "cer"
+                          "rz" "rlez" "rgz" "rgez" "rlz" "not" "cat" "len" "jz" "cmp"})
+
 (defn get-source-line-numbers [source]
   (:line-nos (reduce (fn [{:keys [cur line-nos] :as acc} i]
                        (if (or (= "" i) (clojure.string/starts-with? i ";"))
@@ -15,88 +20,88 @@
 (defn keyed-collection [col]
   (zipmap (range (count col)) col))
 
-(defn get-supported-instructions []
-  [{:instruction "mov"
-    :example      "mov :a :b"
-    :description  "moves b (number or register) into register :a"}
-   {:instruction "add"
-    :example      "add :a :b"
-    :description  "a + b (numbers or registers), result goes into :a"}
-   {:instruction "sub"
-    :example      "sub :a :b"
-    :description  "a - b (numbers or registers), result goes into :a"}
-   {:instruction "mul"
-    :example      "mul :a :b"
-    :description  "a * b (numbers or registers), result goes into :a"}
-   {:instruction "div"
-    :example      "div :a :b"
-    :description  "a / b (numbers or registers), result goes into :a"}
-   {:instruction "and"
-    :example      "and :a :b"
-    :description  "a ∧ b (numbers or registers), result goes into :a"}
-   {:instruction "or"
-    :example      "or :a :b"
-    :description  "a ∨ b (numbers or registers), result goes into :a"}
-   {:instruction "xor"
-    :example      "xor :a :b"
-    :description  "a ⊕ b (numbers or registers), result goes into :a"}
-   {:instruction "dec"
-    :example      "dec :a"
-    :description  "Decrements the register :a by one"}
-   {:instruction "inc"
-    :example      "inc :a"
-    :description  "Increments the register :a by one"}
-   {:instruction "jnz"
-    :example      "jnz :x :y"
-    :description  "jumps y (number or register) instructions (positive or negative) if x (number or register) is not zero."}
-   {:instruction "label"
-    :example      "foo:"
-    :description  "Creates a label foo: that can be used by jmp or call instructions. If encountered as an instruction it is ignored."}
-   {:instruction "jmp"
-    :example      "jmp foo"
-    :description  "Moves the execution pointer to the label foo."}
-   {:instruction "nop"
-    :example      "nop"
-    :description  "Does nothing."}
-   {:instruction "cmp"
-    :example      "cmp :x :y"
-    :description  "compares x and y and stores the result in the internal register :cmp, result will either be x < y, x = y, x > y."}
-   {:instruction  "jne"
-    :example      "jne foo"
-    :description  "jumps to the label foo if the result of the previous cmp call was that x /= y"}
-   {:instruction  "jg"
-    :example      "jg foo"
-    :description  "jumps to the label foo if the result of the previous cmp call was that x > y"}
-   {:instruction  "jge"
-    :example      "jge foo"
-    :description  "jumps to the label foo if the result of the previous cmp call was that x >= y"}
-   {:instruction  "je"
-    :example      "je foo"
-    :description  "jumps to the label foo if the result of the previous cmp call was that x = y"}
-   {:instruction  "jle"
-    :example      "jle foo"
-    :description  "jumps to the label foo if the result of the previous cmp call was that x <= y"}
-   {:instruction  "jl"
-    :example      "jl foo"
-    :description  "jumps to the label foo if the result of the previous cmp call was that x < y"}
-   {:instruction  "call"
-    :example      "call foo"
-    :description  "Moves the execution pointer to the label foo, pushes the current execution pointer onto the EIP stack so that it can be returned to by a ret instruction."}
-   {:instruction "ret"
-    :example      "ret"
-    :description  "returns execution to the top execution pointer on the execution pointer stack. Results in popping eip stack."}
-   {:instruction "end"
-    :example      "end"
-    :description  "terminates the program."}
-   {:instruction "pop"
-    :example      "pop :x"
-    :description  "Pops the top value off the stack into register x"}
-   {:instruction "push"
-    :example      "push :x"
-    :description  "Pushes x (value or register) onto the stack"}
-   {:instruction "cat"
-    :example      "cat :x y"
-    :description  "Concatents the string in register x with the string y (where y is a register or literal string)"}
-   {:instruction "comments"
-    :example      "; foo"
-    :description  "Comments are ignored, can be on own line or trailing, e.g. mov a b ; moves b into a"}])
+(defn- deep-merge-with
+  "
+  Copied here from clojure.contrib.map-utils. The original may have
+  been a casualty of the clojure.contrib cataclysm.
+  Like merge-with, but merges maps recursively, applying the given fn
+  only when there's a non-map at a particular level.
+  (deepmerge + {:a {:b {:c 1 :d {:x 1 :y 2}} :e 3} :f 4}
+               {:a {:b {:c 2 :d {:z 9} :z 3} :e 100}})
+  -> {:a {:b {:z 3, :c 3, :d {:z 9, :x 1, :y 2}}, :e 103}, :f 4}
+  "
+  [f & maps]
+  (apply
+   (fn m [& maps]
+     (if (every? map? maps)
+       (apply merge-with m maps)
+       (apply f maps)))
+   maps))
+
+(defn levenshtein-distance
+  "Copied from incanter
+   https://github.com/incanter/incanter/
+  http://en.wikipedia.org/wiki/Levenshtein_distance
+  internal representation is a table d with m+1 rows and n+1 columns
+  where m is the length of a and m is the length of b.
+  In information theory and computer science, the Levenshtein distance
+  is a metric for measuring the amount of difference between two sequences
+  (i.e., the so called edit distance).
+  The Levenshtein distance between two strings is given by the minimum number
+  of operations needed to transform one string into the other,
+  where an operation is an insertion, deletion, or substitution of a single character.
+  For example, the Levenshtein distance between \"kitten\" and \"sitting\" is 3,
+  since the following three edits change one into the other,
+  and there is no way to do it with fewer than three edits:
+   1. kitten → sitten (substitution of 's' for 'k')
+   2. sitten → sittin (substitution of 'i' for 'e')
+   3. sittin → sitting (insert 'g' at the end).
+  The Levenshtein distance has several simple upper and lower bounds that are useful
+  in applications which compute many of them and compare them. These include:
+    * It is always at least the difference of the sizes of the two strings.
+    * It is at most the length of the longer string.
+    * It is zero if and only if the strings are identical.
+    * If the strings are the same size, the Hamming distance is an upper bound on the Levenshtein distance.
+  "
+  [a b]
+  (let [m (count a)
+        n (count b)
+        init (apply deep-merge-with (fn [a b] b)
+                    (concat
+                       ;;deletion
+                     (for [i (range 0 (inc m))]
+                       {i {0 i}})
+                       ;;insertion
+                     (for [j (range 0 (inc n))]
+                       {0 {j j}})))
+        table (reduce
+               (fn [d [i j]]
+                 (deep-merge-with
+                  (fn [a b] b)
+                  d
+                  {i {j (if (= (nth a (dec i))
+                               (nth b (dec j)))
+                          ((d (dec i)) (dec j))
+                          (min
+                           (+ ((d (dec i))
+                               j) 1) ;;deletion
+                           (+ ((d i)
+                               (dec j)) 1) ;;insertion
+                           (+ ((d (dec i))
+                               (dec j)) 1))) ;;substitution
+                      }}))
+               init
+               (for [j (range 1 (inc n))
+                     i (range 1 (inc m))] [i j]))]
+
+    ((table m) n)))
+
+(defn get-suggestions-for-invalid-instruction [invalid-instruction replacements]
+  (let [all-distances (->> (map (fn [instruction] [instruction (levenshtein-distance instruction invalid-instruction)]) replacements)
+                           (sort-by second <))
+        
+        closest-distance (second (first all-distances))]
+    (->> all-distances
+         (take-while #(= closest-distance (second %)))
+         (sort-by first)
+         (map first))))

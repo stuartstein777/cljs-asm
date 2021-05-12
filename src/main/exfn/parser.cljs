@@ -1,5 +1,6 @@
 (ns exfn.parser
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [exfn.validators :as vdt]))
 
 (defn is-register? [x]
   (boolean (str/starts-with? x ":")))
@@ -305,6 +306,14 @@
 
 ;; - macro expansion ====================================================================
 
+;; + verify code ========================================================================
+(defn verify-macros [macros]
+  true
+  )
+
+
+;; - verify code ========================================================================
+
 (defn get-data [source]
   (let [data-start (.indexOf source ".data")
         data-end (count source)]
@@ -334,30 +343,24 @@
         macros (get-macros source)
         code (get-code source)
         data (get-data source)]
-    {:code (->> (macro-expand-code code macros)
-                (map parse-line-of-code))
-     :data (mapv parse-data-entry data)}))
+    (if (verify-macros macros)
+      {:code (->> (macro-expand-code code macros)
+                  (map parse-line-of-code))
+       :data (mapv parse-data-entry data)})))
 
 (comment
-  {:code ([:mov :a 2] [:mov :b 5] [:mul :a :a] [:mul :b :b] [:add :a :b] [:add :a 10])
-   :data ["foo 42" "quax `this is a string`" "bar 'abc `def` ghi'"]}
-
-  (parse ";; macros
-          .macros
-          %square-and-sum
-            mul %1 %1
-            mul %2 %2
-            add %1 %2
-          %end
-          %add-ten
-            add %1 10
-          %end
-          .code
-              mov :a 2
-              mov :b 5
-              square-and-sum(:a, :b)
-              add-ten (:a)
-          .data
-              foo 42
-              quax `this is a string`
-              bar 'abc `def` ghi'"))
+  (->> (prepare-source ".code
+                      mov :a 5
+              mov :b 7
+              muk :a :b ; should be mul
+              prn :a
+              cvlj foo ; call foo!
+              prn :b
+              end
+                      
+              ;; function foo
+              foo:
+              dec :b
+              wet  ; should be ret
+              ;; end of foo")
+       (vdt/validate)))
