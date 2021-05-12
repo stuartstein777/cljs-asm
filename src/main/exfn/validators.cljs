@@ -210,7 +210,7 @@
 
 
 (defn validate [code]
-  (->> (map vector (range (count sample-code)) code)
+  (->> (map vector (range (count code)) code)
        (reduce verify {:current-section nil
                        :errors          []
                        :macro-names     #{}
