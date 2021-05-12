@@ -3,24 +3,14 @@
             [exfn.helpers :as h]
             [exfn.errors :as err]))
 
-;; this is the result of calling prepare-source
-;; code is broken into lines.
-
-(defn has-two-arguments? [line]
-  (if (= (count line) 3)
-    ""
-    (str (first line) " requires 2 arguments.")))
-
-(defn has-one-argument? [line]
-  (= (count line) 2))
-
-(defn has-no-arguments? [line]
-  (= (count line) 1))
-
-(defn first-argument-is-a-register? [line]
-  (str/starts-with? (second line) ":"))
-
-(def rules {:mov [has-two-arguments? first-argument-is-a-register?]})
+(defn validate-instruction [instr args is-macro?]
+  (let [{:keys [macro-applicable non-macro-applicable]} (err/rules instr)
+        applied  (map #(partial % is-macro?) macro-applicable)
+        all-rules (apply conj applied non-macro-applicable)]
+    (keep (fn [f]
+            (let [error (f args)]
+              (when error
+                (str "Invalid `" instr "` call, `" instr "` " error)))) all-rules)))
 
 (defn get-section [code]
   (condp = code
@@ -65,7 +55,7 @@
 ;;
 ;; Return new accumulator for the reduce. Want to set errors if line doesnt' validate.
 ;;=================================================================================================================
-(defn validate-line [{:keys [in-macro?] :as acc} line-no code in-macro? macro-names]
+(defn validate-line [{:keys [open-macro] :as acc} line-no code macro-names]
   (let [[instruction & args] (str/split code #" ")]
 
     (cond
@@ -80,10 +70,16 @@
       :else
       (if (not (h/valid-instructions instruction))
         (update acc :errors conj (build-error instruction line-no h/valid-instructions false))
-        acc))))
+        (let [errors (->> (validate-instruction instruction args open-macro)
+                          (map #(str line-no ": " %)))]
+          (if (seq errors)
+            (update acc :errors #(apply conj %1 %2) errors)
+            acc))))))
 
+;;=================================================================================================================
+;;
+;;=================================================================================================================
 (defn verify [{:keys [current-section open-macro macro-names] :as acc} [line-no code]]
-  #_(prn "current-section: " current-section ", open-macro: " open-macro ", line " line-no ": " code)
   (cond
     ; current line is the start of the macro definitions section. So mark us as in macro section.
     (or (= code ".macros") (= code ".code") (= code ".data"))
@@ -123,19 +119,21 @@
 
     ;; in a macro, line doesnt start with % so its an instruction. Parse the instruction.
     (and (= :macro current-section) (not (str/starts-with? code "%")) open-macro)
-    (validate-line acc line-no code true macro-names)
+    (validate-line acc line-no code macro-names)
 
     (= :code current-section)
-    (validate-line acc line-no code false macro-names)
+    (validate-line acc line-no code macro-names)
 
     ;; code parsing ---------------------------------------------------------------------------------------
 
     :else
     acc))
 
+
+
 (def sample-code '(".macros"
                    "%square-and-sum"
-                   "mul %1 %1"
+                   "mul 5 %1"
                    "muk %2 %2"
                    "add %1 %2"
                    "%end"
@@ -149,13 +147,13 @@
                    "mov :c 2"
                    "prn :b"
                    "call foo"
-                   "mul :c :b"
+                   "mul :c"
                    "cmp :a :b"
                    "ffne quax"
                    "mul :c 10"
                    "quax:"
                    "nop"
-                   "call bar"
+                   "cdlk bar"
                    "pop :d"
                    "pop :e"
                    "prn :d"
@@ -176,9 +174,10 @@
 
 (defn validate [code]
   ;; want line numbers with each line.
-  (->> (map vector (range (count sample-code)) sample-code)
+  (->> (map vector (range (count sample-code)) code)
        (reduce verify {:current-section nil
                        :errors          []
                        :macro-names     #{}
                        :open-macro      false})
-       :errors))
+       :errors
+       (str/join "\n")))
