@@ -35,11 +35,8 @@
             :release {:target     :browser
                       :output-dir "release/js"
                       :modules    {:main {:init-fn exfn.app/init}}
-                      :compiler-options {:silence-optimizations-warning true
-                                         :optimizations :advanced}}
-
-            :test     {:target    :browser-test
-                       :test-dir  "test/js"
-                       :ns-regexp "-test$"
-                       :devtools  {:http-port          8021
-                                   :http-root          "test/js"}}}}
+                      :compiler-options {:optimizations :advanced}}
+            
+            :test {:target :karma
+                   :ns-regexp "-tests$"
+                   :output-to  "target/ci.js"}}}
