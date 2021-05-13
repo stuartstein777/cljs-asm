@@ -34,7 +34,7 @@ jobs:
         run: npm install
 
       - name: Compile CLJS tests
-        run: npx shadow-cljs compile ci
+        run: npx shadow-cljs compile app
     
       - name: Run CLJS tests
-        run: node target/ci.js
+        run: node target/app.js
