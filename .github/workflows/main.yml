@@ -37,4 +37,4 @@ jobs:
         run: npx shadow-cljs compile app
     
       - name: Run CLJS tests
-        run: node target/app.js
+        run: node test/js/js/test.js
