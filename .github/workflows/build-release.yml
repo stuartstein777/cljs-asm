@@ -1,6 +1,6 @@
 # This is a basic workflow that is manually triggered
 
-name: Build release
+name: Release
 
 # Controls when the action will run. Workflow runs when manually triggered using the UI
 # or API.
@@ -34,5 +34,12 @@ jobs:
       - name: Compile a release build
         run: npx shadow-cljs release release
         
+      - uses: tibor19/static-website-deploy@v1
+        with:
+           enabled-static-website: 'true'
+           folder: 'public'
+           connection-string: ${{ secrets.AZURE_CONN_STRING }}
+      
+      
         
         
