@@ -1,4 +1,4 @@
-(ns exfn.parser-test
+(ns exfn.parser-tests
   (:require [cljs.test :refer-macros [deftest is testing run-tests]]
             [exfn.parser :refer [expand
                                  format-arg
