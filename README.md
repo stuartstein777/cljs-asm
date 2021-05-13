@@ -1,4 +1,8 @@
+![cibadge](https://github.com/stuartstein777/cljs-asm/actions/workflows/main.yml/badge.svg)
+
 # cljs-asm
 ToyAsm
 
-![cibadge](https://github.com/stuartstein777/cljs-asm/actions/workflows/main.yml/badge.svg)
+Toy assembly language style language parser and interpreter. 
+
+Display registers and running program with breakpoints.
