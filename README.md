@@ -1,4 +1,4 @@
 # cljs-asm
 ToyAsm
 
-https://github.com/stuartstein77/cljs-asm/actions/workflows/main.yaml/badge.svg
+![example workflow](https://github.com/github/docs/actions/workflows/main.yml/badge.svg)
