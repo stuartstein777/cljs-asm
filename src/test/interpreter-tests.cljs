@@ -589,4 +589,4 @@
                        :rep-counters-stack [5]
                        :registers {:a 5}})))))
 
-(run-tests)
+(comment (run-tests))

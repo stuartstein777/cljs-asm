@@ -436,4 +436,4 @@
                 [:ret])
               (:code (parse source)))))))
 
-(run-tests)
+(comment (run-tests))
