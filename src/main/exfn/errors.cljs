@@ -98,13 +98,13 @@
            :non-macro-applicable [has-no-arguments?]}
    "rz"   {:macro-applicable     []
            :non-macro-applicable [has-one-argument?]}
-   "rnz"   {:macro-applicable     []
+   "rnz"  {:macro-applicable     []
            :non-macro-applicable [has-one-argument?]}
-   "rlz"   {:macro-applicable     []
+   "rlz"  {:macro-applicable     []
            :non-macro-applicable [has-one-argument?]}
-   "rlez"   {:macro-applicable     []
-            :non-macro-applicable [has-one-argument?]}
-   "rgz"   {:macro-applicable     []
-            :non-macro-applicable [has-one-argument?]}
-   "rgez"   {:macro-applicable     []
-             :non-macro-applicable [has-one-argument?]}})
+   "rlez" {:macro-applicable     []
+           :non-macro-applicable [has-one-argument?]}
+   "rgz"  {:macro-applicable     []
+           :non-macro-applicable [has-one-argument?]}
+   "rgez" {:macro-applicable     []
+           :non-macro-applicable [has-one-argument?]}})
