@@ -5,4 +5,4 @@ ToyAsm
 
 Toy assembly language style language parser and interpreter. 
 
-Display registers and running program with breakpoints.
+Display registers and running program with breakpoints. Supports running program / pausing / stopping and stepping through.
