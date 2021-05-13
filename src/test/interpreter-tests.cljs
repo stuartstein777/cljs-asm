@@ -1,4 +1,4 @@
-(ns test.interpreter-tests
+(ns exfn.interpreter-test
   (:require [cljs.test :refer [deftest is testing run-tests]]
             [exfn.interpreter :refer [append-output
                                       bitnot
