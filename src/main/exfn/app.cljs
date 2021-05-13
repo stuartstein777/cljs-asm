@@ -34,6 +34,12 @@
                                      :value     @(rf/subscribe [:source])
                                      :wrap      :off}]]]))
 
+(defn parse-errors []
+  [:div.parsed-code-container
+     [:div.parsed-code-header.header
+      "Parse errors"
+      ]])
+
 ;; Display the parsed code.
 (defn code []
   (let [code            @(rf/subscribe [:code])
@@ -216,27 +222,30 @@
 
 ;; -- App ---------------------------------------------------------------------------
 (defn app []
-  [:div.container
-   [:div.row
-    [:div.col.col-lg-4
-     [code-editor]]
-    [:div.col.col-lg-5
-     [code]]
-    [:div.col.col-lg-3
-     [output]]]
-   [:div.row
-    [execution-controls]]
-   [:div.row.eip-container
-    [eip]]
-   [:div.grid
-    [:div
-     [registers]]
-    [:div
-     [internal-registers]]
-    [:div
-     [stack :stack "Stack"]]
-    [:div
-     [symbol-table]]]])
+  (let [parse-errors? @(rf/subscribe [:parse-errors?])]
+    [:div.container
+     [:div.row
+      [:div.col.col-lg-4
+       [code-editor]]
+      [:div.col.col-lg-5
+       (if parse-errors? 
+         [parse-errors]
+         [code])]
+      [:div.col.col-lg-3
+       [output]]]
+     [:div.row
+      [execution-controls]]
+     [:div.row.eip-container
+      [eip]]
+     [:div.grid
+      [:div
+       [registers]]
+      [:div
+       [internal-registers]]
+      [:div
+       [stack :stack "Stack"]]
+      [:div
+       [symbol-table]]]]))
 
 ;; -- Dev Helpers -------------------------------------------------------------------
 (comment (rf/dispatch-sync [:initialize]))
@@ -244,6 +253,7 @@
 (comment (rf/dispatch-sync [:parse]))
 (comment (rf/dispatch-sync [:toggle-breakpoint 11]))
 (comment (rf/dispatch-sync [:reset-eip]))
+(comment (rf/dispatch-sync [:toggle-parse-errors]))
 
 (comment 
   (let [registers [[:a 1] [:b 2] [:c 3] [:d 4] [:e 5] [:f 6]]]

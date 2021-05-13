@@ -74,6 +74,7 @@ xyz 123"
              :last-edit-register  nil
              :output              "$ Toy Asm Output >"}
     :on-breakpoint false    
+    :parse-errors? false
     :running? false
     :running-speed 250
     :ticker-handle nil}))
@@ -102,11 +103,11 @@ xyz 123"
 (rf/reg-event-fx
  :parse
  (fn [{:keys [db]} _]
-   (let [parsed (parse (db :source))
+   (let [parsed (parse (db :source)) ; call verify first or have parsed return {:code [] :errors ""} WOuld rather verify, and only parse if no errors.
          symbol-table (interp/build-symbol-table (parsed :code))]
      {:db
       (-> db
-          (assoc :memory {:eip                 0
+          (assoc :memory {:eip                 0 ; move al this to default db def that I can just reference.
                           :eip-stack           []
                           :internal-registers  {}
                           :output              (if (db :running?)
@@ -298,6 +299,12 @@ xyz 123"
    (assoc-in db [:memory :output] "$ Toy Asm Output >")))
 
  ;;================== DEV TEST EVENTS ==================================
+
+(rf/reg-event-db
+ :toggle-parse-errors
+ (fn [db _]
+   (assoc db :parse-errors? (not (db :parse-errors?)))))
+
 (rf/reg-event-db
  :add-value-to-registers
  (fn [db [_ [k v]]]

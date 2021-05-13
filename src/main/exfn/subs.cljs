@@ -90,3 +90,8 @@
  :rep-counters-stack
  (fn [db _]
    (-> db :memory :rep-counters-stack)))
+
+(rf/reg-sub
+ :parse-errors?
+ (fn [db _]
+   (db :parse-errors?)))
