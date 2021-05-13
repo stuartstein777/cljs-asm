@@ -35,3 +35,15 @@ jobs:
 
       - name: Compile CLJS tests
         run: npx shadow-cljs compile test
+        
+      - name: Install karma
+        run: npm install -g karma-cli
+        
+      - name: Install karma ChromeHeadless
+        run: npm install karma-chrome-launcher
+        
+      - name: Install karma cljs
+        run: npm install karma-cljs-test
+        
+      - name: Run karma tests
+        run: ./node_modules/karma/bin/karma start --single-run
