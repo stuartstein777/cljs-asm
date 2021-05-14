@@ -1,11 +1,11 @@
 (ns exfn.parser-tests
   (:require [cljs.test :refer-macros [deftest is testing run-tests]]
-            [exfn.parser :refer [expand
+            [exfn.parser :refer [build-symbol-table
+                                 expand
                                  format-arg
                                  format-arguments
                                  get-args
                                  get-code
-                                 get-data
                                  get-macro-call
                                  get-macros
                                  get-value
@@ -16,6 +16,23 @@
                                  prepare-source
                                  replace-macro-args
                                  scrub-comments]]))
+
+(deftest build-symbol-table-tests
+  (is (= {:foo 2, :bar 4, :quax 5}
+         (build-symbol-table [[:nop]
+                              [:nop]
+                              [:label :foo]
+                              [:nop]
+                              [:label :bar]
+                              [:label :quax]])))
+
+  (is (= {}
+         (build-symbol-table [[:nop]
+                              [:nop]
+                              [:nop]
+                              [:nop]
+                              [:nop]
+                              [:nop]]))))
 
 ;; is-register tests
 ;; a register starts with :
@@ -436,4 +453,41 @@
                 [:ret])
               (:code (parse source)))))))
 
-(comment (run-tests))
+(comment (run-tests)
+         (parse ".macros
+                  %initialize
+                     mov %1 0
+                     mov %2 0
+                  %end
+                  %square-and-sum
+                     mul %1 %1
+                     mul %2 %2
+                     add %1 %2
+                  %end
+                  %add-ten
+                     add %1 10
+                  %end
+                  .code
+                    initialize(:a, :b)
+                    mov :a 2
+                    mov :b 5
+                    mov :c 4
+                    square-and-sum(:a, :b)
+                    square-and-sum(:a, :c)
+                    call foo
+                    mov :s 'a = '
+                    cat :s :a
+                    prn :s
+                    end
+
+
+                    foo:
+                       call bar
+                       ret
+
+                    bar:
+                       add-ten(:a)
+                       ret")
+         
+         
+         )

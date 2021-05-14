@@ -44,18 +44,6 @@
     :jl  #{:lt}))
 
 ;;=======================================================================================================
-;; Builds the symbol table for jump targets
-;; A jump target is a label of form foo:
-;;=======================================================================================================
-(defn build-symbol-table [asm]
-  (reduce (fn [a [i ix]]
-            (if (= (first ix) :label)
-              (assoc a (second ix) i)
-              a))
-          {}
-          (map vector (range) asm)))
-
-;;=======================================================================================================
 ;; Update the existing output with the new line of output.
 ;;=======================================================================================================
 (defn append-output [existing new]

@@ -1,35 +1,54 @@
-(ns exfn.errors
-  (:require [clojure.string :as str]))
+(ns exfn.errors)
 
 (def invalid-macro-end ": Invalid macro end definition. Found %end without an opening macro definition.")
 (def invalid-macro-definition ": Invalid macro start definition. Previous macro was not closed. Are you missing %end ?")
 
-(defn has-no-arguments? [args]
-  (prn "has-no-argumetns:: " args)
-  (when (not (zero? (count args)))
-    (str "should have no arguments.")))
+(defn has-no-arguments? [line]
+  (when (not (re-seq  #"^(\w+)$" line))
+    "does not expect arguments"))
 
-(defn has-one-argument? [args]
-  (when (not= (count args) 1)
-    (str "should have no arguments.")))
+(defn has-one-argument? [line]
+  (when (not (re-seq #"^(\w+) :?(\w+):?$" line))
+    "should only have one argument."))
 
-(defn has-two-arguments? [args]
-  (when (not= (count args) 2)
-    (str "should have two arguments.")))
+(defn has-two-arguments? [line]
+  (when (not (re-seq #"^(\w+) ('.+'|`.+`|:\w+|%\w+|\d+) ('.+'|`.+`|:\w+|%\w+|\d+)$" line))
+    "should have two arguments."))
 
-(defn first-argument-is-a-register? [is-macro? args]
-  (cond (and is-macro? (not (re-find #"%\d+" (first args))))
+;; if we are in a macro, then we want the first argument to start with a %,
+;; if its not in a macro then we want the first argument to be a register.
+(defn first-argument-is-a-register? [is-macro? line]
+  (cond (and is-macro? (not (re-seq #"^(\w+)\s(:(\w+)|%(\w+))" line)))
         "first argument in a macro can't be a constant (value or string). Should have form %1, %2 etc"
 
-        (and (not is-macro?) (not (str/starts-with? (first args) ":")))
+        (and (not is-macro?) (not (re-seq #"^(\w+)\s:(\w+)" line)))
         "first argument must be a register."
 
         :else
         nil))
 
-(defn first-argument-is-a-label? [args]
-  (when (not (str/starts-with? (first args) ":"))
-    "first argument must be a jump label of form `foo`"))
+(defn one-argument-and-its-a-label [line]
+  (when (not (re-seq #"^(\w+) ([a-zA-Z_][a-zA-Z0-9_]*)$" line))
+    "expects one argument and it must be a label."))
+
+(comment
+  (one-argument-and-its-a-label "jne quax"))
+(comment
+  ; two arguments
+  (re-seq #"^(\w+) (:\w+\s)('.+'|`.+`|:\w+|\d+)$" "mov :a :b")
+  (re-seq #"^(\w+) (:\w+\s)('.+'|`.+`|:\w+|\d+)$" "mov :a")
+  ; register followed by string:
+  (rest (re-matches #"^(\w+) (:\w+\s)('.+'|`.+`)$" "mov :a 'foo bar'"))
+  ; two registers.
+  (rest (re-matches #"^(\w+) (:\w+)\s(:\w+)$" "mov :a :b"))
+  ; one register
+  (rest (re-matches #"^(\w+) (:\w+)$" "mov :a"))
+  ; one argument and its a label, match things like jump foo:
+  (rest (re-matches #"^(\w+) (\w+:)$" "jmp foo:"))
+  ;one argument
+  (rest (re-matches #"^(\w+) :?(\w+):?$" "jmp foo:"))
+  ; no arguments
+  (rest (re-matches #"^(\w+)$" "ret")))
 
 (def rules
   {"mov"  {:macro-applicable     [first-argument-is-a-register?]
@@ -69,21 +88,21 @@
    "jz"   {:macro-applicable     []
            :non-macro-applicable [has-one-argument?]}
    "jmp"  {:macro-applicable     []
-           :non-macro-applicable [has-one-argument? first-argument-is-a-label?]}
+           :non-macro-applicable [one-argument-and-its-a-label]}
    "cmp"  {:macro-applicable     []
            :non-macro-applicable [has-two-arguments?]}
    "jg"   {:macro-applicable     []
-           :non-macro-applicable [has-one-argument? first-argument-is-a-label?]}
+           :non-macro-applicable [one-argument-and-its-a-label]}
    "jge"  {:macro-applicable     []
-           :non-macro-applicable [has-one-argument? first-argument-is-a-label?]}
+           :non-macro-applicable [one-argument-and-its-a-label]}
    "jle"  {:macro-applicable     []
-           :non-macro-applicable [has-one-argument? first-argument-is-a-label?]}
+           :non-macro-applicable [one-argument-and-its-a-label]}
    "jl"   {:macro-applicable     []
-           :non-macro-applicable [has-one-argument? first-argument-is-a-label?]}
+           :non-macro-applicable [one-argument-and-its-a-label]}
    "je"   {:macro-applicable     []
-           :non-macro-applicable [has-one-argument? first-argument-is-a-label?]}
+           :non-macro-applicable [one-argument-and-its-a-label]}
    "jne"  {:macro-applicable     []
-           :non-macro-applicable [has-one-argument? first-argument-is-a-label?]}
+           :non-macro-applicable [one-argument-and-its-a-label]}
    "call" {:macro-applicable     []
            :non-macro-applicable [has-one-argument? ]}
    "ret"  {:macro-applicable     []

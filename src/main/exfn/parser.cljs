@@ -221,6 +221,18 @@
          "returns add-ten"
          (get-macro-call ["sum-and-square" "add-ten"] "add-ten(:a)"))
 
+;;=======================================================================================================
+;; Builds the symbol table for jump targets
+;; A jump target is a label of form foo:
+;;=======================================================================================================
+(defn build-symbol-table [asm]
+  (reduce (fn [a [i ix]]
+            (if (= (first ix) :label)
+              (assoc a (second ix) i)
+              a))
+          {}
+          (map vector (range) asm)))
+
 ;; ==============================================================================================
 ;; Get the arguments for the macro call.
 ;; Takes a line of source for a macro call, e.g,
@@ -306,14 +318,6 @@
 
 ;; - macro expansion ====================================================================
 
-;; + verify code ========================================================================
-(defn verify-macros [macros]
-  true
-  )
-
-
-;; - verify code ========================================================================
-
 (defn get-data [source]
   (let [data-start (.indexOf source ".data")
         data-end (count source)]
@@ -338,29 +342,21 @@
        (remove #(= "" %))
        (remove #(str/starts-with? % ";"))))
 
+;; This has to return either the parsed code or the errors from parsing.
 (defn parse [asm]
   (let [source (prepare-source asm)
-        macros (get-macros source)
-        code (get-code source)
-        data (get-data source)]
-    (if (verify-macros macros)
-      {:code (->> (macro-expand-code code macros)
-                  (map parse-line-of-code))
-       :data (mapv parse-data-entry data)})))
-
-(comment
-  (->> (prepare-source ".code
-                      mov :a 5
-              mov :b 7
-              muk :a :b ; should be mul
-              prn :a
-              cvlj foo ; call foo!
-              prn :b
-              end
-                      
-              ;; function foo
-              foo:
-              dec :b
-              wet  ; should be ret
-              ;; end of foo")
-       (vdt/validate)))
+        parse-errors (vdt/validate source)]
+    (if (= "" parse-errors)
+      (let [code (get-code source)
+            macros (get-macros source)
+            data (get-data source)
+            parsed-code (->> (macro-expand-code code macros)
+                             (map parse-line-of-code))
+            symbol-table (build-symbol-table parsed-code)]
+        {:code parsed-code
+         :data (mapv parse-data-entry data)
+         :errors ""
+         :symbol-table symbol-table})
+      {:code []
+       :data []
+       :errors parse-errors})))

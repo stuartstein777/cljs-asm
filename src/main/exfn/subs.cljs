@@ -95,3 +95,8 @@
  :parse-errors?
  (fn [db _]
    (db :parse-errors?)))
+
+(rf/reg-sub
+ :parse-errors
+ (fn [db _]
+   (db :parse-errors)))

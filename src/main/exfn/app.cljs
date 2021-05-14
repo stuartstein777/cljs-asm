@@ -14,17 +14,27 @@
 
 ;; -- Reagent Components ------------------------------------------------------------
 
+;; Header with right aligned clear button.
+(defn header-with-clear [clear-event title]
+  [:div.parsed-code-header.header
+   {:style {:text-align   :left
+            :padding-left 5
+            :padding-top 3}}
+   title
+   [:button.btn.btn-danger.btn.py-0
+    {:on-click #(rf/dispatch [clear-event])
+     :style    {:font-size    "0.8em"
+                :float        :right
+                :margin-top   2
+                :margin-right 5}}
+    "clear"]])
+
 ;; Source Code Editor.
 (defn code-editor []
   (let [source @(rf/subscribe [:source])]
     [:div
      [:div.editor
-      [:div.source-editor-header.header "Source Editor"
-       [:button.btn.btn-danger.btn.py-0 {:on-click #(rf/dispatch [:clear-source])
-                                         :style    {:font-size    "0.8em"
-                                                    :float        :right
-                                                    :margin-right 5}}
-        "clear"]]
+      [header-with-clear :clear-source "Source Editor"]
       [:textarea#lineNos.text-editor-line-nos {:readOnly  true
                                                :value     (h/get-source-line-numbers source)}]
       [:textarea#editor.text-editor {:on-change #(rf/dispatch-sync [:update-source (-> % .-target .-value)])
@@ -35,18 +45,21 @@
                                      :wrap      :off}]]]))
 
 (defn parse-errors []
-  [:div.parsed-code-container
-     [:div.parsed-code-header.header
-      "Parse errors"
-      ]])
+  (let [errors @(rf/subscribe [:parse-errors])]
+    [:div.parsed-code-container
+     [header-with-clear :clear-parse-errors "Parse Errors"]
+     [:textarea#errors.parse-errors
+      {:readOnly true
+       :value errors
+       :wrap      :off}]]))
 
 ;; Display the parsed code.
 (defn code []
   (let [code            @(rf/subscribe [:code])
-        breakpoints     @(rf/subscribe [:breakpoints])
-        code-with-lines (zipmap (range (count code)) code)
-        eip             @(rf/subscribe [:eip])
-        on-breakpoint?  @(rf/subscribe [:on-breakpoint])]
+     breakpoints     @(rf/subscribe [:breakpoints])
+     code-with-lines (zipmap (range (count code)) code)
+     eip             @(rf/subscribe [:eip])
+     on-breakpoint?  @(rf/subscribe [:on-breakpoint])]
     [:div.parsed-code-container
      [:div.parsed-code-header.header
       [:div
@@ -111,7 +124,8 @@
         :disabled (and (or finished? (not has-parsed-code?) is-running? ) (not on-breakpoint))}
        [:i.fas.fa-forward]]
       [:button.btn.btn-danger.stop-button
-       {:on-click #(rf/dispatch [:reset])}
+       {:disabled (not has-parsed-code?)
+        :on-click #(rf/dispatch [:reset])}
        (if finished? [:i.fas.fa-redo] [:i.fas.fa-stop])]
       [:input.instr-per-sec {:disabled    is-running?
                              :on-change   #(rf/dispatch-sync [:update-running-speed (-> % .-target .-value)])
@@ -205,17 +219,7 @@
 (defn output []
   (let [output @(rf/subscribe [:output])]
     [:div.std-out-container
-     [:div.std-out-header
-      [:label
-       {:style {:margin-left 5}}
-       "Output"]
-      [:button.btn.btn-danger.btn.py-0
-       {:on-click #(rf/dispatch [:clear-output])
-        :style    {:font-size    "0.8em"
-                   :float        :right
-                   :margin-top   2
-                   :margin-right 2}}
-       "clear"]]
+     [header-with-clear :clear-output "Output"]
      [:textarea.std-out {:value output
                          :readOnly  true
                          :wrap      :off}]]))

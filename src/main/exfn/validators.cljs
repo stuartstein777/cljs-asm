@@ -8,15 +8,17 @@
 ;;
 ;; runs an instructions ruleset against the supplied args and collects the error(s).
 ;;=================================================================================================================
-(defn validate-instruction [instr args is-macro?]
+(defn validate-instruction [instr line is-macro?]
   (let [{:keys [macro-applicable non-macro-applicable]} (err/rules instr)
         applied  (map #(partial % is-macro?) macro-applicable)
         all-rules (apply conj applied non-macro-applicable)]
     (keep (fn [f]
-            (let [error (f args)]
+            (let [error (f line)]
               (when error
                 (str "Invalid `" instr "` call, `" instr "` " error)))) all-rules)))
 
+(comment 
+  (validate-instruction "mov" "mov :a :b" false))
 ;;=================================================================================================================
 ;; get-section
 ;;
@@ -71,7 +73,7 @@
 ;; Otherwise return acc.
 ;;=================================================================================================================
 (defn validate-macro-call [acc macro-names macro-call line-no]
-  (let [macro-name (apply str (take-while #(not= \( %) macro-call))]
+  (let [macro-name (str/trim (apply str (take-while #(not= \( %) macro-call)))]
     (if (macro-names macro-name)
       acc
       (update acc :errors conj (build-error macro-call line-no macro-names true)))))
@@ -82,8 +84,7 @@
 ;; Return new accumulator for the reduce. Want to set errors if line doesnt' validate.
 ;;=================================================================================================================
 (defn validate-line [{:keys [open-macro] :as acc} line-no code macro-names]
-  (let [[instruction & args] (str/split code #" ")]
-
+  (let [instruction (first (str/split code #" "))]
     (cond
       ;; it looks like a macro call:
       (re-find #"(\(\)|(\(.+?\)))" code)
@@ -99,7 +100,7 @@
         ; if its invalid instruction, then add error.
         (update acc :errors conj (build-error instruction line-no h/valid-instructions false))
         ;else, validate the instruction has the correct arguments and types.
-        (let [errors (->> (validate-instruction instruction args open-macro)
+        (let [errors (->> (validate-instruction instruction code open-macro)
                           (map #(str line-no ": " %)))]
           ; if we got any errors add them to the errors key. Otherwise just return the acc unchanged.
           (if (seq errors)
@@ -177,8 +178,8 @@
 
 (comment (validate '(".macros"
                      "%square-and-sum"
-                     "mul 5 %1"
-                     "muk %2 %2"
+                     "mul %1 %1"
+                     "mul %2 %2"
                      "add %1 %2"
                      "%end"
                      "%add-ten"
@@ -187,17 +188,17 @@
                      ".code"
                      "mov :a 0"
                      "mov :b 1"
-                     "squareandsub(:a, :b)"
-                     "mov :c 2"
+                     "square-and-sum (:a, :b)"
+                     "mov :c 'foo bar'"
                      "prn :b"
                      "call foo"
-                     "mul :c"
+                     "mul :c 5"
                      "cmp :a :b"
-                     "ffne quax"
+                     "jne quax"
                      "mul :c 10"
                      "quax:"
                      "nop"
-                     "cdlk bar"
+                     "call bar"
                      "pop :d"
                      "pop :e"
                      "prn :d"
@@ -205,13 +206,12 @@
                      "xor :b :b"
                      "end" "foo:"
                      "inc :b"
-                     "xxx"
                      "ret"
                      "bar:"
                      "add :a 7"
                      "sub :c 1"
                      "push 3"
                      "push 4"
-                     "wet"
+                     "ret"
                      ".data"
                      "xyz 123")))

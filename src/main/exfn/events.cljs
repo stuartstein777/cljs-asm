@@ -4,10 +4,31 @@
             [exfn.interpreter :as interp]
             [clojure.set :as set]))
 
+(defn reset-db [db]
+  (-> db
+      (assoc-in [:memory :eip] 0)
+      (assoc-in [:memory :eip-stack] [])
+      (assoc-in [:memory :internal-registers] {})
+      (assoc-in [:memory :last-edit-register] nil)
+      (assoc-in [:memory :output] "$ Toy Asm Output >")
+      (assoc-in [:memory :registers] [])
+      (assoc-in [:memory :rep-counters-stack] [])
+      (assoc-in [:memory :stack] [])
+      (assoc-in [:memory :symbol-table] [])
+      (assoc-in [:memory :termination-message] "")
+      (assoc :breakpoints #{})
+      (assoc :code [])
+      (assoc :finished? false)
+      (assoc :has-parsed-code? false)
+      (assoc :on-breakpoint false)
+      (assoc :parse-errors? false)
+      (assoc :parse-errors "")
+      (assoc :running? false)))
+
 (rf/reg-event-db
  :initialize
  (fn [_ _]
-   {:source      ".macros
+   {:source           ".macros
    %square-and-sum
       mul %1 %1
       mul %2 %2
@@ -59,25 +80,26 @@ ret        ; ret to bar call, pop eip stack
 
 .data
 xyz 123"
-    :breakpoints #{}
-    :code        []
-    :finished? false
+    :breakpoints      #{}
+    :code             []
+    :finished?        false
     :has-parsed-code? false
-    :memory {:eip                 0
-             :registers           {}
-             :eip-stack           []
-             :internal-registers  {}
-             :stack               []
-             :termination-message ""
-             :symbol-table        {}
-             :rep-counters-stack  []
-             :last-edit-register  nil
-             :output              "$ Toy Asm Output >"}
-    :on-breakpoint false    
-    :parse-errors? false
-    :running? false
-    :running-speed 250
-    :ticker-handle nil}))
+    :memory           {:eip                 0
+                       :registers           {}
+                       :eip-stack           []
+                       :internal-registers  {}
+                       :stack               []
+                       :termination-message ""
+                       :symbol-table        {}
+                       :rep-counters-stack  []
+                       :last-edit-register  nil
+                       :output              "$ Toy Asm Output >"}
+    :on-breakpoint    false
+    :parse-errors?    false
+    :parse-errors     ""
+    :running?         false
+    :running-speed    250
+    :ticker-handle    nil}))
 
 (defn dispatch-timer-event []
   (rf/dispatch [:next-instruction]))
@@ -103,28 +125,26 @@ xyz 123"
 (rf/reg-event-fx
  :parse
  (fn [{:keys [db]} _]
-   (let [parsed (parse (db :source)) ; call verify first or have parsed return {:code [] :errors ""} WOuld rather verify, and only parse if no errors.
-         symbol-table (interp/build-symbol-table (parsed :code))]
-     {:db
-      (-> db
-          (assoc :memory {:eip                 0 ; move al this to default db def that I can just reference.
-                          :eip-stack           []
-                          :internal-registers  {}
-                          :output              (if (db :running?)
-                                                 (str (-> db :memory :output) "\nUser terminated.")
-                                                 (-> db :memory :output))
-                          :registers           (fill-data-registers (parsed :data))
-                          :rep-counters-stack  []
-                          :stack               []
-                          :symbol-table        symbol-table
-                          :termination-message ""})
-          (assoc :code (parsed :code))
-          (assoc :on-breakpoint false)
-          (assoc :has-parsed-code? (pos? (count (parsed :code))))
-          (assoc :finished? false)
-          (assoc :running? false))
-      :scroll-parsed-code-to-top _
-      :end-running (db :ticker-handle)})))
+   (let [{:keys [code data errors symbol-table]} (parse (db :source))]
+     ; if we have errors, this trumps any other output that might be there, so we want to display the errors.
+     ; but if errors is an empty string, we can just proceed as normal and assoc the code, symbol table and data entries
+     (if (= "" errors)
+       {:db (-> (reset-db db)
+                (assoc-in [:memory :output] (if (db :running?)
+                                               (str (-> db :memory :output) "\nUser terminated.")
+                                               (-> db :memory :output)))
+                (assoc-in [:memory :symbol-table] symbol-table)
+                (assoc-in [:memory :registers] (fill-data-registers data))
+                (assoc :has-parsed-code? true)
+                (assoc :code code)
+                (assoc :parse-errors? false)
+                (assoc :parse-errors errors))
+        ;:scroll-parsed-code-to-top _
+        :end-running (db :ticker-handle)}
+       {:db (-> (reset-db db)
+                (assoc :parse-errors? true)
+                (assoc :parse-errors errors))
+        :end-running (db :ticker-handle)}))))
 
 ; Handles when the user clicks the Clear Parsed button
 (rf/reg-event-fx
