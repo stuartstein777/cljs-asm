@@ -13,3 +13,5 @@ Watch build
 ```
 $ npx shadow-cljs watch app
 ```
+
+Site at: https://toyasm.z33.web.core.windows.net/
