@@ -50,7 +50,9 @@
   
 (deftest has-two-arguments?-tests
   (testing "instruction has two arguments, should not return error"
-    (is (nil? (has-two-arguments? "mov :a :b"))))
+    (is (nil? (has-two-arguments? "mov :a :b")))
+    (is (nil? (has-two-arguments? "mov a 0")))
+    (is (nil? (has-two-arguments? "mov 5 0"))))
   (testing "instruction has one argument, should return error"
     (is (= "should have two arguments." (has-two-arguments? "mov :a"))))
   (testing "instruction has no arguments, should return error"

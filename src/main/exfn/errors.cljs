@@ -12,7 +12,7 @@
     "should only have one argument."))
 
 (defn has-two-arguments? [line]
-  (when (not (re-seq #"^(\w+) ('.+'|`.+`|:\w+|%\w+|\d+) ('.+'|`.+`|:\w+|%\w+|\d+)$" line))
+  (when (not (re-seq #"^(\w+) ('.+'|`.+`|:\w+|%\w+|\d+|\w+) ('.+'|`.+`|:\w+|%\w+|\d+|\w+)$" line))
     "should have two arguments."))
 
 ;; if we are in a macro, then we want the first argument to start with a %,
