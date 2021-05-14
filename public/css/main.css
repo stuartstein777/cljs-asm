@@ -69,6 +69,14 @@ textarea:focus {
     border-color: black;
 }
 
+.parse-errors {
+    background-color: rgb(29, 29, 29);
+    color: rgb(209, 9, 9);
+    height: 400px;
+    padding: 10px;
+    width: 100%;
+
+}
 /*
 ----------------------------------------------------------
 The parsed code control
@@ -442,8 +450,7 @@ reagent function::          memory, eip
 .std-out {
     background-color: rgb(46,43,43);
     color: greenyellow;
-    height: 410px;
-    max-height: 410px;
+    height: 400px;
     padding: 10px;
     width: 100%;
 }
