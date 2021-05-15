@@ -1,4 +1,4 @@
-(ns test.exfn.validators-tests
+(ns exfn.validators-tests
   (:require [cljs.test :refer-macros [deftest is testing run-tests]]
             [exfn.validators :refer [validate-instruction]]))
 
@@ -51,21 +51,36 @@
     (is (= [] (validate-instruction "jle" "jle foo" false)))
     (is (= [] (validate-instruction "jl" "jl foo" false)))
     (is (= [] (validate-instruction "jg" "jg foo" false)))
+    (is (= [] (validate-instruction "rnz" "rnz :a" false)))
+    (is (= [] (validate-instruction "rz" "rz :a" false)))
+    (is (= [] (validate-instruction "rgz" "rgz :a" false)))
+    (is (= [] (validate-instruction "rlz" "rlz :a" false)))
+    (is (= [] (validate-instruction "rgez" "rgez :a" false)))
+    (is (= [] (validate-instruction "rlez" "rlez :a" false)))
     (is (= [] (validate-instruction "prn" "prn :a" false))))
-  
+
     (testing "Invalid instructions should return errors"
-    (is (= ["Invalid `mov` call, `mov` should have two arguments."
-            "Invalid `mov` call, `mov` first argument must be a register."]
-           (validate-instruction "mov" "mov a" false)))
-    (is (= ["Invalid `mov` call, `mov` should have two arguments."
-            "Invalid `mov` call, `mov` first argument must be a register."]
-           (validate-instruction "mov" "mov" false)))
-    (is (= ["Invalid `mov` call, `mov` should have two arguments."]
-           (validate-instruction "mov" "mov :a" false)))
-    (is (= ["Invalid `mov` call, `mov` should have two arguments."]
-           (validate-instruction "mov" "mov :a :b :c" false)))
-    (is (= ["Invalid `add` call, `add` should have two arguments."]
-           (validate-instruction "add" "add :a :b :c" false)))
-    ))
+      (is (= ["Invalid `mov` call, `mov` should have two arguments."
+              "Invalid `mov` call, `mov` first argument must be a register."]
+             (validate-instruction "mov" "mov a" false)))
+      (is (= ["Invalid `mov` call, `mov` should have two arguments."
+              "Invalid `mov` call, `mov` first argument must be a register."]
+             (validate-instruction "mov" "mov" false)))
+      (is (= ["Invalid `mov` call, `mov` should have two arguments."]
+             (validate-instruction "mov" "mov :a" false)))
+      (is (= ["Invalid `mov` call, `mov` should have two arguments."]
+             (validate-instruction "mov" "mov :a :b :c" false)))
+      (is (= ["Invalid `add` call, `add` should have two arguments."]
+             (validate-instruction "add" "add :a :b :c" false)))
+      (is (= ["Invalid `add` call, `add` should have two arguments."]
+             (validate-instruction "add" "add :a" false)))
+      (is (= ["Invalid `add` call, `add` first argument must be a register."]
+             (validate-instruction "add" "add 5 :b" false)))
+      (is (= ["Invalid `sub` call, `sub` first argument must be a register."]
+             (validate-instruction "sub" "sub 5 :b" false)))
+      (is (= ["Invalid `sub` call, `sub` should have two arguments."
+              "Invalid `sub` call, `sub` first argument must be a register."]
+             (validate-instruction "sub" "sub 5" false)))
+      ))
 
 (comment (run-tests))
