@@ -11,9 +11,10 @@ body{
 .header {
     background-color: rgb(34, 34, 34);
     border: 1px black solid;
+    color: white;
     font-size: 0.7em;
     height: 20px;
-    color: white;
+    text-align: center;
 }
 
 /*
@@ -99,11 +100,13 @@ reagent function::          code
 }
 
 .breakpoint-indicator {
-    background-color: rgb(224, 75, 75);
+    background-color: rgb(233, 53, 53);
     border-left: 1px solid black;
     border-right: 1px solid black;
     border-bottom: 1px solid black;
+    font-size: 0.8em;
     height: 20px;
+    padding-left: 10px;
 }
 
 .code { 
@@ -160,7 +163,6 @@ reagent function::          code
 }
 
 .register {
-    color: darkmagenta;    
     font-weight: bold;
     text-align: left;
     min-width: 30px;
@@ -236,7 +238,7 @@ reagent function::          execution-controls
 }
 /*
 ----------------------------------------------------------
-The registers section
+Running data section.
 
 reagent function::          memory, eip
 
@@ -271,32 +273,119 @@ reagent function::          memory, eip
     width: 100px;
 }
 
+
+/*
+----------------------------------------------------------
+
+ Internal registers.
+
+ ----------------------------------------------------------
+*/
+.internal-registers-container {
+    /* background-color: green; */
+    border: 1px black solid;
+    height: 100%;
+    width: 250px;
+}
+
+.internal-registers-inner-container {
+    height: calc(100% - 20px);
+    overflow-x: hidden;
+    overflow-y: scroll;
+}
+
+.internal-registers-header {
+    font-size: 0.7em;
+    text-align: center;
+    width: 100%;
+}
+
+.internal-registers-stacks-container {
+    height: calc(100% - 60px);
+    width: 100%;
+}
+
+.internal-registers-list {
+    background-color: grey;
+    height: 60px;
+    width: 100%;
+}
+
+.internal-register-name {
+    background-color: grey;
+    border-bottom: 1px solid black;
+    border-left: 1px solid black;
+    font-size: 0.7em;
+    height: 20px;
+    text-align: center;
+    width: 50%;
+}
+
+.internal-register-value {
+    background-color: white;
+    border-bottom: 1px solid black;
+    border-right: 1px solid black;
+    font-size: 0.7em;
+    height: 20px;
+    text-align: center;
+    width: 50%;
+}
+
+.eip-stack-container {
+    float: left;
+    height: 100%;
+    width: 50%;
+}
+
+.rp-stack-container {
+    float: right;
+    height: 100%;
+    width: 50%;
+}
+
+.eip-stack-value {
+    background-color: white;
+    border-bottom: 1px solid black;
+    border-right: 1px solid black;
+    font-size: 0.7em;
+    height: 20px;
+    text-align: center;
+    width: 100%;
+}
+
+/*
+----------------------------------------------------------
+
+Registers list
+
+----------------------------------------------------------
+*/
+
 .registers-container {
+    background-color: orange;
+    height: 100%;
     text-align: left;
-    width: 225px;
+    width: 500px;
 }
 
 .registers-header {
     font-size: 0.7em;
-    height: 20px;
     padding-left: 10px;
     text-align: center;
     vertical-align: middle;
-    width: 225px;
+    width: 500px;
 }
 
 .registers-list {
     background-color: gray;
     border: 1px solid black;
-    height: 350px;
-    max-height: 350px;
-    max-width: 225px;
-    min-height: 350px;
-    min-width: 225px;
+    height: calc(100% - 20px);
     overflow-x: hidden;
     overflow-y: scroll;
-    width: 225px;
+    width: 500px;
 }
+
+
 
 .register-name {
     background-color: grey;
@@ -315,8 +404,8 @@ reagent function::          memory, eip
     border-right: 1px solid black;
     font-size: 0.7em;
     height: 20px;
-    text-align: center;
-    width: 105px;
+    text-align: left;
+    width: 380px;
 }
 
 .register-updated {
@@ -333,9 +422,17 @@ reagent function::          memory, eip
     width: 1000px;
 }
 
+/*
+----------------------------------------------------------
+
+Stack
+
+----------------------------------------------------------
+*/
 .stack-container {
+    height: 100%;
     text-align: left;
-    width: 125px;
+    width: 350px;
 }
 
 .stack-header {
@@ -344,20 +441,16 @@ reagent function::          memory, eip
     padding-left: 10px;
     text-align: center;
     vertical-align: middle;
-    width: 125px;
+    width: 100%;
 }
 
 .stack-list {
     background-color: gray;
     border: 1px solid black;
-    height: 350px;
-    max-height: 350px;
-    max-width: 125px;
-    min-height: 350px;
-    min-width: 125px;
+    height: calc(100% - 20px);
     overflow-x: hidden;
     overflow-y: scroll;
-    width: 125px;
+    width: 100%;
 }
 
 .stack-value {
@@ -366,21 +459,20 @@ reagent function::          memory, eip
     border-right: 1px solid black;
     font-size: 0.7em;
     height: 20px;
+    margin-left: 10px;
     text-align: center;
-    width: 120px;
+    width: 100%;
 }
 
-.eip-stack-value {
-    background-color: white;
-    border-bottom: 1px solid black;
-    border-right: 1px solid black;
-    font-size: 0.7em;
-    height: 20px;
-    text-align: center;
-    width: 105px;
-}
+/*
+----------------------------------------------------------
 
+Symbol Table
+
+----------------------------------------------------------
+*/
 .symbol-table-container {
+    height: 100%;
     text-align: left;
     width: 200px;
 }
@@ -391,19 +483,15 @@ reagent function::          memory, eip
     padding-left: 10px;
     text-align: center;
     vertical-align: middle;
-    width: 150px;
+    width: 200px;
 }
 
 .symbol-table {
     border: 1px solid black;
-    height: 350px;
-    max-height: 350px;
-    max-width: 150px;
-    min-height: 350px;
-    min-width: 150px;
+    height: calc(100% - 20px);
     overflow-x: hidden;
     overflow-y: scroll;
-    width: 150px;
+    width: 100%;
 }
 
 .symbol-name {
@@ -412,7 +500,7 @@ reagent function::          memory, eip
     font-size: 0.7em;
     height: 20px;    
     text-align: center;
-    width: 94px;
+    width: 50%;
 }
 
 .symbol-value {
@@ -420,8 +508,8 @@ reagent function::          memory, eip
     border-bottom: 1px solid black;
     font-size: 0.7em;
     height: 20px;
-    text-align: right;
-    width: 50px;
+    text-align: center;
+    width: 50%;
 }
 
 .breakpoint-label {
@@ -452,6 +540,9 @@ reagent function::          memory, eip
     color: greenyellow;
     height: 400px;
     padding: 10px;
+    overflow-x: auto;
+    overflow-y: auto;
+    resize: none;
     width: 100%;
 }
 

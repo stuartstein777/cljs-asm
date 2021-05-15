@@ -172,24 +172,25 @@
   (let [internal-registers (dissoc @(rf/subscribe [:internal-registers]) :err-msg)
         eip-stack @(rf/subscribe [:eip-stack])
         rep-counters @(rf/subscribe [:rep-counters-stack])]
-    [:div.registers-container
-     [:div.registers-header.header "Internal Registers"]
-     [:div.registers-list
-      (when (not= internal-registers {})
-        (for [[k [reg v]] (h/keyed-collection internal-registers)]
-          [:div.row {:key k}
-           [:div.col-col-lg6.register-name {:key (str "irgn-" k)} reg]
-           [:div.col-col-lg6.register-value {:key (str "irgv-" k)}
-            (cmp-values v)]]))
-      [:div
-       [:div {:style {:float :left :width 103 :text-align :center}}
+    [:div.internal-registers-container
+     [:div.internal-registers-header.header "Internal Registers"]
+     [:div.internal-registers-inner-container
+      [:div.internal-registers-list
+       (when (not= internal-registers {})
+         (for [[k [reg v]] (h/keyed-collection internal-registers)]
+           [:div.row
+            [:div.internal-register-name {:key (str "irgn-" k)} reg]
+            [:div.internal-register-value {:key (str "irgv-" k)}
+             (cmp-values v)]]))]
+      [:div.internal-registers-stacks-container
+       [:div.eip-stack-container
         [:div.header "EIP Stack"]
         [:div
          (for [[k r] (h/keyed-collection (reverse eip-stack))]
            [:div.eip-stack-value {:key k} r])]]
-       [:div {:style {:float :right :width 103 :text-align :center}}
+       [:div.eip-rp-container
         [:div.header "RP Stack"]
-        [:div 
+        [:div
          (for [[k r] (h/keyed-collection (reverse rep-counters))]
            [:div.eip-stack-value {:key k} r])]]]]]))
 
@@ -264,7 +265,7 @@
     ((doseq [r registers]
        (rf/dispatch-sync [:add-value-to-registers r])))))
 
-(comment (rf/dispatch [:add-value-to-stack 4]))
+(comment (rf/dispatch [:add-value-to-stack "foooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"]))
 
 ;; -- After-Load --------------------------------------------------------------------
 ;; Do this after the page has loaded.
