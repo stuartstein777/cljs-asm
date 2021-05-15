@@ -4,6 +4,10 @@
 
 (deftest validate-instruction-tests
   (testing "Valid instructions should not return errors"
+    (is (= [] (validate-instruction "mov" "mov :a :b" true)))
+    (is (= [] (validate-instruction "mov" "mov %1 %2" true)))
+    (is (= [] (validate-instruction "mov" "mov %1 :b" true)))
+    (is (= [] (validate-instruction "mov" "mov :a %2" true)))
     (is (= [] (validate-instruction "mov" "mov :a :b" false)))
     (is (= [] (validate-instruction "mov" "mov :a 5" false)))
     (is (= [] (validate-instruction "add" "add :a :b" false)))
