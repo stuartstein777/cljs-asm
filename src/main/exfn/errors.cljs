@@ -86,7 +86,7 @@
    "jnz"  {:macro-applicable     []
            :non-macro-applicable [has-two-arguments?]}
    "jz"   {:macro-applicable     []
-           :non-macro-applicable [has-one-argument?]}
+           :non-macro-applicable [has-two-arguments?]}
    "jmp"  {:macro-applicable     []
            :non-macro-applicable [one-argument-and-its-a-label]}
    "cmp"  {:macro-applicable     []
