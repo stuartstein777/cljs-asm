@@ -2,12 +2,9 @@ body{
     background-color: rgb(150, 150, 150);
 }
 
-.content {
-    /*margin:10px;*/
-    text-align: center;
-    width: 100%;
-}
-
+/* 
+Standard settings for all the headers.
+*/
 .header {
     background-color: rgb(34, 34, 34);
     border: 1px black solid;
@@ -24,12 +21,16 @@ reagent function::          code-editor
 ----------------------------------------------------------
 */
 
+/*
+  The div that holds the source editor elements.
+*/
 .editor {
     height: 400px;
     margin: 10px;
     width: 100%;
 }
 
+/* The header for the source editor */
 .source-editor-header {
     height: 25px;
     padding-left: 5px;
@@ -39,6 +40,7 @@ reagent function::          code-editor
     width:100%;
 }
 
+/* Holds the line numbers for the source editor. */
 .text-editor-line-nos {
     background-color: rgb(18, 18, 19);
     border-right: 0px;
@@ -53,6 +55,7 @@ reagent function::          code-editor
     width: 10%;
 }
 
+/* The source editor that holds the code. */
 .text-editor {
     background-color: rgb(29, 29, 29);
     border-left: 0px;
@@ -70,14 +73,15 @@ textarea:focus {
     border-color: black;
 }
 
+/* Shows the parse errors. */
 .parse-errors {
     background-color: rgb(29, 29, 29);
     color: rgb(209, 9, 9);
     height: 400px;
     padding: 10px;
     width: 100%;
-
 }
+
 /*
 ----------------------------------------------------------
 The parsed code control
@@ -85,13 +89,7 @@ reagent function::          code
 ----------------------------------------------------------
 */
 
-.parsed-code-container {
-    margin-top: 10px;
-    height: 455px;
-    overflow-y: none;
-    width:  100%;
-}
-
+/* The column that holds all the breakpoint indicators.*/
 .breakpoint {
     cursor: pointer;
     width: 25px;
@@ -99,6 +97,7 @@ reagent function::          code
     text-shadow: 0 0 2px #000;
 }
 
+/* The circle on the left of the parsed code control, clickable to set / disable breakpoint */
 .breakpoint-indicator {
     background-color: rgb(233, 53, 53);
     border-left: 1px solid black;
@@ -109,6 +108,7 @@ reagent function::          code
     padding-left: 10px;
 }
 
+/* The table that holds the code instructions and arguments.*/
 .code { 
     border-bottom: 1px solid rgb(46, 46, 46);
     table-layout: fixed;
@@ -116,6 +116,7 @@ reagent function::          code
     width: 100%;
 }
 
+/* The container for the parsed code table */
 .code-container {
     border: 1px rgb(51, 51, 51) solid;
     height: 400px;
@@ -124,18 +125,22 @@ reagent function::          code
     width: 100%;
 }
 
-.code-line {
-    max-height: 20px;
-}
-
-.current-line {
-    background-color: goldenrod;
-}
-
+/* The >> eip indicator.*/
 .code-eip {
     width: 25px;
 }
 
+/* Table row that holds a single parsed line of code. */
+.code-line {
+    max-height: 20px;
+}
+
+/* For styling the current line of code the eip is on in the parsed code control. */
+.current-line {
+    background-color: goldenrod;
+}
+
+/* For styling the instruction part of a line of code. */
 .instruction {
     color: darkblue;
     font-weight: bold;
@@ -146,7 +151,8 @@ reagent function::          code
     width: 50px;
 }
 
-.line-number {
+/* Styling the line number column. */
+.line-numbers {
     background-color: grey;
     border-right: 2px solid black;
     border-left: 2px solid black;
@@ -155,6 +161,15 @@ reagent function::          code
     width: 45px;
 }
 
+/* Holds the parsed code. */
+.parsed-code-container {
+    margin-top: 10px;
+    height: 100%;
+    overflow-y: none;
+    width:  100%;
+}
+
+/* The header for the parsed code (has bin on left and clear button on right) */
 .parsed-code-header {
     height: 25px;
     text-align: left;
@@ -162,15 +177,17 @@ reagent function::          code
     width: 100%;
 }
 
+/* Styles a register in a line of code */
 .register {
     font-weight: bold;
     text-align: left;
     min-width: 30px;
 }
 
+/* Styles a value in a line of code */
 .value {
     border-right: 1px solid black dashed;
-    color: black;
+    color: blueviolet;
     font-weight: normal;
     text-align: left;
     min-width: 30px;
@@ -186,16 +203,19 @@ reagent function::          execution-controls
 ----------------------------------------------------------
 */
 
-.parse-btn {
-    margin-right: 10px;
-    width: 150px;
-}
-
+/* Outer div for the code control buttons */
 .execution-controls {
     margin: 10px;
     text-align:  left;
 }
 
+/* The parse button */
+.parse-btn {
+    margin-right: 10px;
+    width: 150px;
+}
+
+/* The textbox where you can enter the instructions per msec */
 .instr-per-sec {
     margin-left: 10px;
     text-align: right;
@@ -203,6 +223,7 @@ reagent function::          execution-controls
     width: 60px;
 }
 
+/* The next instruction button that increases the eip. */
 .next-instruction {
     color: black;
     margin-left: 10px;
@@ -213,6 +234,7 @@ reagent function::          execution-controls
     border: 1px solid grey;
 }
 
+/* The play / pause button */
 .play-pause {
     color: black;
 }
@@ -222,11 +244,13 @@ reagent function::          execution-controls
     border: 1px solid grey;
 }
 
+/* The label for displaying the speed (msecs / instruction) description. */
 .speed-label {
     margin-left: 10px;
     vertical-align: middle;
 }
 
+/* The stop / reset button */
 .stop-button {
     color: black;
     margin-left: 10px;
@@ -236,6 +260,16 @@ reagent function::          execution-controls
     background-color: darkgray;
     border: 1px solid grey;
 }
+
+/* Shows error if invalid speed is entered for msecs / instruction */
+.speed-value-error {
+    background-color: red;
+    border-radius: 5px;
+    color: black;
+    margin-left: 5px;
+    padding: 5px;
+}
+
 /*
 ----------------------------------------------------------
 Running data section.
@@ -244,6 +278,17 @@ reagent function::          memory, eip
 
 ----------------------------------------------------------
 */
+
+/* EIP container, holds the EIP label and the actual EIP */
+.eip-container {
+    float: left;
+    height: 20px;
+    margin: 0;
+    text-align: left;
+    width: 100%;
+}
+
+/* Displays the current EIP */
 .eip {
     background-color: white;
     border-right: 1px black solid;
@@ -257,14 +302,7 @@ reagent function::          memory, eip
     width: 125px;
 }
 
-.eip-container {
-    float: left;
-    height: 20px;
-    margin: 0;
-    text-align: left;
-    width: 100%;
-}
-
+/* The EIP Header */
 .eip-header {
     font-size: 0.7em;
     height: 20px;
@@ -281,36 +319,42 @@ reagent function::          memory, eip
 
  ----------------------------------------------------------
 */
+
+/* Holds the internal registers, eip stack and rp stack and the header. */
 .internal-registers-container {
-    /* background-color: green; */
     border: 1px black solid;
     height: 100%;
     width: 250px;
 }
 
+/* Holds the internal registers, eip stack and rp stack. */
 .internal-registers-inner-container {
     height: calc(100% - 20px);
     overflow-x: hidden;
     overflow-y: scroll;
 }
 
+/* Internal registers header. */
 .internal-registers-header {
     font-size: 0.7em;
     text-align: center;
     width: 100%;
 }
 
+/* Holds both the internal register stacks*/
 .internal-registers-stacks-container {
     height: calc(100% - 60px);
     width: 100%;
 }
 
+/* Holds the internal registers, cmp, err and par*/
 .internal-registers-list {
     background-color: grey;
     height: 60px;
     width: 100%;
 }
 
+/* Holds an internal register name, e.g. par, cmp err */
 .internal-register-name {
     background-color: grey;
     border-bottom: 1px solid black;
@@ -321,6 +365,7 @@ reagent function::          memory, eip
     width: 50%;
 }
 
+/* Holds an internal register value. */
 .internal-register-value {
     background-color: white;
     border-bottom: 1px solid black;
@@ -331,18 +376,21 @@ reagent function::          memory, eip
     width: 50%;
 }
 
+/* Holds the eip stack container (including header) */
 .eip-stack-container {
     float: left;
     height: 100%;
     width: 50%;
 }
 
+/* Holds the rp stack container (including header) */
 .rp-stack-container {
     float: right;
     height: 100%;
     width: 50%;
 }
 
+/* Internal register stack value, used in both eip stack and rp stack. */
 .eip-stack-value {
     background-color: white;
     border-bottom: 1px solid black;
@@ -361,6 +409,7 @@ Registers list
 ----------------------------------------------------------
 */
 
+/* Holds the registers, including the header. */
 .registers-container {
     background-color: orange;
     height: 100%;
@@ -368,6 +417,7 @@ Registers list
     width: 500px;
 }
 
+/* The registers header. */
 .registers-header {
     font-size: 0.7em;
     padding-left: 10px;
@@ -376,6 +426,7 @@ Registers list
     width: 500px;
 }
 
+/* Holds the registers list. Scroll bar is in this control so it doesn't add scrollbar to header as well. */
 .registers-list {
     background-color: gray;
     border: 1px solid black;
@@ -385,8 +436,7 @@ Registers list
     width: 500px;
 }
 
-
-
+/* Register Name*/
 .register-name {
     background-color: grey;
     border-bottom: 1px solid black;
@@ -398,6 +448,7 @@ Registers list
     width: 105px;
 }
 
+/* Register Value*/
 .register-value {
     background-color: white;
     border-bottom: 1px solid black;
@@ -408,10 +459,12 @@ Registers list
     width: 380px;
 }
 
+/* the last updated register is highlighted yellow. */
 .register-updated {
     background-color: yellow;
 }
 
+/* Holds the registers, internal registers, stack and symbol table */
 .grid {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
@@ -419,7 +472,7 @@ Registers list
     grid-gap: 0px;
     margin: 12px;
     height: 380px;
-    width: 1000px;
+    width: 100%;
 }
 
 /*
@@ -427,14 +480,18 @@ Registers list
 
 Stack
 
+reagent method: stack
 ----------------------------------------------------------
 */
+
+/* Holds the stack, including the header */
 .stack-container {
     height: 100%;
     text-align: left;
     width: 350px;
 }
 
+/* Stack header */
 .stack-header {
     font-size: 0.7em;
     height: 20px;
@@ -444,6 +501,7 @@ Stack
     width: 100%;
 }
 
+/* List of all the stacl values */
 .stack-list {
     background-color: gray;
     border: 1px solid black;
@@ -453,6 +511,7 @@ Stack
     width: 100%;
 }
 
+/* A single row / value in the stack */
 .stack-value {
     background-color: white;
     border-bottom: 1px solid black;
@@ -469,14 +528,18 @@ Stack
 
 Symbol Table
 
+reagent method: symbol-table
 ----------------------------------------------------------
 */
+
+/* Holds the symbol table including the header */
 .symbol-table-container {
     height: 100%;
     text-align: left;
     width: 200px;
 }
 
+/* Symbol table header */
 .symbol-table-header {
     font-size: 0.7em;
     height: 20px;
@@ -486,6 +549,7 @@ Symbol Table
     width: 200px;
 }
 
+/* Holds the symbol table, (not including header) */
 .symbol-table {
     border: 1px solid black;
     height: calc(100% - 20px);
@@ -494,6 +558,7 @@ Symbol Table
     width: 100%;
 }
 
+/* A name in the symbol table (left column entry) */
 .symbol-name {
     background-color: gray;
     border-bottom: 1px solid black;
@@ -503,6 +568,7 @@ Symbol Table
     width: 50%;
 }
 
+/* A value in the symbol table (right column entry) */
 .symbol-value {
     background-color: white;
     border-bottom: 1px solid black;
@@ -512,14 +578,18 @@ Symbol Table
     width: 50%;
 }
 
-.breakpoint-label {
-    margin-left: 25px;
-    vertical-align: middle;
-}
+/*
+----------------------------------------------------------
 
+Output
+
+reagent method: output
+----------------------------------------------------------
+*/
+
+/* Output header. */
 .std-out-header {
     background-color: rgb(34, 34, 34);
-    border: 1px black solid;
     color: white;
     font-size: 0.7em;
     height: 25px;
@@ -528,6 +598,7 @@ Symbol Table
     width: 100%;
 }
 
+/* Holds the output, including the header */
 .std-out-container {
     margin-top: 10px;
     margin-right: 10px;
@@ -535,6 +606,7 @@ Symbol Table
     width: 100%;
 }
 
+/* Holds the output, not including the header */
 .std-out {
     background-color: rgb(46,43,43);
     color: greenyellow;
@@ -544,12 +616,4 @@ Symbol Table
     overflow-y: auto;
     resize: none;
     width: 100%;
-}
-
-.speed-value-error {
-    background-color: red;
-    border-radius: 5px;
-    color: black;
-    margin-left: 5px;
-    padding: 5px;
 }

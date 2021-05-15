@@ -56,10 +56,10 @@
 ;; Display the parsed code.
 (defn code []
   (let [code            @(rf/subscribe [:code])
-     breakpoints     @(rf/subscribe [:breakpoints])
-     code-with-lines (zipmap (range (count code)) code)
-     eip             @(rf/subscribe [:eip])
-     on-breakpoint?  @(rf/subscribe [:on-breakpoint])]
+        breakpoints     @(rf/subscribe [:breakpoints])
+        code-with-lines (zipmap (range (count code)) code)
+        eip             @(rf/subscribe [:eip])
+        on-breakpoint?  @(rf/subscribe [:on-breakpoint])]
     [:div.parsed-code-container
      [:div.parsed-code-header.header
       [:div
@@ -85,12 +85,12 @@
           [:tr.code-line {:key   line-no
                           :style {:background-color (if (= eip line-no) "goldenrod" "white")}}
            [:td.breakpoint
-            [:i.fas.fa-circle {:style    {:color (if (some? (breakpoints line-no)) "red" "lightgray")}
+            [:i.fas.fa-circle {:style    {:color (if (some? (breakpoints line-no)) "red" "white")}
                                :on-click #(rf/dispatch [:toggle-breakpoint line-no])}]]
            [:td.code-eip
             [:i.fas.fa-angle-double-right
              {:style {:visibility (if (= eip line-no) :visible :hidden)}}]]
-           [:td.line-number [:div {:style {:height 20}}
+           [:td.line-numbers [:div {:style {:height 20}}
                              line-no]]
            [:td
             [:span
@@ -188,7 +188,7 @@
         [:div
          (for [[k r] (h/keyed-collection (reverse eip-stack))]
            [:div.eip-stack-value {:key k} r])]]
-       [:div.eip-rp-container
+       [:div.rp-stack-container
         [:div.header "RP Stack"]
         [:div
          (for [[k r] (h/keyed-collection (reverse rep-counters))]
