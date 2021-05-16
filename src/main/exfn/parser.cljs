@@ -55,7 +55,7 @@
   (cond (is-register? arg)
         (keyword (subs arg 1))
 
-        (re-find #"(\d+)" arg)
+        (re-find #"^(\d+)$" arg)
         (js/Number arg)
 
         (or (str/starts-with? arg "'") (str/starts-with? arg "`"))
