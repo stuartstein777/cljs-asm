@@ -1,6 +1,7 @@
 (ns exfn.validators-tests
   (:require [cljs.test :refer-macros [deftest is testing run-tests]]
-            [exfn.validators :refer [validate-instruction]]))
+            [exfn.validators :refer [validate-instruction
+                                     validate-line]]))
 
 (deftest validate-instruction-tests
   (testing "Valid instructions should not return errors"
@@ -86,5 +87,10 @@
               "Invalid `sub` call, `sub` first argument must be a register."]
              (validate-instruction "sub" "sub 5" false)))
       ))
+
+(deftest validate-line-tests
+  (testing "Validate mov call with float as argument"
+    (is (= {:open-macro false}
+           (validate-line {:open-macro false} 1 "mov :a 2.05" #{})))))
 
 (comment (run-tests))

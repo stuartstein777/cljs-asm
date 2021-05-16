@@ -17,8 +17,6 @@
               (when error
                 (str "Invalid `" instr "` call, `" instr "` " error)))) all-rules)))
 
-(comment 
-  (validate-instruction "mov" "mov :a :b" false))
 ;;=================================================================================================================
 ;; get-section
 ;;
@@ -165,7 +163,6 @@
 
     :else
     acc))
-
 
 (defn validate [code]
   (->> (map vector (range (count code)) code)
