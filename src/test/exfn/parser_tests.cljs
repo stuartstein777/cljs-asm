@@ -64,7 +64,10 @@
     (is (= "123.45" (format-arg "'123.45'"))))
   (testing "formats arguments that are floating points"
     (is (= 123.45 (format-arg "123.45")))
-    (is (= -123.45 (format-arg "-123.45")))))
+    (is (= -123.45 (format-arg "-123.45")))
+    (is (= -123 (format-arg "-123")))
+    (is (= 0.123 (format-arg ".123")))
+    (is (= -0.123 (format-arg "-.123")))))
 
 (deftest format-arguments-tests
   (testing "2 argument instructions"
