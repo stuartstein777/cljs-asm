@@ -58,7 +58,13 @@
   (testing "registers are formatted to keywords"
     (is (= :foo (format-arg ":foo"))))
   (testing "if none of the above, make it a keyword"
-    (is (= :foo (format-arg "foo")))))
+    (is (= :foo (format-arg "foo"))))
+  (testing "formats strings when the strings are only numbers"
+    (is (= "123.45" (format-arg "`123.45`")))
+    (is (= "123.45" (format-arg "'123.45'"))))
+  (testing "formats arguments that are floating points"
+    (is (= 123.45 (format-arg "123.45")))
+    (is (= -123.45 (format-arg "-123.45")))))
 
 (deftest format-arguments-tests
   (testing "2 argument instructions"
@@ -453,41 +459,4 @@
                 [:ret])
               (:code (parse source)))))))
 
-(comment (run-tests)
-         (parse ".macros
-                  %initialize
-                     mov %1 0
-                     mov %2 0
-                  %end
-                  %square-and-sum
-                     mul %1 %1
-                     mul %2 %2
-                     add %1 %2
-                  %end
-                  %add-ten
-                     add %1 10
-                  %end
-                  .code
-                    initialize(:a, :b)
-                    mov :a 2
-                    mov :b 5
-                    mov :c 4
-                    square-and-sum(:a, :b)
-                    square-and-sum(:a, :c)
-                    call foo
-                    mov :s 'a = '
-                    cat :s :a
-                    prn :s
-                    end
-
-
-                    foo:
-                       call bar
-                       ret
-
-                    bar:
-                       add-ten(:a)
-                       ret")
-         
-         
-         )
+(comment (run-tests))

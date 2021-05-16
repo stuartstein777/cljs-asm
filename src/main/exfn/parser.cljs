@@ -55,7 +55,7 @@
   (cond (is-register? arg)
         (keyword (subs arg 1))
 
-        (re-find #"^(?:\d+(?:\.\d*)?|\.\d+)$" arg)
+        (re-find #"^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$" arg)
         (js/Number arg)
 
         (or (str/starts-with? arg "'") (str/starts-with? arg "`"))
@@ -78,7 +78,8 @@
          (format-arguments ["mov" ":a" ":b"])
          (format-arguments ["call" "foo"])
          (format-arguments ["ret"])
-         (format-arguments ["rep 5"]))
+         (format-arguments ["rep 5"])
+         (format-arguments ["mov" ":a" "123.45"]))
 
 (defn get-first-arg [args]
   (cond
