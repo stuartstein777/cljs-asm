@@ -148,18 +148,20 @@ setordinal:
      ; if we have errors, this trumps any other output that might be there, so we want to display the errors.
      ; but if errors is an empty string, we can just proceed as normal and assoc the code, symbol table and data entries
      (if (= "" errors)
-       {:db (-> (reset-db db)
-                (assoc-in [:memory :output] (if (db :running?)
-                                               (str (-> db :memory :output) "\nUser terminated.")
-                                               (-> db :memory :output)))
-                (assoc-in [:memory :symbol-table] symbol-table)
-                (assoc-in [:memory :registers] (fill-data-registers data))
-                (assoc :has-parsed-code? true)
-                (assoc :code code)
-                (assoc :parse-errors? false)
-                (assoc :parse-errors errors))
+       (let [data-registers (fill-data-registers data)]
+         {:db (-> (reset-db db)
+                  (assoc-in [:memory :output] (if (db :running?)
+                                                (str (-> db :memory :output) "\nUser terminated.")
+                                                (-> db :memory :output)))
+                  (assoc-in [:memory :symbol-table] symbol-table)
+                  (assoc-in [:memory :registers] data-registers)
+                  (assoc-in [:memory :data-registers] data-registers)
+                  (assoc :has-parsed-code? true)
+                  (assoc :code code)
+                  (assoc :parse-errors? false)
+                  (assoc :parse-errors errors))
         ;:scroll-parsed-code-to-top _
-        :end-running (db :ticker-handle)}
+          :end-running (db :ticker-handle)})
        {:db (-> (reset-db db)
                 (assoc :parse-errors? true)
                 (assoc :parse-errors errors))
@@ -283,16 +285,17 @@ setordinal:
  :reset
  (fn [{:keys [db]} _]
    {:db (-> db
-            (assoc :memory {:eip                 0
-                            :registers           {}
-                            :eip-stack           []
-                            :internal-registers  {}
-                            :stack               []
-                            :rep-counters-stack  []
-                            :symbol-table        (:symbol-table (:memory db))
-                            :output              (if (db :running?)
-                                                   (str (-> db :memory :output) "\nUser terminated.")
-                                                   (-> db :memory :output))})
+            (assoc :memory {:eip                0
+                            :registers          (-> db :memory :data-registers)
+                            :data-registers     (-> db :memory :data-registers)
+                            :eip-stack          []
+                            :internal-registers {}
+                            :stack              []
+                            :rep-counters-stack []
+                            :symbol-table       (:symbol-table (:memory db))
+                            :output             (if (db :running?)
+                                                  (str (-> db :memory :output) "\nUser terminated.")
+                                                  (-> db :memory :output))})
             (assoc :running? false)
             (assoc :on-breakpoint false)
             (assoc :finished? false))
