@@ -8,12 +8,11 @@
     "does not expect arguments"))
 
 (defn has-one-argument? [line]
-  (when (not (re-seq #"^(\w+) :?(\w+):?$" line))
+  (when (not (re-seq #"^(\w+) [:%]?(\w+):?$" line))
     "should only have one argument."))
 
 (defn has-two-arguments? [line]
-  (when (not (re-seq #"^(\w+) ('.+'|`.+`|:\w+|%\w+|([0-9]+([.][0-9]*)?|[.][0-9]+)|\w+) ('.+'|`.+`|:\w+|%\w+|[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)|\w+)$"
-                     line))
+  (when (not (re-seq #"^(\w+) ('.+'|`.+`|:\w+|%\w+|([0-9]+([.][0-9]*)?|[.][0-9]+)|\w+) ('.+'|`.+`|:\w+|%\w+|[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)|\w+)$" line))
     "should have two arguments."))
 
 ;; if we are in a macro, then we want the first argument to start with a %,
