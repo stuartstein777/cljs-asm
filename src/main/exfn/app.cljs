@@ -146,6 +146,55 @@
      [:label.eip-header.header "EIP"]
      [:label.eip eip]]))
 
+;; An expandable box. Displays a configurable number of characters max.
+;; Provides a .. to click to expand it, opens up into a bigger text box (higher, with horizontal / vertical scrollbar)
+(defn expandable-box [n s last]
+  (let [displaying-full (r/atom false)]
+    (fn [n s last]
+      [:div {:style {:background-color "#646464"
+                     :border-bottom "1px solid black"
+                     :border-right "1px solid black"
+                     :margin 0
+                     :padding 0
+                     :width 380}}
+       (if @displaying-full
+           ; display full
+         [:div {:style {:height "100%"}}
+          [:div {:style {:height 15}}
+           [:i.fas.fa-window-minimize {:on-click #(swap! displaying-full not)
+                                       :style    {:float  :right
+                                                  :cursor :pointer}}]]
+          [:textarea {:readOnly true
+                      :style    {:background-color (if last :yellow :white):font-size "0.7em"
+                                 :height     "calc(100% - 15px)"
+                                 :margin 0
+                                 :overflow-x :auto
+                                 :overflow-y :auto
+                                 :padding-left 5
+                                 :resize     :none
+                                 :width      380
+                                 :wrap       true}
+                      :value    s}]]
+           ; display collapsed
+         [:div
+          {:style {:background-color (if last :yellow :white)
+                   :border-top "1px solid black"
+                   :border-right "1px solid black"
+                   :border-left "1px solid black"
+                   :font-size "0.7em"
+                   :height "100%"
+                   :margin 0
+                   :padding-left 5
+                   :width 380}}
+          [:label
+           (subs s 0 n)]
+          [:i.fas.fa-expand {:on-click #(swap! displaying-full not)
+                             :style {:float      :right
+                                     :text-align :left
+                                     :padding-top 3
+                                     :padding-right 8
+                                     :cursor     :pointer}}]])])))
+
 ;; Display the user registers.
 (defn registers []
   (let [registers @(rf/subscribe [:registers])
@@ -157,11 +206,7 @@
         (for [[k [name v]] (h/keyed-collection registers)]
           [:div.row {:key k}
            [:div.col-col-lg6.register-name {:key (str k "reg:name")} name]
-           (if (keyword-identical? name last-edit-register)
-             [:div.col-col-lg6.register-value {:id (str "reg" name) :key (str k "reg:value")
-                                               :style {:background-color :yellow}}
-              v]
-             [:div.col-col-lg6.register-value {:id (str "reg" name) :key (str k "reg:value")} v])]))]]))
+           [expandable-box 30 (str v) (keyword-identical? name last-edit-register)]]))]]))
 
 (defn cmp-values [cmp]
   (cond (keyword-identical? cmp :lt) "<"
@@ -229,53 +274,6 @@
      [:textarea#stdout.std-out {:readOnly true
                                 :value    output                                
                                 :wrap     :off}]]))
-
-;; An expandable box. Displays a configurable number of characters max.
-;; Provides a .. to click to expand it, opens up into a bigger text box (higher, with horizontal / vertical scrollbar)
-(defn expandable-box [n s]
-  (let [displaying-full (r/atom false)]
-    (fn [n s]
-        [:div {:style {:background-color "#646464"
-                       :border-bottom "1px solid black"
-                       :border-right "1px solid black"
-                       :margin 0
-                       :padding 0
-                       :width 380}}
-         (if @displaying-full
-           ; display full
-           [:div {:style {:height "100%"}}
-            [:div {:style {:height 15}}
-             [:i.fas.fa-window-minimize {:on-click #(swap! displaying-full not)
-                                         :style    {:float  :right
-                                                    :cursor :pointer}}]]
-            [:textarea {:readOnly true
-                        :style    {:height     "calc(100% - 15px)"
-                                   :margin 0
-                                   :overflow-x :auto
-                                   :overflow-y :auto
-                                   :padding-left 5
-                                   :resize     :none
-                                   :width      380
-                                   :wrap       true}
-                        :value    s}]]
-           ; display collapsed
-           [:div
-            {:style {:background-color :white
-                     :border-top "1px solid black"
-                     :border-right "1px solid black"
-                     :border-left "1px solid black"
-                     :height "100%"
-                     :margin 0
-                     :padding-left 5
-                     :width 380}}
-            [:label
-             (subs s 0 n)]
-            [:i.fas.fa-expand {:on-click #(swap! displaying-full not)
-                               :style {:float      :right
-                                       :text-align :left
-                                       :padding-top 3
-                                       :padding-right 8
-                                       :cursor     :pointer}}]])])))
 
 ;; -- App ---------------------------------------------------------------------------
 (defn app []
