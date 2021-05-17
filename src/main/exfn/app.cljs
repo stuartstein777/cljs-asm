@@ -59,7 +59,7 @@
 (defn code []
   (let [code            @(rf/subscribe [:code])
         breakpoints     @(rf/subscribe [:breakpoints])
-        code-with-lines (zipmap (range (count code)) code)
+        code-with-lines (mapv (fn [n l] [n l]) (range 1 (count code)) code)
         eip             @(rf/subscribe [:eip])
         on-breakpoint?  @(rf/subscribe [:on-breakpoint])]
     [:div.parsed-code-container
@@ -92,7 +92,7 @@
            [:td.code-eip
             [:i.fas.fa-angle-double-right
              {:style {:visibility (if (= eip line-no) :visible :hidden)}}]]
-           #_[:td.line-numbers [:div {:style {:height 20}}
+           [:td.line-numbers [:div {:style {:height 20}}
                              line-no]]
            [:td
             [:span
@@ -104,7 +104,7 @@
                    [:label.value {:key (key i)} (val i)])))]]])]]]
      [:div.breakpoint-indicator
       {:style {:visibility (if on-breakpoint? :visible :hidden)}}
-      [:label (str "Breakpoint hit: Line " eip)]]]))
+      [:label (str "Breakpoint hit. Line: " eip)]]]))
 
 ;; Buttons that control the executing code (start/stop/pause/speed)
 (defn execution-controls []
@@ -226,9 +226,9 @@
   (let [output @(rf/subscribe [:output])]
     [:div.std-out-container
      [header-with-clear :clear-output "Output"]
-     [:textarea.std-out {:value output
-                         :readOnly  true
-                         :wrap      :off}]]))
+     [:textarea#stdout.std-out {:readOnly true
+                                :value    output                                
+                                :wrap     :off}]]))
 
 ;; An expandable box. Displays a configurable number of characters max.
 ;; Provides a .. to click to expand it, opens up into a bigger text box (higher, with horizontal / vertical scrollbar)
@@ -292,8 +292,6 @@
        [output]]]
      [:div.row
       [execution-controls]]
-     #_[:div.row
-      [expandable-box 5 "foobarararjrjfiosjfisdjofisdjf"]]
      [:div.row.eip-container
       [eip]]
      [:div.grid
