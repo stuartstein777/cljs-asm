@@ -59,7 +59,7 @@
 (defn code []
   (let [code            @(rf/subscribe [:code])
         breakpoints     @(rf/subscribe [:breakpoints])
-        code-with-lines (mapv (fn [n l] [n l]) (range 1 (count code)) code)
+        code-with-lines (mapv (fn [n l] [n l]) (range 1 (inc (count code))) code)
         eip             @(rf/subscribe [:eip])
         on-breakpoint?  @(rf/subscribe [:on-breakpoint])]
     [:div.parsed-code-container
