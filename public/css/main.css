@@ -617,3 +617,23 @@ reagent method: output
     resize: none;
     width: 100%;
 }
+
+/*
+----------------------------------------------------------
+
+Expandable Box
+
+reagent method: expandable-box
+----------------------------------------------------------
+*/
+
+.collapsed-expandable {
+    border-top: "1px solid black";
+    border-right: "1px solid black";
+    border-left: "1px solid black";
+    font-size: 0.7em;
+    height: 100%;
+    margin: 0;
+    padding-left: 5px;
+    width: 380;
+}
