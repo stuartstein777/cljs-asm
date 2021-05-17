@@ -131,7 +131,7 @@
 ;; if arg starts with a ' it's a string.
 ;; else arg is a number.
 ;; ==============================================================================================
-(defn parse-line-of-code [line]  
+(defn parse-line-of-code [line]
   (if (re-find #"\w+:$" line) ; if the line is foo: then its a label.
     [:label (keyword (subs line 0 (dec (count line))))]
     (let [instruction (first (re-find #"^(\w+)" line))
@@ -332,9 +332,9 @@
     [(keyword reg) (format-arg value)]))
 
 (comment "parse-data-entry"
-     (parse-data-entry "foo 42")
-     (parse-data-entry "bar `this is a string`")
-     (parse-data-entry "quax 'another string'"))
+         (parse-data-entry "foo 42")
+         (parse-data-entry "bar `this is a string`")
+         (parse-data-entry "quax 'another string'"))
 
 (defn prepare-source [asm]
   (->> (str/split-lines asm)

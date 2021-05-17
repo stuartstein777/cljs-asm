@@ -1,6 +1,7 @@
 (ns exfn.events
   (:require [exfn.parser :refer [parse]]
             [re-frame.core :as rf]
+            [day8.re-frame.tracing :refer-macros [fn-traced]]
             [exfn.interpreter :as interp]
             [clojure.set :as set]))
 
@@ -245,7 +246,16 @@ setordinal:
    (-> js/document
        (.getElementById "code-container")
        (.-scrollTop)
-       (set! (* eip 25)))))
+       (set! (- (* eip 25) 50)))))
+
+(rf/reg-fx
+ :scroll-output-to-end
+ (fn [_]
+   (let [stdout (-> js/document (.getElementById "stdout"))
+         scroll (-> stdout (.-scrollHeight))]
+     (-> stdout
+         (.-scrollTop)
+         (set! scroll)))))
 
 (rf/reg-event-fx
  :toggle-running
@@ -324,6 +334,7 @@ setordinal:
        :else
        {:db                            (assoc db :on-breakpoint false)
         :scroll-current-code-into-view (:eip memory)
+        :scroll-output-to-end nil
         :end-if-finished               [(db :ticker-handle) (or finished? terminated?)]}))))
 
 (rf/reg-event-db
