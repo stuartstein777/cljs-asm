@@ -148,31 +148,27 @@
 
 ;; An expandable box. Displays a configurable number of characters max.
 ;; Provides a .. to click to expand it, opens up into a bigger text box (higher, with horizontal / vertical scrollbar)
-(defn expandable-box [reg n s last]
-  (let [displaying-full (r/atom false)]
-    (fn [name n s last]
-      [:div.expandable-box
-       (if @displaying-full
-         ; display full
-         [:div {:style {:height "100%"}}
-          [:div {:style {:background-color (if last :yellow :white)
-                         :border-left "1px solid black"
-                         :height 15}}
-           [:i.fas.fa-compress-arrows-alt.expandable-box-minimise-icon
-            {:on-click #(do (swap! displaying-full not)
-                            (rf/dispatch [:remove-expanded-reg name]))}]]
-          [:textarea.expandable-text-area {:readOnly true
-                                           :style    {:background-color (if last :yellow :white)}
-                                           :value    s
-                                           :wrap     true}]]
-         ; display collapsed
-         [:div.collapsed-expandable
-          {:style {:background-color (if last :yellow :white)}}
-          [:label
-           (subs s 0 n)]
-          [:i.fas.fa-expand.expandable-expand-icon
-           {:on-click #(do (swap! displaying-full not)
-                           (rf/dispatch [:add-expanded-reg name]))}]])])))
+(defn expandable-box [name s last expanded?]
+  [:div.expandable-box
+   (if expanded?
+     ; display full
+     [:div {:style {:height "100%"}}
+      [:div {:style {:background-color (if last :yellow :white)
+                     :border-left "1px solid black"
+                     :border-right "1px solid black"
+                     :height 15}}
+       [:i.fas.fa-compress-arrows-alt.expandable-box-minimise-icon
+        {:on-click #(rf/dispatch [:remove-expanded-reg name])}]]
+      [:textarea.expandable-text-area {:readOnly true
+                                       :style    {:background-color (if last :yellow :white)}
+                                       :value    s
+                                       :wrap     true}]]
+     ; display collapsed
+     [:div.collapsed-expandable
+      {:style {:background-color (if last :yellow :white)}}
+      [:label (subs s 0 30)]
+      [:i.fas.fa-expand.expandable-expand-icon
+       {:on-click #(rf/dispatch [:add-expanded-reg name])}]])])
 
 ;; Display the user registers.
 (defn registers []
@@ -189,7 +185,7 @@
             {:key (str k "reg:name")
              :style {:height (if (expanded-registers name) 60 20)}}
             name]
-           [expandable-box name 30 (str v) (keyword-identical? name last-edit-register)]]))]]))
+           [expandable-box name (str v) (keyword-identical? name last-edit-register) (expanded-registers name)]]))]]))
 
 (defn cmp-values [cmp]
   (cond (keyword-identical? cmp :lt) "<"

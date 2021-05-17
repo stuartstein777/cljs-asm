@@ -1,4 +1,5 @@
-(ns exfn.errors)
+(ns exfn.errors
+  (:require [clojure.string :as str]))
 
 (def invalid-macro-end ": Invalid macro end definition. Found %end without an opening macro definition.")
 (def invalid-macro-definition ": Invalid macro start definition. Previous macro was not closed. Are you missing %end ?")
@@ -22,10 +23,15 @@
         "first argument in a macro can't be a constant (value or string). Should have form %1, %2 etc"
 
         (and (not is-macro?) (not (re-seq #"^(\w+)\s:(\w+)" line)))
-        "first argument must be a register."
+        (str "first argument must be a register. Registers start with : Did you mean :"
+             (if (second (str/split line #" "))
+               (second (str/split line #" "))
+               ""))
 
         :else
         nil))
+
+
 
 (defn one-argument-and-its-a-label [line]
   (when (not (re-seq #"^(\w+) ([a-zA-Z_][a-zA-Z0-9_]*)$" line))

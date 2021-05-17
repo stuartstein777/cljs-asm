@@ -22,6 +22,7 @@
       (assoc :finished? false)
       (assoc :has-parsed-code? false)
       (assoc :on-breakpoint false)
+      (assoc :expanded-registers #{})
       (assoc :parse-errors? false)
       (assoc :parse-errors "")
       (assoc :running? false)))
