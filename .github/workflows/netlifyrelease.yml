@@ -1,6 +1,6 @@
 # This is a basic workflow that is manually triggered
 
-name: Release
+name: ReleaseNetlify
 
 # Controls when the action will run. Workflow runs when manually triggered using the UI
 # or API.
@@ -21,10 +21,7 @@ jobs:
       - uses: actions/setup-java@v1
         with:
            java-version: 11
-      - uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-          
+      
       - name: Setup Node.js environment
         uses: actions/setup-node@v1.4.4
       
@@ -33,10 +30,10 @@ jobs:
         
       - name: Compile a release build
         run: npx shadow-cljs release release
-      
-      - name: Publish
-        uses: netlify/actions/build@master
+        
+        # Deploy the site with netlify-cli
+      - name: Netlify Deploy
         env:
-           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-           NETLIFY_DIR: public
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        run: netlify deploy --dir=public --prod
