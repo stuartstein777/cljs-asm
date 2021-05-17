@@ -43,9 +43,9 @@
 .code
 start:
    print-nth(:b, :ctr)
-   mov :t :a
+   push :a
    add :a :b
-   mov :b :t
+   pop :b
    inc :ctr
    jmp start
    end
