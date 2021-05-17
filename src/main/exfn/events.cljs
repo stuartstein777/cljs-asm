@@ -40,28 +40,38 @@
        cat :s %1
        prn :s
     %end
+    %next-fib
+        push %1
+        add %1 %2
+        pop %2
+    %end
+     %restart
+          inc %1
+          jmp start
+     %end
+     %check123
+          cmp %1 1
+          je st
+         cmp %1 2
+         je nd
+         cmp %1 3
+         je rd
+     %end
 .code
 start:
    print-nth(:b, :ctr)
-   push :a
-   add :a :b
-   pop :b
-   inc :ctr
-   jmp start
+   next-fib(:a, :b)
+   restart(:ctr)
    end
 
 setordinal:
    ; if ctr is 1 then return 'st', if 2 return 'nd',
    ; if 3 return 'rd'
-   cmp :ctr 1
-   je st
-   cmp :ctr 2
-   je nd
-   cmp :ctr 3
-   je rd
-   cmp :ctr 20
+   check123(:ctr)
+
    ; if we got here, we are not = 1, 2 or 3. so need to 
    ; check if we are greater than 20
+   cmp :ctr 20
    jg gt20
    mov :ord `th `
    ret
@@ -70,12 +80,7 @@ setordinal:
       ; and check if remainder is 1, 2 or 3
       mov :n :ctr
       rem :n 10 ; integer division
-      cmp :n 1
-      je st
-      cmp :n 2
-      je nd
-      cmp :n 3
-      je rd
+      check123(:n)
       mov :ord `th `
       ret
       st:
