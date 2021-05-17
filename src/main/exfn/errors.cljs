@@ -23,10 +23,7 @@
         "first argument in a macro can't be a constant (value or string). Should have form %1, %2 etc"
 
         (and (not is-macro?) (not (re-seq #"^(\w+)\s:(\w+)" line)))
-        (str "first argument must be a register. Registers start with : Did you mean :"
-             (if (second (str/split line #" "))
-               (second (str/split line #" "))
-               ""))
+        "first argument must be a register. Registers start with a :"
 
         :else
         nil))

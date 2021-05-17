@@ -67,10 +67,10 @@
 
     (testing "Invalid instructions should return errors"
       (is (= ["Invalid `mov` call, `mov` should have two arguments."
-              "Invalid `mov` call, `mov` first argument must be a register."]
+              "Invalid `mov` call, `mov` first argument must be a register. Registers start with a :"]
              (validate-instruction "mov" "mov a" false)))
       (is (= ["Invalid `mov` call, `mov` should have two arguments."
-              "Invalid `mov` call, `mov` first argument must be a register."]
+              "Invalid `mov` call, `mov` first argument must be a register. Registers start with a :"]
              (validate-instruction "mov" "mov" false)))
       (is (= ["Invalid `mov` call, `mov` should have two arguments."]
              (validate-instruction "mov" "mov :a" false)))
@@ -80,12 +80,12 @@
              (validate-instruction "add" "add :a :b :c" false)))
       (is (= ["Invalid `add` call, `add` should have two arguments."]
              (validate-instruction "add" "add :a" false)))
-      (is (= ["Invalid `add` call, `add` first argument must be a register."]
+      (is (= ["Invalid `add` call, `add` first argument must be a register. Registers start with a :"]
              (validate-instruction "add" "add 5 :b" false)))
-      (is (= ["Invalid `sub` call, `sub` first argument must be a register."]
+      (is (= ["Invalid `sub` call, `sub` first argument must be a register. Registers start with a :"]
              (validate-instruction "sub" "sub 5 :b" false)))
       (is (= ["Invalid `sub` call, `sub` should have two arguments."
-              "Invalid `sub` call, `sub` first argument must be a register."]
+              "Invalid `sub` call, `sub` first argument must be a register. Registers start with a :"]
              (validate-instruction "sub" "sub 5" false)))
       ))
 

@@ -10,12 +10,16 @@
   (testing "first argument is a register should not return error"
     (is (nil? (first-argument-is-a-register? false "mov :a 5"))))
   (testing "First argument is label should return error"
-    (is (= "first argument must be a register." (first-argument-is-a-register? false "mov a 5"))))
+    (is (= "first argument must be a register. Registers start with a :"
+           (first-argument-is-a-register? false "mov a 5"))))
   (testing "First argument is a string should return error"
-    (is (= "first argument must be a register." (first-argument-is-a-register? false "mov `a` 5")))
-    (is (= "first argument must be a register." (first-argument-is-a-register? false "mov 'a' 5"))))
+    (is (= "first argument must be a register. Registers start with a :"
+           (first-argument-is-a-register? false "mov `a` 5")))
+    (is (= "first argument must be a register. Registers start with a :"
+           (first-argument-is-a-register? false "mov 'a' 5"))))
   (testing "First argument is number should return error"
-    (is (= "first argument must be a register." (first-argument-is-a-register? false "mov 5 5"))))
+    (is (= "first argument must be a register. Registers start with a :"
+           (first-argument-is-a-register? false "mov 5 5"))))
   (testing "Within a macro call, first argument is prefixed with %, should not return error"
     (is (nil? (first-argument-is-a-register? true "mov %1 5"))))
   (testing "Within a macro call, first argument is a register, should not return error"
