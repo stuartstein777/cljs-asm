@@ -58,6 +58,8 @@
            :non-macro-applicable [has-two-arguments?]}
    "add"  {:macro-applicable     [first-argument-is-a-register?]
            :non-macro-applicable [has-two-arguments?]}
+   "rem"  {:macro-applicable     [first-argument-is-a-register?]
+           :non-macro-applicable [has-two-arguments?]}
    "sub"  {:macro-applicable     [first-argument-is-a-register?]
            :non-macro-applicable [has-two-arguments?]}
    "xor"  {:macro-applicable     [first-argument-is-a-register?]

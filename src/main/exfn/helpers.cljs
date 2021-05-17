@@ -4,7 +4,8 @@
 (def valid-instructions #{"mov" "add" "sub" "div" "mul" "call" "ret" "rep" "rza"
                           "prn" "end" "and" "or" "xor" "jmp" "jgz" "push" "pop" "nop"
                           "inc" "dec" "jne" "jge" "jg" "je" "jle" "jl" "rnz" "cer" "rp"
-                          "rz" "rlez" "rgz" "rgez" "rlz" "not" "cat" "len" "jz" "cmp"})
+                          "rz" "rlez" "rgz" "rgez" "rlz" "not" "cat" "len" "jz" "cmp"
+                          "rem"})
 
 (defn get-source-line-numbers [source]
   (:line-nos (reduce (fn [{:keys [cur line-nos] :as acc} i]

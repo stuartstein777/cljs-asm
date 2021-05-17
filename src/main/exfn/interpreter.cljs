@@ -94,6 +94,7 @@
     :div quot
     :mul *
     :xor bit-xor
+    :rem rem
     :and bit-and
     :or bit-or))
 
@@ -512,7 +513,7 @@
                          (assoc :last-edit-register (first args))
                          (update :eip inc))
 
-                     (#{:add :sub :mul :div :xor :and :or} instruction)
+                     (#{:add :sub :mul :div :xor :and :or :rem} instruction)
                      (-> (math-func instruction memory args)
                          (assoc :last-edit-register (first args))
                          (update :eip inc))

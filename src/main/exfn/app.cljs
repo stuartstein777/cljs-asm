@@ -1,6 +1,7 @@
 (ns exfn.app
   (:require
    [reagent.dom :as dom]
+   [reagent.core :as r]
    [re-frame-flow.core :as re-flow]
    [exfn.subs]
    [exfn.events]
@@ -44,6 +45,7 @@
                                      :value     @(rf/subscribe [:source])
                                      :wrap      :off}]]]))
 
+;; Display any parse errors.
 (defn parse-errors []
   (let [errors @(rf/subscribe [:parse-errors])]
     [:div.parsed-code-container
@@ -90,7 +92,7 @@
            [:td.code-eip
             [:i.fas.fa-angle-double-right
              {:style {:visibility (if (= eip line-no) :visible :hidden)}}]]
-           [:td.line-numbers [:div {:style {:height 20}}
+           #_[:td.line-numbers [:div {:style {:height 20}}
                              line-no]]
            [:td
             [:span
@@ -178,7 +180,7 @@
       [:div.internal-registers-list
        (when (not= internal-registers {})
          (for [[k [reg v]] (h/keyed-collection internal-registers)]
-           [:div.row
+           [:div.row {:key (str "irrow-" k)}
             [:div.internal-register-name {:key (str "irgn-" k)} reg]
             [:div.internal-register-value {:key (str "irgv-" k)}
              (cmp-values v)]]))]
@@ -186,13 +188,15 @@
        [:div.eip-stack-container
         [:div.header "EIP Stack"]
         [:div
-         (for [[k r] (h/keyed-collection (reverse eip-stack))]
-           [:div.eip-stack-value {:key k} r])]]
+         (when (seq eip-stack)
+           (for [[k r] (h/keyed-collection (reverse eip-stack))]
+             [:div.eip-stack-value {:key (str "eipsv-" k)} r]))]]
        [:div.rp-stack-container
         [:div.header "RP Stack"]
         [:div
-         (for [[k r] (h/keyed-collection (reverse rep-counters))]
-           [:div.eip-stack-value {:key k} r])]]]]]))
+         (when (seq rep-counters)
+           (for [[k r] (h/keyed-collection (reverse rep-counters))]
+             [:div.eip-stack-value {:key (str "rpsv-" k)} r]))]]]]]))
 
 ;; Display the stack.
 (defn stack [stack title]
@@ -217,6 +221,7 @@
            [:div.col-col-lg6.symbol-name {:key (str "symbols-name-" k)} (key s)]
            [:div.col-col-lg6.symbol-value {:key (str "symbols-value-" k)} (val s)]]))]]))
 
+;; Display the generated std output from the interpreter.
 (defn output []
   (let [output @(rf/subscribe [:output])]
     [:div.std-out-container
@@ -224,6 +229,53 @@
      [:textarea.std-out {:value output
                          :readOnly  true
                          :wrap      :off}]]))
+
+;; An expandable box. Displays a configurable number of characters max.
+;; Provides a .. to click to expand it, opens up into a bigger text box (higher, with horizontal / vertical scrollbar)
+(defn expandable-box [n s]
+  (let [displaying-full (r/atom false)]
+    (fn [n s]
+        [:div {:style {:background-color "#646464"
+                       :border-bottom "1px solid black"
+                       :border-right "1px solid black"
+                       :margin 0
+                       :padding 0
+                       :width 380}}
+         (if @displaying-full
+           ; display full
+           [:div {:style {:height "100%"}}
+            [:div {:style {:height 15}}
+             [:i.fas.fa-window-minimize {:on-click #(swap! displaying-full not)
+                                         :style    {:float  :right
+                                                    :cursor :pointer}}]]
+            [:textarea {:readOnly true
+                        :style    {:height     "calc(100% - 15px)"
+                                   :margin 0
+                                   :overflow-x :auto
+                                   :overflow-y :auto
+                                   :padding-left 5
+                                   :resize     :none
+                                   :width      380
+                                   :wrap       true}
+                        :value    s}]]
+           ; display collapsed
+           [:div
+            {:style {:background-color :white
+                     :border-top "1px solid black"
+                     :border-right "1px solid black"
+                     :border-left "1px solid black"
+                     :height "100%"
+                     :margin 0
+                     :padding-left 5
+                     :width 380}}
+            [:label
+             (subs s 0 n)]
+            [:i.fas.fa-expand {:on-click #(swap! displaying-full not)
+                               :style {:float      :right
+                                       :text-align :left
+                                       :padding-top 3
+                                       :padding-right 8
+                                       :cursor     :pointer}}]])])))
 
 ;; -- App ---------------------------------------------------------------------------
 (defn app []
@@ -240,6 +292,8 @@
        [output]]]
      [:div.row
       [execution-controls]]
+     #_[:div.row
+      [expandable-box 5 "foobarararjrjfiosjfisdjofisdjf"]]
      [:div.row.eip-container
       [eip]]
      [:div.grid

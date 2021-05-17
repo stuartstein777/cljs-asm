@@ -28,58 +28,71 @@
 (rf/reg-event-db
  :initialize
  (fn [_ _]
-   {:source           ".macros
-   %square-and-sum
-      mul %1 %1
-      mul %2 %2
-      add %1 %2
-   %end
-   %add-ten
-      add %1 10
-   %end
-
+   {:source           
+".macros
+    %print-nth
+       call setordinal
+       mov :s :msg1
+       cat :s %2
+       cat :s :ord
+       cat :s :msg2
+       cat :s %1
+       prn :s
+    %end
 .code
-; function calls.
-mov :a 0    ; a = 0
-mov :b 1    ; a = 0, b = 1
-square-and-sum(:a, :b)
-mov :c 2    ; a = 0, b = 1, c = 2
-prn :b
-call foo   ; move eip to foo, push eip to eip-stack
-mul :c :b    ; a = 0, b = 2, c = 4
-cmp :a :b    ; :cmp = lt
-jne quax   ; jump
-mul :c 10   ;
+start:
+   print-nth(:b, :ctr)
+   mov :t :a
+   add :a :b
+   mov :b :t
+   inc :ctr
+   jmp start
+   end
 
-
-;; quax:: call bar and zero :b
-quax:      ;
-nop        ;
-call bar   ; move eip to bar, push eip to eip-stack
-pop :d
-pop :e
-prn :d
-prn :e
-xor :b :b    ; a = 7, b = 0, c = 3
-end        ; a = 7, b = 0, c = 3
-
-
-;; foo:: increment b
-foo:
-inc :b      ; a = 0, b = 2, c = 2
-ret        ; ret to foo call, pop eip stack
-
-
-;; bar:: add 7 to a and decrement c
-bar:
-add :a 7    ; a = 7, b = 2, c = 4
-sub :c 1    ; a = 7, b = 2, c = 3
-push 3
-push 4
-ret        ; ret to bar call, pop eip stack
+setordinal:
+   ; if ctr is 1 then return 'st', if 2 return 'nd',
+   ; if 3 return 'rd'
+   cmp :ctr 1
+   je st
+   cmp :ctr 2
+   je nd
+   cmp :ctr 3
+   je rd
+   cmp :ctr 20
+   ; if we got here, we are not = 1, 2 or 3. so need to 
+   ; check if we are greater than 20
+   jg gt20
+   mov :ord `th `
+   ret
+   gt20:
+      ; we are greater than 20 so divide by 10
+      ; and check if remainder is 1, 2 or 3
+      mov :n :ctr
+      rem :n 10 ; integer division
+      cmp :n 1
+      je st
+      cmp :n 2
+      je nd
+      cmp :n 3
+      je rd
+      mov :ord `th `
+      ret
+      st:
+         mov :ord `st `
+         ret
+      nd:
+         mov :ord `nd `
+         ret
+      rd:
+         mov :ord `rd `
+         ret
 
 .data
-xyz 123"
+   a 1
+   b 1
+   ctr 1
+   msg1 `The `
+   msg2 ` fibonacci number is `"
     :breakpoints      #{}
     :code             []
     :finished?        false

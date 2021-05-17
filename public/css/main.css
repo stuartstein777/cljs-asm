@@ -327,13 +327,6 @@ reagent function::          memory, eip
     width: 250px;
 }
 
-/* Holds the internal registers, eip stack and rp stack. */
-.internal-registers-inner-container {
-    height: calc(100% - 20px);
-    overflow-x: hidden;
-    overflow-y: scroll;
-}
-
 /* Internal registers header. */
 .internal-registers-header {
     font-size: 0.7em;
@@ -341,10 +334,11 @@ reagent function::          memory, eip
     width: 100%;
 }
 
-/* Holds both the internal register stacks*/
-.internal-registers-stacks-container {
-    height: calc(100% - 60px);
-    width: 100%;
+/* Holds the internal registers, eip stack and rp stack. */
+.internal-registers-inner-container {
+    height: calc(100% - 20px);
+    overflow-x: hidden;
+    overflow-y: scroll;
 }
 
 /* Holds the internal registers, cmp, err and par*/
@@ -363,6 +357,12 @@ reagent function::          memory, eip
     height: 20px;
     text-align: center;
     width: 50%;
+}
+
+/* Holds both the internal register stacks*/
+.internal-registers-stacks-container {
+    height: calc(100% - 60px);
+    width: 100%;
 }
 
 /* Holds an internal register value. */
