@@ -29,8 +29,7 @@
 (rf/reg-event-db
  :initialize
  (fn [_ _]
-   {:source           
-".macros
+   {:source             ".macros
     %print-nth
        call setordinal
        mov :s :msg1
@@ -99,26 +98,27 @@ setordinal:
    ctr 1
    msg1 `The `
    msg2 ` fibonacci number is `"
-    :breakpoints      #{}
-    :code             []
-    :finished?        false
-    :has-parsed-code? false
-    :memory           {:eip                 0
-                       :registers           {}
-                       :eip-stack           []
-                       :internal-registers  {}
-                       :stack               []
-                       :termination-message ""
-                       :symbol-table        {}
-                       :rep-counters-stack  []
-                       :last-edit-register  nil
-                       :output              "$ Toy Asm Output >"}
-    :on-breakpoint    false
-    :parse-errors?    false
-    :parse-errors     ""
-    :running?         false
-    :running-speed    250
-    :ticker-handle    nil}))
+    :breakpoints        #{}
+    :code               []
+    :finished?          false
+    :has-parsed-code?   false
+    :memory             {:eip                 0
+                         :registers           {}
+                         :eip-stack           []
+                         :internal-registers  {}
+                         :stack               []
+                         :termination-message ""
+                         :symbol-table        {}
+                         :rep-counters-stack  []
+                         :last-edit-register  nil
+                         :output              "$ Toy Asm Output >"}
+    :on-breakpoint      false
+    :parse-errors?      false
+    :parse-errors       ""
+    :expanded-registers #{}
+    :running?           false
+    :running-speed      250
+    :ticker-handle      nil}))
 
 (defn dispatch-timer-event []
   (rf/dispatch [:next-instruction]))
@@ -157,6 +157,7 @@ setordinal:
                   (assoc-in [:memory :registers] data-registers)
                   (assoc-in [:memory :data-registers] data-registers)
                   (assoc :has-parsed-code? true)
+                  (assoc :has-parsed-code? (:expanded-registers db))
                   (assoc :code code)
                   (assoc :parse-errors? false)
                   (assoc :parse-errors errors))
@@ -175,6 +176,7 @@ setordinal:
             (assoc :code [])
             (assoc :running? false)
             (assoc :has-parsed-code? false)
+            (assoc :expanded-registers #{})
             (assoc :on-breakpoint false)
             (assoc :memory {:eip                0
                             :registers          {}
@@ -280,6 +282,24 @@ setordinal:
  (fn [[handle finished?]]
    (when finished?
      (js/clearInterval handle))))
+
+(rf/reg-event-db
+ :add-expanded-reg
+ (fn [db [_ reg]]
+   (-> db
+       (update :expanded-registers conj reg))))
+
+(rf/reg-event-db
+ :remove-expanded-reg
+ (fn [db [_ reg]]
+   (js/console.log reg)
+   (-> db
+       (update :expanded-registers clojure.set/difference #{reg}))))
+
+#_(rf/reg-event-db
+ :add-value-to-stack
+ (fn [db [_ v]]
+   (update-in db [:memory :stack] conj v)))
 
 (rf/reg-event-fx
  :reset

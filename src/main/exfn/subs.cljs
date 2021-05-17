@@ -100,3 +100,8 @@
  :parse-errors
  (fn [db _]
    (db :parse-errors)))
+
+(rf/reg-sub
+ :expanded-registers
+ (fn [db _]
+   (db :expanded-registers)))

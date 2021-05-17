@@ -628,12 +628,48 @@ reagent method: expandable-box
 */
 
 .collapsed-expandable {
-    border-top: "1px solid black";
-    border-right: "1px solid black";
-    border-left: "1px solid black";
+    border-bottom: 1px solid black;
+    border-right: 1px solid black;
+    border-left: 1px solid black;
     font-size: 0.7em;
     height: 100%;
-    margin: 0;
+    margin: 0px;
     padding-left: 5px;
-    width: 380;
+    width: 380px;
+}
+
+.expandable-text-area {
+    border-top: 0px solid white;
+    border-left: 1px solid black;
+    font-size: 0.7em;
+    height: calc(100% - 15px);
+    margin: 0px;
+    overflow-x: auto;
+    overflow-y: auto;
+    padding-left: 5px;
+    resize: none;
+    width: 380px;
+}
+
+.expandable-expand-icon {
+    cursor: pointer;
+    float: right;
+    padding-top: 3px;
+    padding-right: 8px;
+    text-align: left;
+}
+
+.expandable-box {
+    background-color: white;
+    margin: 0;
+    padding: 0;
+    width: 380px;
+}
+
+.expandable-box-minimise-icon {
+    cursor: pointer;
+    float: right;
+    font-size: 0.7em;    
+    padding-right: 8px;
+    padding-top: 3px;    
 }
