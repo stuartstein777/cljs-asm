@@ -19,7 +19,7 @@
                           (map str/trim)))))
 
 (defn keyed-collection [col]
-  (zipmap (range (count col)) col))
+  (zipmap (iterate inc 0) col)) ; TODO change this from zipmap to vector, it's causing the registers to be re-arranged!
 
 (defn- deep-merge-with
   "

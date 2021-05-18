@@ -165,7 +165,7 @@
     acc))
 
 (defn validate [code]
-  (->> (map vector (range (count code)) code)
+  (->> (map vector (iterate inc 0) code)
        (reduce verify {:current-section nil
                        :errors          []
                        :macro-names     #{}

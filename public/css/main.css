@@ -611,6 +611,7 @@ reagent method: output
 .std-out {
     background-color: rgb(46,43,43);
     color: greenyellow;
+    font-size: 0.7em;
     height: 400px;
     padding: 10px;
     overflow-x: auto;

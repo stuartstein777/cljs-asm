@@ -38,12 +38,13 @@
       [header-with-clear :clear-source "Source Editor"]
       [:textarea#lineNos.text-editor-line-nos {:readOnly  true
                                                :value     (h/get-source-line-numbers source)}]
-      [:textarea#editor.text-editor {:on-change #(rf/dispatch-sync [:update-source (-> % .-target .-value)])
-                                     :on-scroll (fn [^js e]
-                                                  (let [scroll-pos (.. e -target -scrollTop)]
-                                                    (rf/dispatch [:update-scroll scroll-pos])))
-                                     :value     @(rf/subscribe [:source])
-                                     :wrap      :off}]]]))
+      [:textarea#editor.text-editor {:on-change  #(rf/dispatch-sync [:update-source (-> % .-target .-value)])
+                                     :on-scroll  (fn [^js e]
+                                                   (let [scroll-pos (.. e -target -scrollTop)]
+                                                     (rf/dispatch [:update-scroll scroll-pos])))
+                                     :spellcheck "false"
+                                     :value      @(rf/subscribe [:source])
+                                     :wrap       :off}]]]))
 
 ;; Display any parse errors.
 (defn parse-errors []
@@ -54,12 +55,11 @@
       {:readOnly true
        :value errors
        :wrap      :off}]]))
-
 ;; Display the parsed code.
 (defn code []
   (let [code            @(rf/subscribe [:code])
         breakpoints     @(rf/subscribe [:breakpoints])
-        code-with-lines (mapv (fn [n l] [n l]) (range 1 (inc (count code))) code)
+        code-with-lines (mapv (fn [n l] [n l]) (iterate inc 1) code)
         eip             @(rf/subscribe [:eip])
         on-breakpoint?  @(rf/subscribe [:on-breakpoint])]
     [:div.parsed-code-container
@@ -166,7 +166,11 @@
      ; display collapsed
      [:div.collapsed-expandable
       {:style {:background-color (if last :yellow :white)}}
-      [:label (subs s 0 30)]
+      [:label (let [shortened (subs s 0 55)]
+                (if (> (count s) (count shortened))
+                  (str shortened "...")
+                  shortened
+                  ))]
       [:i.fas.fa-expand.expandable-expand-icon
        {:on-click #(rf/dispatch [:add-expanded-reg name])}]])])
 
@@ -251,6 +255,7 @@
     [:div.std-out-container
      [header-with-clear :clear-output "Output"]
      [:textarea#stdout.std-out {:readOnly true
+                                :spellcheck "false"
                                 :value    output                                
                                 :wrap     :off}]]))
 
