@@ -9,4 +9,4 @@ Toy assembly language style language parser and interpreter.
 
 Display registers and running program with breakpoints. Supports running program / pausing / stopping and stepping through.
 
-See it running at (toyasm.com)
+See it running at [toyasm](https://toyasm.com)
