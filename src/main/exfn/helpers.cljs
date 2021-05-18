@@ -5,7 +5,7 @@
                           "prn" "end" "and" "or" "xor" "jmp" "jgz" "push" "pop" "nop"
                           "inc" "dec" "jne" "jge" "jg" "je" "jle" "jl" "rnz" "cer" "rp"
                           "rz" "rlez" "rgz" "rgez" "rlz" "not" "cat" "len" "jz" "cmp"
-                          "rem"})
+                          "rem" "inp"})
 
 (defn get-source-line-numbers [source]
   (:line-nos (reduce (fn [{:keys [cur line-nos] :as acc} i]
@@ -19,7 +19,7 @@
                           (map str/trim)))))
 
 (defn keyed-collection [col]
-  (zipmap (iterate inc 0) col)) ; TODO change this from zipmap to vector, it's causing the registers to be re-arranged!
+  (zipmap (iterate inc 0) col))
 
 (defn- deep-merge-with
   "

@@ -9,8 +9,11 @@
     "does not expect arguments"))
 
 (defn has-one-argument? [line]
-  (when (not (re-seq #"^(\w+) [:%]?(\w+):?$" line))
+  (js/console.log line)
+  (when (not (re-seq #"^(\w+) [:%]?(\w+|'.+'|`.+`):?$" line))
     "should only have one argument."))
+
+(comment (has-one-argument? "prn `hello`"))
 
 (defn has-two-arguments? [line]
   (when (not (re-seq #"^(\w+) ('.+'|`.+`|:\w+|%\w+|([0-9]+([.][0-9]*)?|[.][0-9]+)|\w+) ('.+'|`.+`|:\w+|%\w+|[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)|\w+)$" line))
@@ -109,7 +112,7 @@
    "jne"  {:macro-applicable     []
            :non-macro-applicable [one-argument-and-its-a-label]}
    "call" {:macro-applicable     []
-           :non-macro-applicable [has-one-argument? ]}
+           :non-macro-applicable [has-one-argument?]}
    "ret"  {:macro-applicable     []
            :non-macro-applicable [has-no-arguments?]}
    "end"  {:macro-applicable     []
@@ -131,4 +134,6 @@
    "rgz"  {:macro-applicable     []
            :non-macro-applicable [has-one-argument?]}
    "rgez" {:macro-applicable     []
-           :non-macro-applicable [has-one-argument?]}})
+           :non-macro-applicable [has-one-argument?]}
+   "inp" {:macro-applicable     [first-argument-is-a-register?]
+          :non-macro-applicable [has-one-argument?]}})

@@ -105,3 +105,13 @@
  :expanded-registers
  (fn [db _]
    (db :expanded-registers)))
+
+(rf/reg-sub
+ :waiting-on-input?
+ (fn [db _]
+     (db :waiting-on-input?)))
+
+(rf/reg-sub
+ :input
+ (fn [db _]
+   (db :input)))

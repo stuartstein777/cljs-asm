@@ -609,13 +609,23 @@
                      (#{:rnz :rz :rgz :rlz :rgez :rlez} instruction)
                      (conditional-repeat memory instruction args)
 
+                     (= :inp instruction)
+                     (-> memory
+                         (update :eip inc))
+
+                     (= :end instruction)
+                     (-> memory
+                         (update :eip inc))
+
                      :else
                      memory)
         terminated? (or (> (memory :eip) (dec (count instructions)))
                        (neg? (memory :eip)))
-        finished? (= :end instruction)]
+        finished? (= :end instruction)
+        waiting-on-input? (= :inp instruction)]
     {:memory (cond-> memory
                terminated? (assoc :output (append-output (memory :output) (get-termination-cause (memory :eip))))
                finished?   (assoc :output (append-output (memory :output) "Exited.")))
      :terminated? terminated?
+     :waiting-on-input? waiting-on-input?
      :finished? (or finished? terminated?)}))

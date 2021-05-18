@@ -42,7 +42,7 @@
                                      :on-scroll  (fn [^js e]
                                                    (let [scroll-pos (.. e -target -scrollTop)]
                                                      (rf/dispatch [:update-scroll scroll-pos])))
-                                     :spellcheck "false"
+                                     :spellCheck "false"
                                      :value      @(rf/subscribe [:source])
                                      :wrap       :off}]]]))
 
@@ -114,16 +114,17 @@
          has-parsed-code? @(rf/subscribe [:has-parsed-code?])
          running-speed @(rf/subscribe [:running-speed])
          on-breakpoint @(rf/subscribe [:on-breakpoint])
-         valid-running-speed (re-matches #"^\d+" (str running-speed))]
+         valid-running-speed (re-matches #"^\d+" (str running-speed))
+         waiting-on-input? @(rf/subscribe [:waiting-on-input?])]
      [:div.execution-controls
       [:button.btn.btn-primary.parse-btn {:on-click #(rf/dispatch [:parse])} "Parse"]
       [:button.btn.btn-success.play-pause
        {:on-click #(rf/dispatch [:toggle-running])
-        :disabled (and (or finished? (not has-parsed-code?) (not valid-running-speed)) (not on-breakpoint))}
+        :disabled (and (or finished? (not has-parsed-code?) (not valid-running-speed) waiting-on-input?) (not on-breakpoint))}
        (if is-running? [:i.fas.fa-pause] [:i.fas.fa-play])]
       [:button.btn.btn-success.next-instruction
        {:on-click #(rf/dispatch [:next-instruction])
-        :disabled (and (or finished? (not has-parsed-code?) is-running? ) (not on-breakpoint))}
+        :disabled (and (or finished? (not has-parsed-code?) is-running? waiting-on-input?) (not on-breakpoint))}
        [:i.fas.fa-forward]]
       [:button.btn.btn-danger.stop-button
        {:disabled (not has-parsed-code?)
@@ -161,8 +162,7 @@
         {:on-click #(rf/dispatch [:remove-expanded-reg name])}]]
       [:textarea.expandable-text-area {:readOnly true
                                        :style    {:background-color (if last :yellow :white)}
-                                       :value    s
-                                       :wrap     true}]]
+                                       :value    s}]]
      ; display collapsed
      [:div.collapsed-expandable
       {:style {:background-color (if last :yellow :white)}}
@@ -187,7 +187,7 @@
           [:div.row {:key k}
            [:div.col-col-lg6.register-name
             {:key (str k "reg:name")
-             :style {:height (if (expanded-registers name) 60 20)}}
+             :style {:height (if (expanded-registers name) 70 20)}}
             name]
            [expandable-box name (str v) (keyword-identical? name last-edit-register) (expanded-registers name)]]))]]))
 
@@ -251,13 +251,31 @@
 
 ;; Display the generated std output from the interpreter.
 (defn output []
-  (let [output @(rf/subscribe [:output])]
+  (let [input @(rf/subscribe [:input])
+        output @(rf/subscribe [:output])
+        waiting-on-input? @(rf/subscribe [:waiting-on-input?])]
     [:div.std-out-container
      [header-with-clear :clear-output "Output"]
      [:textarea#stdout.std-out {:readOnly true
-                                :spellcheck "false"
-                                :value    output                                
-                                :wrap     :off}]]))
+                                :spellCheck "false"
+                                :value    output
+                                :wrap     :off}]
+     [:div {:style {:background-color (if waiting-on-input? :yellow :grey)
+                    :border "1px solid black"
+                    :padding 5}}
+      [:i.fas.fa-keyboard]
+      [:input {:disabled (not waiting-on-input?)
+               :on-change #(rf/dispatch [:update-input (-> % .-target .-value)])
+               :style {:margin-left 5
+                       :height 23
+                       :width 220
+                       :margin-right 5}             
+               :value input}]
+      [:button.btn.btn-success.py-0
+      {:disabled (not waiting-on-input?)
+       :on-click #(rf/dispatch [:enter-input])
+       :style {:font-size "0.7em"}} 
+       "OK"]]]))
 
 ;; -- App ---------------------------------------------------------------------------
 (defn app []

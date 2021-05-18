@@ -630,6 +630,7 @@ reagent method: expandable-box
 */
 
 .collapsed-expandable {
+    -moz-box-sizing: border-box;
     border-bottom: 1px solid black;
     border-right: 1px solid black;
     border-left: 1px solid black;
@@ -641,7 +642,8 @@ reagent method: expandable-box
 }
 
 .expandable-text-area {
-    border-top: 0px solid white;
+    -moz-box-sizing: border-box; 
+    border-top: 0px solid white;    
     border-left: 1px solid black;
     font-size: 0.7em;
     height: calc(100% - 15px);

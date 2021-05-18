@@ -19,13 +19,15 @@
       (assoc-in [:memory :termination-message] "")
       (assoc :breakpoints #{})
       (assoc :code [])
+      (assoc :expanded-registers #{})
       (assoc :finished? false)
       (assoc :has-parsed-code? false)
+      (assoc :input "")
       (assoc :on-breakpoint false)
-      (assoc :expanded-registers #{})
       (assoc :parse-errors? false)
       (assoc :parse-errors "")
-      (assoc :running? false)))
+      (assoc :running? false)
+      (assoc :waiting-on-input? false)))
 
 (rf/reg-event-db
  :initialize
@@ -113,10 +115,12 @@ setordinal:
                          :rep-counters-stack  []
                          :last-edit-register  nil
                          :output              "$ Toy Asm Output >"}
+    :input              ""
     :on-breakpoint      false
     :parse-errors?      false
     :parse-errors       ""
     :expanded-registers #{}
+    :waiting-on-input?  false
     :running?           false
     :running-speed      250
     :ticker-handle      nil}))
@@ -160,6 +164,8 @@ setordinal:
                   (assoc :has-parsed-code? true)
                   (assoc :has-parsed-code? (:expanded-registers db))
                   (assoc :code code)
+                  (assoc :waiting-on-input? false)
+                  (assoc :input "")
                   (assoc :parse-errors? false)
                   (assoc :parse-errors errors))
         ;:scroll-parsed-code-to-top _
@@ -179,6 +185,7 @@ setordinal:
             (assoc :has-parsed-code? false)
             (assoc :expanded-registers #{})
             (assoc :on-breakpoint false)
+            (assoc :waiting-on-input? false)
             (assoc :memory {:eip                0
                             :registers          {}
                             :eip-stack          []
@@ -261,6 +268,7 @@ setordinal:
 (rf/reg-fx
  :scroll-output-to-end
  (fn [_]
+   (js/console.log "scrolling to end")
    (let [stdout (-> js/document (.getElementById "stdout"))
          scroll (-> stdout (.-scrollHeight))]
      (-> stdout
@@ -272,6 +280,30 @@ setordinal:
  (fn [{:keys [db]} _]
    {:db (assoc db :running? (not (db :running?)))
     :toggle-running [(not (db :running?)) (db :ticker-handle) (db :running-speed)]}))
+
+(defn parse-input [input]
+  (if (re-matches #"^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$" input)
+    (js/Number input)
+    input))
+
+;; add the input to the register for the current inp instruction
+(rf/reg-event-fx
+ :enter-input
+ (fn [{:keys [db]} _]
+   (let [eip (-> db :memory :eip)
+         register (second (nth (db :code) (dec eip)))]
+     {:db (-> db
+              (update-in [:memory :registers] assoc register (parse-input (db :input)))
+              (assoc :input "")
+              (assoc :waiting-on-input? false)
+              (assoc :running? true))
+      :toggle-running [true (db :ticker-handle) (db :running-speed)]
+      :scroll-output-to-end nil})))
+
+(rf/reg-event-db
+ :update-input
+ (fn [db [_ input]]
+   (assoc db :input input)))
 
 (rf/reg-fx
  :end-running
@@ -302,6 +334,11 @@ setordinal:
  (fn [db [_ v]]
    (update-in db [:memory :stack] conj v)))
 
+(rf/reg-fx
+ :pause
+ (fn [handle]
+   (js/clearInterval handle)))
+
 (rf/reg-event-fx
  :reset
  (fn [{:keys [db]} _]
@@ -317,16 +354,19 @@ setordinal:
                             :output             (if (db :running?)
                                                   (str (-> db :memory :output) "\nUser terminated.")
                                                   (-> db :memory :output))})
-            (assoc :running? false)
+            (assoc :finished? false)
+            (assoc :input "")
             (assoc :on-breakpoint false)
-            (assoc :finished? false))
+            (assoc :running? false)
+            (assoc :waiting-on-input? false))
     :toggle-running [false (db :ticker-handle)]
-    :scroll-parsed-code-to-top _}))
+    ;:scroll-parsed-code-to-top _
+    }))
 
 (rf/reg-event-fx
  :next-instruction
  (fn [{:keys [db]} _]
-   (let [{:keys [memory finished? terminated?]} (exfn.interpreter/interpret (db :code) (db :memory))
+   (let [{:keys [memory finished? terminated? waiting-on-input?]} (exfn.interpreter/interpret (db :code) (db :memory))
          breakpoints (db :breakpoints)
          db (-> db
                 (assoc :memory memory)
@@ -339,8 +379,17 @@ setordinal:
                 (assoc :on-breakpoint true)
                 (assoc :running? false))
         :scroll-current-code-into-view (:eip memory)
-        :toggle-running [false (db :ticker-handle)]}
+        :toggle-running [false (db :ticker-handle)]
+        :scroll-output-to-end nil}
 
+       waiting-on-input?
+       {:db (-> db
+                (assoc :running? false)
+                (assoc :waiting-on-input? true))
+        
+        :pause (db :ticker-handle)
+        :scroll-output-to-end nil}
+       
        ;; Program was terminated.
        terminated?
        {:db (-> db
@@ -348,7 +397,8 @@ setordinal:
                 (assoc :on-breakpoint false)
                 (assoc :finished? true)
                 (assoc :running? false))
-        :end-if-finished [(db :ticker-handle) (or finished? terminated?)]}
+        :end-if-finished [(db :ticker-handle) (or finished? terminated?)]
+        :scroll-output-to-end nil}
 
        ;; Program finished by hitting an :end instruction (since it wasn't terminated.)
        finished?
@@ -357,14 +407,15 @@ setordinal:
                 (assoc :on-breakpoint false)
                 (assoc :finished? true)
                 (assoc :running? false))
-        :end-if-finished [(db :ticker-handle) (or finished? terminated?)]}
+        :end-if-finished [(db :ticker-handle) (or finished? terminated?)]
+        :scroll-output-to-end nil}
 
        ;; Otherwise it's ok to continue.
        :else
        {:db                            (assoc db :on-breakpoint false)
         :scroll-current-code-into-view (:eip memory)
-        :scroll-output-to-end nil
-        :end-if-finished               [(db :ticker-handle) (or finished? terminated?)]}))))
+        :end-if-finished               [(db :ticker-handle) (or finished? terminated?)]
+        :scroll-output-to-end nil}))))
 
 (rf/reg-event-db
  :clear-output
