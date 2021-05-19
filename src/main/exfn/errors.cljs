@@ -9,38 +9,33 @@
     "does not expect arguments"))
 
 (defn has-one-argument? [line]
-  (when (not (re-seq #"^(\w+) [:%]?(\w+|'.+'|`.+`):?$" line))
+  (when (not (re-seq #"^\s*?(\w+)\s+[:%]?(\w+|'.+'|`.+`):?$" line))
     "should only have one argument."))
 
-(comment (has-one-argument? "prn `hello`"))
-
 (defn has-two-arguments? [line]
-  (when (not (re-seq #"^(\w+) ('.+'|`.+`|:\w+|%\w+|([0-9]+([.][0-9]*)?|[.][0-9]+)|\w+) ('.+'|`.+`|:\w+|%\w+|[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)|\w+)$" line))
+  (when (not (re-seq #"^(\w+)\s+('.+'|`.+`|:\w+|%\w+|([0-9]+([.][0-9]*)?|[.][0-9]+)|\w+)\s+('.+'|`.+`|:\w+|%\w+|[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)|\w+)$" line))
     "should have two arguments."))
 
 ;; if we are in a macro, then we want the first argument to start with a %,
 ;; if its not in a macro then we want the first argument to be a register.
 (defn first-argument-is-a-register? [is-macro? line]
-  (cond (and is-macro? (not (re-seq #"^(\w+)\s(:(\w+)|%(\w+))" line)))
+  (js/console.log "`" line "`")
+  (cond (and is-macro? (not (re-seq #"^\s*(\w+)\s+(:(\w+)|%(\w+))" line)))
         "first argument in a macro can't be a constant (value or string). Should have form %1, %2 etc"
 
-        (and (not is-macro?) (not (re-seq #"^(\w+)\s:(\w+)" line)))
+        (and (not is-macro?) (not (re-seq #"^\s*(\w+)\s+:(\w+)" line)))
         "first argument must be a register. Registers start with a :"
 
         :else
         nil))
 
-
-
 (defn one-argument-and-its-a-label [line]
-  (when (not (re-seq #"^(\w+) ([a-zA-Z_][a-zA-Z0-9_]*)$" line))
+  (when (not (re-seq #"^(\w+)\s+([a-zA-Z_][a-zA-Z0-9_]*)$" line))
     "expects one argument and it must be a label."))
 
 (comment
-  (one-argument-and-its-a-label "jne quax"))
-(comment
   ; two arguments
-  (re-seq #"^(\w+) (:\w+\s)('.+'|`.+`|:\w+|\d+)$" "mov :a :b")
+  (re-seq #"^(\w+)\s+(:\w+\s)('.+'|`.+`|:\w+|\d+)$" "mov     :a :b")
   (re-seq #"^(\w+) (:\w+\s)('.+'|`.+`|:\w+|\d+)$" "mov :a")
   ; register followed by string:
   (rest (re-matches #"^(\w+) (:\w+\s)('.+'|`.+`)$" "mov :a 'foo bar'"))

@@ -81,30 +81,6 @@
          (format-arguments ["rep 5"])
          (format-arguments ["mov" ":a" "123.45"]))
 
-(defn get-first-arg [args]
-  (cond
-    ; first argument is a register
-    (str/starts-with? args ":")
-    (->> args
-         (re-find #"^(\:\w+)")
-         (first))
-
-    ; first argument is a string
-    (str/starts-with? args "`")
-    (first (re-find #"([`])(?:(?=(\\?))\2.)*?\1" args))
-
-    ; first argument is a string
-    (str/starts-with? args "'")
-    (first (re-find #"(['])(?:(?=(\\?))\2.)*?\1" args))
-
-    ; first argument is a number.
-    (re-find #"^\d" args)
-    (first (re-find #"(\d+)" args))
-
-    ; first argument is a label
-    :else
-    (first (re-find #"(\w+)" args))))
-
 ;; ==============================================================================================
 ;; A line will look like this:
 ;;
@@ -132,31 +108,39 @@
 ;; else arg is a number.
 ;; ==============================================================================================
 (defn parse-line-of-code [line]
-  (if (re-find #"\w+:$" line) ; if the line is foo: then its a label.
-    [:label (keyword (subs line 0 (dec (count line))))]
-    (let [instruction (first (re-find #"^(\w+)" line))
-          args (subs line (inc (count instruction)))
-          first-arg (get-first-arg args)
-          second-arg (str/trim (subs args (count first-arg)))]
-      (-> (cond (and (nil? first-arg) (= second-arg ""))
-                [instruction]
-                (and first-arg (= second-arg ""))
-                [instruction first-arg]
-                :else
-                [instruction first-arg second-arg])
-          (format-arguments)))))
+  (js/console.log "line:: " line)
+  (let [[instruction & args] (->> line
+                                (re-seq #"^\s*?(\w+|\w+:)\s*(\:?\w+|\d+|\%\d+|'.+'|`.+`|)?\s*(\:?\w+|\d+|'.+'|`.+`|\%\d+)?$")
+                                (first)
+                                (rest)
+                                (filter identity))]
+    (if (zero? (count args))
+      (if (str/ends-with? instruction ":")
+        [:label (keyword (subs instruction 0 (dec (count instruction))))]
+        (format-arguments [instruction]))
+      (format-arguments (apply conj [instruction] args)))))
 
-(comment (parse-line-of-code "prn 'hello world'")
-         (parse-line-of-code "prn 555")
-         (parse-line-of-code "call foo")
-         (parse-line-of-code "foo:")
-         (parse-line-of-code "mov :a :b")
-         (parse-line-of-code "push `abc 'bar' quax`")
-         (parse-line-of-code "cat 'hello ' 'world'")
-         (parse-line-of-code "cat `foo 'bar' quax` 'world'")
-         (parse-line-of-code "mov :a 555")
-         (parse-line-of-code "mov :a 'foo, 'bar', quax'")
-         (parse-line-of-code "ret"))
+;; after doing below to get the seq of instruction and args, we need to 
+;; format each arg.
+(comment
+  ; to possibly get instruction and args parsed in one go.
+  (->> "push `abc 'bar' quax`"
+       (re-seq #"^\s*?(\w+|\w+:)\s*(\:?\w+|\d+|\%\d+|'.+'|`.+`|)?\s*(\:?\w+|\d+|'.+'|`.+`|\%\d+)?$")
+       (first)
+       (rest)
+       (filter identity))
+  
+  (parse-line-of-code "prn 'hello world'")
+  (parse-line-of-code "inc ctr:")
+  (parse-line-of-code "call foo")
+  (parse-line-of-code "foo:")
+  (parse-line-of-code "mov :a :b")
+  (parse-line-of-code "push `abc 'bar' quax`")
+  (parse-line-of-code "cat 'hello ' 'world'")
+  (parse-line-of-code "cat `foo 'bar' quax` 'world'")
+  (parse-line-of-code "mov      :ord `th `")
+  (parse-line-of-code "mov :a 'foo, 'bar', quax'")
+  (parse-line-of-code "ret"))
 
 ;; ==============================================================================================
 ;; Get rid of all comments, this can be either a line that starts with a ; or a line with a

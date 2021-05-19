@@ -66,7 +66,6 @@
 start:
    cmp :ctr :tgt
    jg finish
-   inc ctr:
    print-nth(:b, :ctr)
    next-fib(:a, :b)
    restart(:ctr)

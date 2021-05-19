@@ -63,7 +63,9 @@
     (is (= [] (validate-instruction "rlz" "rlz :a" false)))
     (is (= [] (validate-instruction "rgez" "rgez :a" false)))
     (is (= [] (validate-instruction "rlez" "rlez :a" false)))
-    (is (= [] (validate-instruction "prn" "prn :a" false))))
+    (is (= [] (validate-instruction "prn" "prn `hello, world`" false)))
+    (is (= [] (validate-instruction "prn" "prn 'hello, world'" false)))
+    (is (= [] (validate-instruction "prn" "prn `hello 'world'`" false))))
 
     (testing "Invalid instructions should return errors"
       (is (= ["Invalid `mov` call, `mov` should have two arguments."
