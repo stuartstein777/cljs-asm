@@ -61,6 +61,7 @@ reagent function::          code-editor
     border-left: 0px;
     color: rgb(97, 192, 255);
     float: left;
+    font-family: monospace;
     font-size: 14px;
     height: 100%;
     margin: 0 auto;
@@ -611,6 +612,7 @@ reagent method: output
 .std-out {
     background-color: rgb(46,43,43);
     color: greenyellow;
+    font-family: monospace;
     font-size: 0.7em;
     height: 400px;
     padding: 10px;
