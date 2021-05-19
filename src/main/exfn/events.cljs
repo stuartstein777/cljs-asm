@@ -32,7 +32,8 @@
 (rf/reg-event-db
  :initialize
  (fn [_ _]
-   {:source             ".macros
+   {:source
+    ".macros
     %print-nth
        call setordinal
        mov :s :msg1
@@ -60,10 +61,17 @@
          je rd
      %end
 .code
+   prn `How many fibonacci numbers to print?`
+   inp :tgt
 start:
+   cmp :ctr :tgt
+   jg finish
+   inc ctr:
    print-nth(:b, :ctr)
    next-fib(:a, :b)
    restart(:ctr)
+
+finish:
    end
 
 setordinal:
@@ -386,10 +394,20 @@ setordinal:
        {:db (-> db
                 (assoc :running? false)
                 (assoc :waiting-on-input? true))
-        
+
         :pause (db :ticker-handle)
         :scroll-output-to-end nil}
-       
+
+       ;; Program finished by hitting an :end instruction (since it wasn't terminated.)
+       finished?
+       {:db(-> db
+               (assoc :terminated? false)
+               (assoc :on-breakpoint false)
+               (assoc :finished? true)
+               (assoc :running? false))
+        :end-if-finished [(db :ticker-handle) (or finished? terminated?)]
+        :scroll-output-to-end nil}
+
        ;; Program was terminated.
        terminated?
        {:db (-> db
@@ -400,15 +418,7 @@ setordinal:
         :end-if-finished [(db :ticker-handle) (or finished? terminated?)]
         :scroll-output-to-end nil}
 
-       ;; Program finished by hitting an :end instruction (since it wasn't terminated.)
-       finished?
-       {:db (-> db
-                (assoc :terminated? false)
-                (assoc :on-breakpoint false)
-                (assoc :finished? true)
-                (assoc :running? false))
-        :end-if-finished [(db :ticker-handle) (or finished? terminated?)]
-        :scroll-output-to-end nil}
+
 
        ;; Otherwise it's ok to continue.
        :else

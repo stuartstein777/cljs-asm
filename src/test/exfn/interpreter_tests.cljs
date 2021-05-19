@@ -499,21 +499,24 @@
   (testing "mov instruction at eip 0"
            (is (= {:finished? false
                    :memory {:eip 1, :registers {:a 5} :last-edit-register :a}
-                   :terminated? false}
+                   :terminated? false
+                   :waiting-on-input? false}
                 (interpret [[:mov :a 5] [:end]] {:eip 0}))))
   
   (testing "end instruction should cause program to be finished."
     (is (= {:finished? true
-            :memory {:eip 1
+            :memory {:eip 2
                      :output "Exited."}
-            :terminated? false}
+            :terminated? false
+            :waiting-on-input? false}
            (interpret [[:nop] [:end]] {:eip 1}))))
-  
+    
   (testing "jmp to label that doesnt exist, terminates program."
     (is (= {:finished? true
             :memory {:eip -2
                      :output "Terminated: Jump to non existant label."}
-            :terminated? true}
+            :terminated? true
+            :waiting-on-input? false}
            (interpret [[:nop] [:jmp "foo"] [:end]] {:eip 1}))))
   
   (testing "jmp past end of instructions terminates program."
@@ -521,7 +524,8 @@
             :memory {:eip -1
                      :output "Terminated: EIP jumped past last instruction."
                      :registers {:a 5}}
-            :terminated? true}
+            :terminated? true
+            :waiting-on-input? false}
            (interpret [[:mov :a 5] [:jnz :a 5] [:end]] {:eip 1 :registers {:a 5}}))))
   
   (testing "jmp to label that doesnt exist, terminates program."
@@ -529,13 +533,15 @@
             :memory {:eip -3
                      :output "Called non-existent function."
                      :symbol-table {}}
-            :terminated? true}
+            :terminated? true
+            :waiting-on-input? false}
            (interpret [[:call :bar] [:end]] {:eip 0 :symbol-table {}}))))
   
   (testing "inc instruction at eip 1"
     (is (= {:finished? false
             :memory {:eip 2, :internal-registers {:par 1}, :last-edit-register :a, :registers {:a 6}}
-            :terminated? false}
+            :terminated? false
+            :waiting-on-input? false}
            (interpret [[:mov :a 5] [:inc :a] [:end]] {:eip 1 :registers {:a 5}}))))
   
   (testing "jmp instruction at eip 1"
@@ -543,7 +549,8 @@
             :memory {:eip 3,
                      :registers {:a 5}
                      :symbol-table {:foo 3}}
-            :terminated? false}
+            :terminated? false
+            :waiting-on-input? false}
            (interpret [[:mov :a 5] [:jmp :foo] [:end] [:label :foo] [:prn :a] [:ret]]
                       {:eip 1 :registers {:a 5} :symbol-table {:foo 3}}))))
   
@@ -553,7 +560,8 @@
                      :eip-stack [1]
                      :rep-counters-stack [5]
                      :registers {:a 5}}
-            :terminated? false}
+            :terminated? false
+            :waiting-on-input? false}
            (interpret [[:mov :a 5] [:rep 5] [:dec :a] [:rp] [:end]]
                       {:eip 1 :registers {:a 5}}))))
   
@@ -563,7 +571,8 @@
                      :eip-stack [1]
                      :rep-counters-stack [4]
                      :registers {:a 5}}
-            :terminated? false}
+            :terminated? false
+            :waiting-on-input? false}
            (interpret [[:mov :a 5] [:rep 5] [:dec :a] [:rp] [:end]]
                       {:eip 3
                        :eip-stack [1]

@@ -619,8 +619,9 @@
 
                      :else
                      memory)
-        terminated? (or (> (memory :eip) (dec (count instructions)))
-                       (neg? (memory :eip)))
+        terminated? (and (or (> (memory :eip) (dec (count instructions)))
+                             (neg? (memory :eip)))
+                         (not (= :end instruction)))
         finished? (= :end instruction)
         waiting-on-input? (= :inp instruction)]
     {:memory (cond-> memory
