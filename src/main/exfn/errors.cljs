@@ -9,7 +9,6 @@
     "does not expect arguments"))
 
 (defn has-one-argument? [line]
-  (js/console.log line)
   (when (not (re-seq #"^(\w+) [:%]?(\w+|'.+'|`.+`):?$" line))
     "should only have one argument."))
 

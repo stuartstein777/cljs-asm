@@ -276,7 +276,6 @@ setordinal:
 (rf/reg-fx
  :scroll-output-to-end
  (fn [_]
-   (js/console.log "scrolling to end")
    (let [stdout (-> js/document (.getElementById "stdout"))
          scroll (-> stdout (.-scrollHeight))]
      (-> stdout
@@ -333,7 +332,6 @@ setordinal:
 (rf/reg-event-db
  :remove-expanded-reg
  (fn [db [_ reg]]
-   (js/console.log reg)
    (-> db
        (update :expanded-registers clojure.set/difference #{reg}))))
 
