@@ -79,42 +79,32 @@
     (is (= [:rep 5] (format-arguments ["rep" "5"])))))
 
 (deftest parse-line-of-code-tests
-  (testing "mov :a 5 to [:mov :a 5]"
-    (is (= [:mov :a 5] (parse-line-of-code "mov :a 5"))))
-  (testing "mov :a b to [:mov :a :b]"
-    (is (= [:mov :a :b] (parse-line-of-code "mov :a b"))))
-  (testing "inc :a to [:inc :a]"
-    (is (= [:inc :a] (parse-line-of-code "inc :a"))))
-  (testing "dec :a to [:dec :a]"
-    (is (= [:dec :a] (parse-line-of-code "dec :a"))))
-  (testing "sub :x :y to [:sub :x :y]"
-    (is (= [:sub :x :y] (parse-line-of-code "sub :x :y"))))
-  (testing "jne lbl to [:jne :lbl]"
-    (is (= [:jne :lbl] (parse-line-of-code "jne lbl"))))
-  (testing "function: to [:lbl function]"
-    (is (= [:label :function] (parse-line-of-code "function:"))))
-  (testing "ret to [:ret]"
-    (is (= [:ret] (parse-line-of-code "ret"))))
-  (testing "end to [:end]"
-    (is (= [:end] (parse-line-of-code "end"))))
-  (testing "rep to [:rep]"
-    (is (= [:rep] (parse-line-of-code "rep"))))
-  (testing "rep 5 to [:rep 5]"
-    (is (= [:rep 5] (parse-line-of-code "rep 5"))))
-  (testing "rep :a to [:rep :a]"
-    (is (= [:rep :a] (parse-line-of-code "rep :a"))))
-  (testing "rp to [:rp]"
-    (is (= [:rp] (parse-line-of-code "rp")))))
+  (testing "all instructions"
+    (is (= [:mov :a 5] (parse-line-of-code "mov :a 5")))
+    (is (= [:mov :a :b] (parse-line-of-code "mov :a b")))
+    (is (= [:inc :a] (parse-line-of-code "inc :a")))
+    (is (= [:dec :a] (parse-line-of-code "dec :a")))
+    (is (= [:sub :x :y] (parse-line-of-code "sub :x :y")))
+    (is (= [:sub :x] (parse-line-of-code "sub :x")))
+    (is (= [:jne :lbl] (parse-line-of-code "jne lbl")))
+    (is (= [:label :function] (parse-line-of-code "function:")))
+    (is (= [:ret] (parse-line-of-code "ret")))
+    (is (= [:end] (parse-line-of-code "end")))
+    (is (= [:call :foo] (parse-line-of-code "call foo")))
+    (is (= [:rep] (parse-line-of-code "rep")))
+    (is (= [:rep 5] (parse-line-of-code "rep 5")))
+    (is (= [:rep :a] (parse-line-of-code "rep :a")))
+    (is (= [:rp] (parse-line-of-code "rp"))))
 
-(deftest is-register?-tests
-  (testing "a should return true"
-    (is (true? (is-register? ":a"))))
-  (testing "5 should return false"
-    (is (false? (is-register? "5"))))
-  (testing "b should return false"
-    (is (false? (is-register? "b"))))
-  (testing "-1 should return false"
-    (is (false? (is-register? "-1")))))
+  (deftest is-register?-tests
+    (testing "a should return true"
+      (is (true? (is-register? ":a"))))
+    (testing "5 should return false"
+      (is (false? (is-register? "5"))))
+    (testing "b should return false"
+      (is (false? (is-register? "b"))))
+    (testing "-1 should return false"
+      (is (false? (is-register? "-1"))))))
 
 (deftest parsing-tests
   (testing "parsing function calls"

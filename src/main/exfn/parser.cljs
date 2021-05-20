@@ -108,7 +108,6 @@
 ;; else arg is a number.
 ;; ==============================================================================================
 (defn parse-line-of-code [line]
-  (js/console.log "line:: " line)
   (let [[instruction & args] (->> line
                                 (re-seq #"^\s*?(\w+|\w+:)\s*(\:?\w+|\d+|\%\d+|'.+'|`.+`|)?\s*(\:?\w+|\d+|'.+'|`.+`|\%\d+)?$")
                                 (first)
@@ -332,16 +331,16 @@
   (let [source (prepare-source asm)
         parse-errors (vdt/validate source)]
     (if (= "" parse-errors)
-      (let [code (get-code source)
-            macros (get-macros source)
-            data (get-data source)
-            parsed-code (->> (macro-expand-code code macros)
-                             (map parse-line-of-code))
+      (let [code         (get-code source)
+            macros       (get-macros source)
+            data         (get-data source)
+            parsed-code  (->> (macro-expand-code code macros)
+                              (map parse-line-of-code))
             symbol-table (build-symbol-table parsed-code)]
-        {:code parsed-code
-         :data (mapv parse-data-entry data)
-         :errors ""
+        {:code         parsed-code
+         :data         (mapv parse-data-entry data)
+         :errors       ""
          :symbol-table symbol-table})
-      {:code []
-       :data []
+      {:code   []
+       :data   []
        :errors parse-errors})))
