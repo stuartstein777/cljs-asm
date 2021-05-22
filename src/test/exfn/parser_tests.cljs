@@ -18,7 +18,7 @@
                                  scrub-comments]]))
 
 (deftest build-symbol-table-tests
-  (is (= {:foo 2, :bar 4, :quax 5}
+  (is (= {:foo 3, :bar 5, :quax 6}
          (build-symbol-table [[:nop]
                               [:nop]
                               [:label :foo]
