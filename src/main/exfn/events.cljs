@@ -1,7 +1,6 @@
 (ns exfn.events
   (:require [exfn.parser :refer [parse]]
             [re-frame.core :as rf]
-            [day8.re-frame.tracing :refer-macros [fn-traced]]
             [exfn.interpreter :as interp]
             [clojure.set :as set]))
 

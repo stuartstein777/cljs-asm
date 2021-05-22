@@ -229,7 +229,7 @@
 (defn build-symbol-table [asm]
   (reduce (fn [a [i ix]]
             (if (= (first ix) :label)
-              (assoc a (second ix) i)
+              (assoc a (second ix) (inc i))
               a))
           {}
           (map vector (range) asm)))
