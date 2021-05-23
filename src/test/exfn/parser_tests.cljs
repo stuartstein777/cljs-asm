@@ -81,6 +81,10 @@
 (deftest parse-line-of-code-tests
   (testing "mov :a 5 to [:mov :a 5]"
     (is (= [:mov :a 5] (parse-line-of-code "mov :a 5"))))
+  (testing "mov :abc 5 to [:mov :abc 5]"
+    (is (= [:mov :abc 5] (parse-line-of-code "mov :abc 5"))))
+  (testing "mov :abc :def to [:mov :abc :def]"
+    (is (= [:mov :abc :def] (parse-line-of-code "mov :abc :def"))))
   (testing "mov :a b to [:mov :a :b]"
     (is (= [:mov :a :b] (parse-line-of-code "mov :a b"))))
   (testing "inc :a to [:inc :a]"
@@ -105,6 +109,7 @@
     (is (= [:rep :a] (parse-line-of-code "rep :a"))))
   (testing "rp to [:rp]"
     (is (= [:rp] (parse-line-of-code "rp")))))
+
 
 (deftest is-register?-tests
   (testing "a should return true"
@@ -132,7 +137,33 @@
                    end
                    function:
                    div :a 2
-                   ret"))))))
+                   ret")))))
+  (testing "parsing calls with long register names"
+    (is (= [[:prn "Enter a number: "]
+            [:inp :a]
+            [:prn "Enter another number: "]
+            [:inp :b]
+            [:mov :msg :a]
+            [:cat :msg " + "]
+            [:cat :msg :b]
+            [:cat :msg " = "]
+            [:add :a :b]
+            [:cat :msg :a]
+            [:prn :msg]
+            [:end]]
+           (:code (parse ".code
+    prn `Enter a number: `
+    inp :a
+   prn `Enter another number: `
+   inp :b
+   mov :msg :a
+   cat :msg ` + `
+   cat :msg :b
+   cat :msg ` = `
+   add :a :b
+   cat :msg :a 
+   prn :msg
+   end"))))))
 
 (deftest parser-with-long-register-names
   (is (= [[:mov :abc 5]
