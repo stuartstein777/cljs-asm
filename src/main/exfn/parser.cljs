@@ -10,153 +10,38 @@
     (keyword (subs x 1))
     x))
 
-(defn parse-msg [instruction]
-  (into [(keyword (subs instruction 0 3))]
-        (let [input (map identity (subs instruction 4))]
-          (loop [to-parse input
-                 res []
-                 in-quote? false
-                 current-string ""]
-            (let [i (first to-parse)]
-              (if (empty? to-parse)
-                (conj res (get-value current-string))
-                (cond
-                  (and in-quote? (= i \'))
-                  (recur (rest to-parse) (conj res current-string) false "")
+(def code-regex #"^(\w+:?)\s*('.+'|`.+`|:\w+\[:\w+\]|:\w+\[\d+\]|:\w+|%\w+|[+-]?[0-9]*[.][0-9]*?|[.][0-9]+)?\s*('.+'|`.+`|:\w+\[:\w+\]|:\w+\[\d+\]|:\w+|%\w+|[+-]?[0-9]*[.][0-9]*?|[.][0-9]+|\w+|\[.*\])?$")
 
-                  (and in-quote? (not= i \'))
-                  (recur (rest to-parse) res in-quote? (str current-string (str i)))
+(def matchers-and-formatters
+  [[#"^:\w+$"                                (fn [a]           (keyword (subs a 1)))]
+   [#"^(:\w+)\[(\d+|:\w+)?\]"                (fn [[_ reg idx]] {:register reg :index idx})]
+   [#"^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$" (fn [[_ n]]       (js/Number n))]
+   [#"^('.+')$"                              (fn [[el _]]      (subs el 1 (dec (count el))))]
+   [#"^(`.+`)$"                              (fn [[el _]]      (subs el 1 (dec (count el))))]
+   [#"\w+"                                    keyword]])
 
-                  (and (not in-quote?) (= i \'))
-                  (recur (rest to-parse) (if (= "" current-string)
-                                           res
-                                           (conj res (get-value current-string))) true "")
+(defn format-element [el]
+  (some (fn [[rx fmt]]
+          (some-> (re-matches rx el) fmt))
+        matchers-and-formatters))
 
-                  (and (not in-quote?) (= i \space))
-                  (recur (rest to-parse) res in-quote? current-string)
+(defn format-instruction [instr]
+  (if (str/ends-with? instr ":")
+    [:label (keyword (subs instr 0 (dec (count instr))))]
+    [(keyword instr)]))
 
-                  (and (not in-quote?) (= i \;))
-                  (conj res (get-value current-string))
+(defn format-line [[instr & args]]
+  (if (seq? args)
+    (concat [(keyword instr)] (map format-element args))
+    (format-instruction instr)))
 
-                  :else
-                  (recur (rest to-parse) res in-quote? (str current-string (str i))))))))))
-
-;; ==============================================================================================
-;; Takes the arguments for a line of source code and formats them depending on their
-;; type.
-;;
-;; Valid argument types:
-;;    keyword - meaning its a register.
-;;    number  - meaning its a number.
-;;    string  - starts with ` or '
-;;    else return it as a keyword.
-;; ==============================================================================================
-(defn format-arg [arg]
-  (cond (is-register? arg)
-        (keyword (subs arg 1))
-
-        (re-find #"^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$" arg)
-        (js/Number arg)
-
-        (or (str/starts-with? arg "'") (str/starts-with? arg "`"))
-        (subs arg 1 (dec (count arg)))
-
-        :else
-        (keyword arg)))
-
-;; ==============================================================================================
-;; Formats the arguments, handles if their are 0, 1 or 2 args.
-;; ==============================================================================================
-(defn format-arguments [[instruction arg1 arg2]]
-  (cond-> [(keyword instruction)]
-    arg1 (conj (format-arg arg1))
-    (and (some? arg2) (not= "" arg2)) (conj (format-arg arg2))))
-
-(comment "format-argument takes instruction and its args as a vector. Returns them formatted for
-          interpreter. Handles 0, 1 or 2 args. e.g:"
-         (format-arguments ["mov" ":a" "5"])
-         (format-arguments ["mov" ":a" ":b"])
-         (format-arguments ["call" "foo"])
-         (format-arguments ["ret"])
-         (format-arguments ["rep 5"])
-         (format-arguments ["mov" ":a" "123.45"]))
-
-(defn get-first-arg [args]
-  (cond
-    ; first argument is a register
-    (str/starts-with? args ":")
-    (->> args
-         (re-find #"^(\:\w+)")
-         (first))
-
-    ; first argument is a string
-    (str/starts-with? args "`")
-    (first (re-find #"([`])(?:(?=(\\?))\2.)*?\1" args))
-
-    ; first argument is a string
-    (str/starts-with? args "'")
-    (first (re-find #"(['])(?:(?=(\\?))\2.)*?\1" args))
-
-    ; first argument is a number.
-    (re-find #"^\d" args)
-    (first (re-find #"(\d+)" args))
-
-    ; first argument is a label
-    :else
-    (first (re-find #"(\w+)" args))))
-
-;; ==============================================================================================
-;; A line will look like this:
-;;
-;; instruction arg1 arg2
-;; arg2 is optional.
-;;
-;; e.g.
-;; mov :a :b
-;; mov :a 'hello, world'
-;; mov :a 555
-;; call foo
-;; prn 555
-;; foo:
-;; prn 'hello, world'
-;; cat 'hello ' 'world'
-;; ret
-;; pop :x
-;; push :x
-;; push `hello, world 'bar', quax`
-;; push `hello, world "bar", quax`
-;; push 555
-;;
-;; if arg starts with a : it's a register.
-;; if arg starts with a ' it's a string.
-;; else arg is a number.
-;; ==============================================================================================
 (defn parse-line-of-code [line]
-  (if (re-find #"\w+:$" line) ; if the line is foo: then its a label.
-    [:label (keyword (subs line 0 (dec (count line))))]
-    (let [instruction (first (re-find #"^(\w+)" line))
-          args (subs line (inc (count instruction)))
-          first-arg (get-first-arg args)
-          second-arg (str/trim (subs args (count first-arg)))]
-      (-> (cond (and (nil? first-arg) (= second-arg ""))
-                [instruction]
-                (and first-arg (= second-arg ""))
-                [instruction first-arg]
-                :else
-                [instruction first-arg second-arg])
-          (format-arguments)))))
-
-(comment (parse-line-of-code "prn 'hello world'")
-         (parse-line-of-code "prn 555")
-         (parse-line-of-code "call foo")
-         (parse-line-of-code "foo:")
-         (parse-line-of-code "mov :a :b")
-         (parse-line-of-code "push `abc 'bar' quax`")
-         (parse-line-of-code "cat 'hello ' 'world'")
-         (parse-line-of-code "cat `foo 'bar' quax` 'world'")
-         (parse-line-of-code "mov :a 555")
-         (parse-line-of-code "mov :a 'foo, 'bar', quax'")
-         (parse-line-of-code "ret"))
+  (->> line
+       (re-matches code-regex)
+       (rest)
+       (remove nil?)
+       (format-line)
+       (vec)))
 
 ;; ==============================================================================================
 ;; Get rid of all comments, this can be either a line that starts with a ; or a line with a
@@ -329,7 +214,7 @@
 
 (defn parse-data-entry [data]
   (let [[_ reg value] (re-find #"^(\w+) (.+)" data)]
-    [(keyword reg) (format-arg value)]))
+    [(keyword reg) (format-element value)]))
 
 (comment "parse-data-entry"
          (parse-data-entry "foo 42")
@@ -352,7 +237,7 @@
             macros (get-macros source)
             data (get-data source)
             parsed-code (->> (macro-expand-code code macros)
-                             (map parse-line-of-code))
+                             (mapv parse-line-of-code))
             symbol-table (build-symbol-table parsed-code)]
         {:code parsed-code
          :data (mapv parse-data-entry data)
@@ -361,3 +246,10 @@
       {:code []
        :data []
        :errors parse-errors})))
+
+(parse ".code
+          mov :a 5
+          mov :b 6
+          add :a :b
+          prn :a
+          end")

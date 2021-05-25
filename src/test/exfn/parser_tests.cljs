@@ -2,8 +2,6 @@
   (:require [cljs.test :refer-macros [deftest is testing run-tests]]
             [exfn.parser :refer [build-symbol-table
                                  expand
-                                 format-arg
-                                 format-arguments
                                  get-args
                                  get-code
                                  get-macro-call
@@ -47,36 +45,6 @@
     (is (= "5" (get-value "5")))
     (is (= :foo (get-value ":foo")))
     (is (= "foo" (get-value "foo")))))
-
-(deftest format-arg-tests
-  (testing "format-arg handles strings"
-    (is (= "foo bar quax" (format-arg "'foo bar quax'")))
-    (is (= "foo bar quax" (format-arg "`foo bar quax`"))))
-  (testing "testing formats numberes"
-    (is (= 5 (format-arg "5")))
-    (is (= 5.5 (format-arg "5.5"))))
-  (testing "registers are formatted to keywords"
-    (is (= :foo (format-arg ":foo"))))
-  (testing "if none of the above, make it a keyword"
-    (is (= :foo (format-arg "foo"))))
-  (testing "formats strings when the strings are only numbers"
-    (is (= "123.45" (format-arg "`123.45`")))
-    (is (= "123.45" (format-arg "'123.45'"))))
-  (testing "formats arguments that are floating points"
-    (is (= 123.45 (format-arg "123.45")))
-    (is (= -123.45 (format-arg "-123.45")))
-    (is (= -123 (format-arg "-123")))
-    (is (= 0.123 (format-arg ".123")))
-    (is (= -0.123 (format-arg "-.123")))))
-
-(deftest format-arguments-tests
-  (testing "2 argument instructions"
-    (is (= [:mov :a 5] (format-arguments ["mov" ":a" "5"])))
-    (is (= [:mov :a :b] (format-arguments ["mov" ":a" ":b"])))
-    (is (= [:ret] (format-arguments ["ret"])))
-    (is (= [:call :foo] (format-arguments ["call" "foo"])))
-    (is (= [:inc :a] (format-arguments ["inc" ":a"])))
-    (is (= [:rep 5] (format-arguments ["rep" "5"])))))
 
 (deftest parse-line-of-code-tests
   (testing "mov :a 5 to [:mov :a 5]"
