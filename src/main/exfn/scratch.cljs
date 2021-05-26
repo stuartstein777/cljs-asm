@@ -1,98 +1,120 @@
 (ns main.exfn.scratch
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [exfn.validators :as vdt]))
 
-(defn to-arr [arr]
-  :array)
+(def code-regex 
+  #"^(\w+:?)\s*('.+'|`.+`|:\w+\[:\w+\]|:\w+\[\d+\]|:\w+|%\w+|[+-]?[0-9]*[.][0-9]*?|[.][0-9]+)?\s*('.+'|`.+`|:\w+\[:\w+\]|:\w+\[\d+\]|:\w+|%\w+|[+-]?[0-9]*[.][0-9]*?|[.][0-9]+|\w+|\[.*\])?$")
 
-;; an element can be a instruction  (end)
-;;                   a number (5)
-;;                   a register (:a)
-;;                   a register with an array index (:a[5] or :a[:b])
-;;                   a string (`foo` or 'foo')
-;;                   a label (foo:)
 (def matchers-and-formatters
   [[#"^:\w+$"                                (fn [a]           (keyword (subs a 1)))]
    [#"^(:\w+)\[(\d+|:\w+)?\]"                (fn [[_ reg idx]] {:register reg :index idx})]
    [#"^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$" (fn [[_ n]]       (js/Number n))]
    [#"^('.+')$"                              (fn [[el _]]      (subs el 1 (dec (count el))))]
    [#"^(`.+`)$"                              (fn [[el _]]      (subs el 1 (dec (count el))))]
-   [#"^\[\w+|\d+\]$"                         to-arr]
-   [#".+"                                    keyword]])
+   [#"\w+"                                    keyword]])
 
 (defn format-element [el]
-  (prn "el: " el)
   (some (fn [[rx fmt]]
           (some-> (re-matches rx el) fmt))
         matchers-and-formatters))
 
-(defn format-instruction [instr]
-  (if (str/ends-with? instr ":")
-    [:label (keyword (subs instr 0 (dec (count instr))))]
-    (keyword instr)))
-
 (defn format-line [[instr & args]]
-  (if (seq? args)
-    (concat [(keyword instr)] (map format-element args))
-    (format-instruction instr)))
+  (cond (seq? args)
+        (concat [(keyword instr)] (map format-element args))
+
+        (str/ends-with? instr ":")
+        [:label (keyword (subs instr 0 (dec (count instr))))]
+
+        :else
+        [(keyword instr)]))
 
 (defn parse-line-of-code [line]
   (->> line
-       (re-matches
-        #"^(\w+:?)\s*('.+'|`.+`|:\w+\[:\w+\]|:\w+\[\d+\]|:\w+|%\w+|[+-]?[0-9]*[.][0-9]*?|[.][0-9]+)?\s*('.+'|`.+`|:\w+\[:\w+\]|:\w+\[\d+\]|:\w+|%\w+|[+-]?[0-9]*[.][0-9]*?|[.][0-9]+|\w+)?$")
+       (re-matches code-regex)
        (rest)
        (remove nil?)
-       (format-line)))
+       (format-line)
+       (vec)))
 
-;; (rest (re-matches
-;;        #"^(\w+:?)\s*(:\w+\[(:\w+|\d+)*\]|:\w+|\w+:|%\w+|[+-]?[0-9]*[.][0-9]*?|[.][0-9]+|\w+|\[.*\])?\s*('.+'|`.+`|:\w+\[(:\w+|\d+)*\]|:\w+|\w+:|%\w+|[+-]?[0-9]*[.][0-9]*?|[.][0-9]+|\w+|\[.*\])?$"
-;;        "mov :a[:abc] :d[:efg]"))
+(defn scrub-comments [s]
+  (if (and (not (str/starts-with? s "msg"))
+           (str/includes? s ";"))
+    (str/trimr (subs s 0 (str/index-of s ";")))
+    s))
 
-;; (rest (re-matches
-;;        #"^(\w+:?)\s*(:\w+\[(:\w+|\d+)*\]|:\w+|\w+:|%\w+|[+-]?[0-9]*[.][0-9]*?|[.][0-9]+|\w+|\[.*\])?\s*('.+'|`.+`|:\w+\[(:\w+|\d+)*\]|:\w+|\w+:|%\w+|[+-]?[0-9]*[.][0-9]*?|[.][0-9]+|\w+|\[.*\])?$"
-;;        "mov :a[:b] :c[:d]"))
+(defn get-macro-call [macro-names line]
+  (first (filter #(str/starts-with? line %) macro-names)))
 
-;; (rest (re-matches
-;;        #"^(\w+:?)\s*(:\w+\[(:\w+|\d+)*\]|:\w+|\w+:|%\w+|[+-]?[0-9]*[.][0-9]*?|[.][0-9]+|\w+|\[.*\])?\s*('.+'|`.+`|:\w+\[(:\w+|\d+)*\]|:\w+|\w+:|%\w+|[+-]?[0-9]*[.][0-9]*?|[.][0-9]+|\w+|\[.*\])?$"
-;;        "mov :a[2] :c[3]"))
-;; (defn to-register [a]
-;;   (keyword (subs a 1)))
+(defn build-symbol-table [asm]
+  (reduce (fn [a [i ix]]
+            (if (= (first ix) :label)
+              (assoc a (second ix) (inc i))
+              a))
+          {}
+          (map vector (range) asm)))
 
-;; (defn to-reg-array [[_ reg idx]]
-;;   {:register reg :index idx})
+(defn get-args [line]
+  (let [args (->> (str/split (->> (re-seq #"\((.*?)\)" line)
+                                  (first)
+                                  (rest)
+                                  (first)) ",")
+                  (remove #(= "" %))
+                  (map str/trim))]
+    (when (seq args)
+      (zipmap (->> (range 1 (inc (count args)))
+                   (map (fn [n] (str "%" n))))
+              args))))
 
-;; (defn to-number [[_ n]] (js/Number n))
+(defn replace-macro-args [args macro-line]
+  (let [regex (re-pattern (str/join "|" (keys args)))]
+    (str/replace macro-line regex args)))
 
-;; (defn to-string [[el _]]
-;;   (subs el 1 (dec (count el))))
+(defn expand
+  [line macro] ;
+  (let [args (get-args line)]
+    (if args
+      (map (partial replace-macro-args args) macro)
+      macro)))
 
-(comment (rest (re-matches
-                #"^(\w+:?)\s*('.+'|`.+`|:\w+\[:\w+\]|:\w+\[\d+\]|:\w+|%\w+|[+-]?[0-9]*[.][0-9]*?|[.][0-9]+)?\s*('.+'|`.+`|:\w+\[:\w+\]|:\w+\[\d+\]|:\w+|%\w+|[+-]?[0-9]*[.][0-9]*?|[.][0-9]+|\w+)?$"
-                "mov :a[:cv] :b[:def]"))
+(defn macro-expand-line [macros line]
+  (let [macro-call (get-macro-call (keys macros) line)]
+    (if macro-call
+      (expand line (macros macro-call))
+      (list line))))
 
-         (rest (re-matches #"^(\w+:?)\s*(:\w+\[:\w+\]|:\w+\[:\d+\])\s*(:\w+\[:\w+\]|:\w+\[\d+\])" "foo :a[:bc] :d[55]"))
-         (rest (re-matches #"^([a-zA-Z]+) (:[a-zA-Z]+\[:?[^\]]*])\s(:[a-zA-Z]+\[[^\]]*\])$" "mov :a[:bc] :d[445]"))
-         (rest (re-matches #"^([a-zA-Z]+) (:[a-zA-Z]+\[[^\]]*])\s(:[a-zA-Z]+\[[^\]]*\])$" "mov :a[55] :d[66]"))
-         (rest (re-matches #"^([a-zA-Z]+) (:[a-zA-Z]+\[[^\]]*])\s(:[a-zA-Z]+\[[^\]]*\])$" "mov :a[55] :d[66]"))
+(defn macro-expand-code [code macros]
+  (->> (mapcat (partial macro-expand-line macros) code)))
 
-         (parse-line-of-code "mov :a :b")
-         (parse-line-of-code "mov :a 55")
-         (parse-line-of-code "inc :a")
-         (parse-line-of-code "inc :a[2]")
-         (parse-line-of-code "inc :a[20]")
-         (parse-line-of-code "end")
-         (parse-line-of-code "foo:")
-         (parse-line-of-code "rep 20")
-         (parse-line-of-code "mov :a -.56")
-         (parse-line-of-code "mov :a 'foo'")
-         (parse-line-of-code "mov :a `foo`")
-         (parse-line-of-code "mov :a `foo 'bar' quax`")
-         (parse-line-of-code "mov :a -5.56")
-         (parse-line-of-code "call foo")
-         (parse-line-of-code "mov :a [1 2 [3 4] 5]")
-         (parse-line-of-code "mov :a[2] :b")
-         (parse-line-of-code "mov :a[:v] :b[:d]")
-         (parse-line-of-code "mov :a[:vv] :b[:dd]")
-         (parse-line-of-code "mov :a[2] :b[2]")
-         (parse-line-of-code "mov :a[:d] :b[0]")
-         (parse-line-of-code "inc :a[2]")
-         (parse-line-of-code "jnz :a 5"))
+(defn parse-data-entry [data]
+  (let [[_ reg value] (re-find #"^(\w+) (.+)" data)]
+    [(keyword reg) (format-element value)]))
+
+(defn prepare-source [asm]
+  (->> (str/split-lines asm)
+       (map #(str/trimr (str/triml %)))
+       (map scrub-comments)
+       (remove #(= "" %))
+       (remove #(str/starts-with? % ";"))))
+
+(defn get-blocks [source]
+  (let [blocks (->> source
+                    (partition-by (fn [item] (str/starts-with? item ".")))
+                    (partition 2))]
+    (zipmap (map #(-> % ffirst (subs 1) keyword) blocks)
+            (map second blocks))))
+
+(defn parse [asm]
+  (let [source (prepare-source asm)
+        parse-errors (vdt/validate source)]
+    (if (= "" parse-errors)
+      (let [{:keys [code macros data]} (get-blocks source)
+            parsed-code (->> (macro-expand-code code macros)
+                             (mapv parse-line-of-code))
+            symbol-table (build-symbol-table parsed-code)]
+        {:code parsed-code
+         :data (mapv parse-data-entry data)
+         :errors ""
+         :symbol-table symbol-table})
+      {:code []
+       :data []
+       :errors parse-errors})))
