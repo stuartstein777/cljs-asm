@@ -181,6 +181,7 @@ reagent function::          code
 .register {
     font-weight: bold;
     text-align: left;
+    margin-left: 8px;
     min-width: 30px;
 }
 
@@ -189,8 +190,9 @@ reagent function::          code
     border-right: 1px solid black dashed;
     color: blueviolet;
     font-weight: normal;
-    text-align: left;
+    margin-left: 8px;
     min-width: 30px;
+    text-align: left;
 }
 
 /*

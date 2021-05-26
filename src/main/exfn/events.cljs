@@ -1,7 +1,6 @@
 (ns exfn.events
   (:require [exfn.parser :refer [parse]]
             [re-frame.core :as rf]
-            [day8.re-frame.tracing :refer-macros [fn-traced]]
             [exfn.interpreter :as interp]
             [clojure.set :as set]))
 
@@ -66,7 +65,6 @@
 start:
    cmp :ctr :tgt
    jg finish
-   inc ctr:
    print-nth(:b, :ctr)
    next-fib(:a, :b)
    restart(:ctr)
@@ -301,6 +299,7 @@ setordinal:
          register (second (nth (db :code) (dec eip)))]
      {:db (-> db
               (update-in [:memory :registers] assoc register (parse-input (db :input)))
+              (assoc-in [:memory :output] (str (-> db :memory :output) " " (db :input)))
               (assoc :input "")
               (assoc :waiting-on-input? false)
               (assoc :running? true))
@@ -334,11 +333,6 @@ setordinal:
  (fn [db [_ reg]]
    (-> db
        (update :expanded-registers clojure.set/difference #{reg}))))
-
-#_(rf/reg-event-db
- :add-value-to-stack
- (fn [db [_ v]]
-   (update-in db [:memory :stack] conj v)))
 
 (rf/reg-fx
  :pause
@@ -456,6 +450,12 @@ setordinal:
  :reset-eip
  (fn [db _]
    (assoc-in db [:memory :eip] 0)))
+
+
+(rf/reg-event-db
+   :add-value-to-stack
+   (fn [db [_ v]]
+     (update-in db [:memory :stack] conj v)))
 
 (rf/reg-event-db
  :test-code
