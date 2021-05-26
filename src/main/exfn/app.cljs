@@ -55,6 +55,12 @@
       {:readOnly true
        :value errors
        :wrap      :off}]]))
+
+(defn array-index [{:keys [:array-index :register]}]
+  
+  )
+
+
 ;; Display the parsed code.
 (defn code []
   (let [code            @(rf/subscribe [:code])
@@ -62,6 +68,7 @@
         code-with-lines (mapv (fn [n l] [n l]) (iterate inc 1) code)
         eip             @(rf/subscribe [:eip])
         on-breakpoint?  @(rf/subscribe [:on-breakpoint])]
+    (js/console.log code)
     [:div.parsed-code-container
      [:div.parsed-code-header.header
       [:div
@@ -99,9 +106,24 @@
              [:label.instruction (first code-line)]
              (let [arguments (rest code-line)]
                (for [i (h/keyed-collection arguments)]
-                 (if (keyword? (val i))
-                   [:label.register {:key (key i)} (val i)]
-                   [:label.value {:key (key i)} (val i)])))]]])]]]
+                 (let [arg (val i)]
+                   (js/console.log arg)
+                   (cond
+                     ;; keyword, so its a register
+                     (keyword? arg)
+                     [:label.register {:key (key i)} (val i)]
+
+                     ;; seq, so its an array
+                     (seq? arg)
+                     [:label.value (str arg)]
+
+                     ;; map so its a register, with an array
+                     (map? arg)
+                     [:label.value "foo"]
+
+                     ;; otherwise just treat it as a value.
+                     :else
+                     [:label.value {:key (key i)} (val i)]))))]]])]]]
      [:div.breakpoint-indicator
       {:style {:visibility (if on-breakpoint? :visible :hidden)}}
       [:label (str "Breakpoint hit. Line: " eip)]]]))

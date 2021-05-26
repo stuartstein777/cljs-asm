@@ -43,17 +43,49 @@
        (format-line)
        (vec)))
 
-;; ==============================================================================================
-;; Get rid of all comments, this can be either a line that starts with a ; or a line with a
-;; trailing comment, e.g.
-;;
-;; mov :a :b ; this is a comment.
-;; ==============================================================================================
 (defn scrub-comments [s]
-  (if (and (not (str/starts-with? s "msg"))
-           (str/includes? s ";"))
-    (str/trimr (subs s 0 (str/index-of s ";")))
-    s))
+  (let [comment-start-loc
+        (->> s
+             (reduce (fn [{:keys [open opened found-semi idx]
+                           :as   acc} i]
+                       (cond
+              ; hit a ` and we are not in an open string and we haven't already found a ;
+                         (and (= i \`) (not open) (not found-semi))
+                         (-> acc
+                             (assoc :open true)
+                             (assoc :opened \`)
+                             (update :idx inc))
+              ; hit a ` and we are in an open string, that was opened by a backtick.
+                         (and (= i \`) open (= opened \`))
+                         (-> acc
+                             (assoc :open false)
+                             (dissoc :opened)
+                             (update :idx inc))
+              ; hit a ' and we are not in an open string, and we haven't already found a ;, so open it.
+                         (and (= i \') (not open))
+                         (-> acc
+                             (assoc :open true)
+                             (assoc :opened \')
+                             (update :idx inc))
+              ; hit a ` and we are in an open string, that was opened by a '.
+                         (and (= i \') open (= opened \'))
+                         (-> acc
+                             (assoc :open false)
+                             (dissoc :opened)
+                             (update :idx inc))
+              ; hit a ; and we are not in an open string, so note it's position, and also we haven't already hit a ;
+                         (and (= i \;) (not open) (not found-semi))
+                         (-> acc
+                             (assoc :found-semi idx))
+                         
+                         :else
+                         (update acc :idx inc)))
+                     {:open false
+                      :idx  0})
+             :found-semi)]
+    (if comment-start-loc
+      (str/trim (subs s 0 comment-start-loc))
+      s)))
 
 ;; ==============================================================================================
 ;; Get all the macros from the macro section.
@@ -228,6 +260,13 @@
        (remove #(= "" %))
        (remove #(str/starts-with? % ";"))))
 
+(defn get-blocks [source]
+  (let [blocks (->> source
+                    (partition-by (fn [item] (str/starts-with? item ".")))
+                    (partition 2))]
+    (zipmap (map #(-> % ffirst (subs 1) keyword) blocks)
+            (map second blocks))))
+
 ;; This has to return either the parsed code or the errors from parsing.
 (defn parse [asm]
   (let [source (prepare-source asm)
@@ -246,10 +285,3 @@
       {:code []
        :data []
        :errors parse-errors})))
-
-(parse ".code
-          mov :a 5
-          mov :b 6
-          add :a :b
-          prn :a
-          end")
