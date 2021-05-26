@@ -142,9 +142,17 @@
 
 (deftest scrubbing-comments-tests
   (is (= "inc a" (scrub-comments "inc a   ; some comment")))
+  (is (= "inc a" (scrub-comments "inc a; some comment")))
   (is (= "" (scrub-comments "; full line comment")))
-  (testing "we don't scrub comments from msg fields"
-    (is (= "msg '(5+1)/2 = ' a ; another comment." (scrub-comments "msg '(5+1)/2 = ' a ; another comment.")))))
+  (is (= "" (scrub-comments ";` full line comment `")))
+  (is (= "" (scrub-comments ";' `full` line comment'")))
+  (testing "we dont scrub comments from inside strings"
+    (is (= "mov :a `foobar;quax`" (scrub-comments "mov :a `foobar;quax`")))
+    (is (= "mov :a `foobar'';quax`" (scrub-comments "mov :a `foobar'';quax`")))
+    (is (= "mov :a `foobar;quax`" (scrub-comments "mov :a `foobar;quax` ;blach blah `` blah ")))
+    (is (= "mov :a 'foo`bar`;quax'" (scrub-comments "mov :a 'foo`bar`;quax'  ;scrub this")))
+    (is (= "mov :a" (scrub-comments "mov :a ;'foo`bar`;quax'"))))
+  )
 
 (deftest get-macro-tests
   (let [prepared-source (list ".macros"

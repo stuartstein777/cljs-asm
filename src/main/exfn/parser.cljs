@@ -162,13 +162,39 @@
 ;; Get rid of all comments, this can be either a line that starts with a ; or a line with a
 ;; trailing comment, e.g.
 ;;
-;; mov :a :b ; this is a comment.
+;; Dont scrub comments inside strings. e.g.
+;; mov :a `foo bar ; quax ` should remain untouched.
 ;; ==============================================================================================
 (defn scrub-comments [s]
-  (if (and (not (str/starts-with? s "msg"))
-           (str/includes? s ";"))
-    (str/trimr (subs s 0 (str/index-of s ";")))
-    s))
+  (let [comment-start-loc
+        (->> s
+             (reduce (fn [{:keys [opened found-semi idx] :as acc} i]
+                       (cond            
+                         ; opening a string.
+                         (and (or (= i \`) (= i \')) (not opened) (not found-semi))
+                         (-> acc
+                             (assoc :opened i)
+                             (update :idx inc))
+              
+                         ; closing a string
+                         (or (= i opened \') (= i opened \`))
+                         (-> acc
+                             (dissoc :opened)
+                             (update :idx inc))
+              
+                         ; hit a ; and we are not in an open string, so note it's position,
+                         ; and also we haven't already hit a ;
+                         (and (= i \;) (not opened) (not found-semi))
+                         (-> acc
+                             (assoc :found-semi idx))
+                         
+                         :else
+                         (update acc :idx inc)))
+                     {:idx 0})
+             :found-semi)]
+    (if comment-start-loc
+      (-> (subs s 0 comment-start-loc) str/trim)
+      s)))
 
 ;; ==============================================================================================
 ;; Get all the macros from the macro section.
