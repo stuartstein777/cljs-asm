@@ -98,10 +98,10 @@
             [:span
              [:label.instruction (first code-line)]
              (let [arguments (rest code-line)]
-               (for [i (h/keyed-collection arguments)]
-                 (if (keyword? (val i))
-                   [:label.register {:key (key i)} (val i)]
-                   [:label.value {:key (key i)} (val i)])))]]])]]]
+               (for [[k i] (h/keyed-collection arguments)]
+                 (if (keyword? i)
+                   [:label.register {:key k} i]
+                   [:label.value {:key k} i])))]]])]]]
      [:div.breakpoint-indicator
       {:style {:visibility (if on-breakpoint? :visible :hidden)}}
       [:label (str "Breakpoint hit. Line: " eip)]]]))

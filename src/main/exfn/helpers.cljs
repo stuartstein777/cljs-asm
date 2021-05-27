@@ -19,7 +19,7 @@
                           (map str/trim)))))
 
 (defn keyed-collection [col]
-  (zipmap (iterate inc 0) col))
+  (map vector (iterate inc 0) col))
 
 (defn- deep-merge-with
   "
