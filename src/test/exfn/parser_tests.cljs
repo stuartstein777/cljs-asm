@@ -214,20 +214,6 @@
        (macro-expand-line {"square-and-sum" ["mul %1 %1" "mul %2 %2" "add %1 %2"], "add-ten" ["add %1 10"]}
                           "mov :a 5"))))
 
-(comment "If the line is a macro, expand it, otherwise just return the line (as a list) as we
-          use mapcat to concatenat all the results from macro-expand-line"
-         (macro-expand-line {"square-and-sum" ["mul %1 %1" "mul %2 %2" "add %1 %2"], "add-ten" ["add %1 10"]}
-                            "square-and-sum(:a, :b)")
-         (macro-expand-line {"square-and-sum" ["mul %1 %1" "mul %2 %2" "add %1 %2"], "add-ten" ["add %1 10"]}
-                            "mov :a 5"))
-
-(comment "If the line is a macro, expand it, otherwise just return the line (as a list) as we
-          use mapcat to concatenat all the results from macro-expand-line"
-         (macro-expand-line {"square-and-sum" ["mul %1 %1" "mul %2 %2" "add %1 %2"], "add-ten" ["add %1 10"]}
-                            "square-and-sum(:a, :b)")
-         (macro-expand-line {"square-and-sum" ["mul %1 %1" "mul %2 %2" "add %1 %2"], "add-ten" ["add %1 10"]}
-                            "mov :a 5"))
-
 (deftest get-code-tests
   (let [prepared-source (list ".macros"
                               "%square-and-sum"

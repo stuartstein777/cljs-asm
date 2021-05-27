@@ -1,7 +1,6 @@
 (ns exfn.app
   (:require
    [reagent.dom :as dom]
-   [reagent.core :as r]
    [re-frame-flow.core :as re-flow]
    [exfn.subs]
    [exfn.events]
@@ -50,11 +49,16 @@
 (defn parse-errors []
   (let [errors @(rf/subscribe [:parse-errors])]
     [:div.parsed-code-container
-     [header-with-clear :clear-parse-errors "Parse Errors"]
+     [:div.parsed-code-header.header
+      [:div {:style {:text-align   :left
+                     :padding-left 5
+                     :padding-top 3}}
+       "Errors"]]
      [:textarea#errors.parse-errors
       {:readOnly true
        :value errors
        :wrap      :off}]]))
+
 ;; Display the parsed code.
 (defn code []
   (let [code            @(rf/subscribe [:code])
@@ -268,14 +272,21 @@
                :on-change #(rf/dispatch [:update-input (-> % .-target .-value)])
                :style {:margin-left 5
                        :height 23
-                       :width 220
+                       :width 180
                        :margin-right 5}             
                :value input}]
       [:button.btn.btn-success.py-0
       {:disabled (not waiting-on-input?)
-       :on-click #(rf/dispatch [:enter-input])
-       :style {:font-size "0.7em"}} 
-       "OK"]]]))
+       :on-click #(rf/dispatch [:enter-input :continue])
+       :style {:font-size "0.7em"
+               :margin-left "5px"
+               :margin-right "5px"}} 
+       [:i.fas.fa-play]]
+      [:button.btn.btn-success.py-0
+       {:disabled (not waiting-on-input?)
+        :on-click #(rf/dispatch [:enter-input :next])
+        :style {:font-size "0.7em"}}
+       [:i.fas.fa-forward]]]]))
 
 ;; -- App ---------------------------------------------------------------------------
 (defn app []
