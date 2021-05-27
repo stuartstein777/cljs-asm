@@ -15,7 +15,7 @@
 (def matchers-and-formatters
   [[#"^:\w+$"                                (fn [a]           (keyword (subs a 1)))]
    [#"^(:\w+)\[(\d+|:\w+)?\]"                (fn [[_ reg idx]] {:register reg :index idx})]
-   [#"^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$" (fn [[_ n]]       (js/Number n))]
+   [#"^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$" (fn [[n _]]       (js/Number n))]
    [#"^('.+')$"                              (fn [[el _]]      (subs el 1 (dec (count el))))]
    [#"^(`.+`)$"                              (fn [[el _]]      (subs el 1 (dec (count el))))]
    [#"\w+"                                    keyword]])
@@ -43,48 +43,42 @@
        (format-line)
        (vec)))
 
+;; ==============================================================================================
+;; Get rid of all comments, this can be either a line that starts with a ; or a line with a
+;; trailing comment, e.g.
+;;
+;; Dont scrub comments inside strings. e.g.
+;; mov :a `foo bar ; quax ` should remain untouched.
+;; ==============================================================================================
 (defn scrub-comments [s]
   (let [comment-start-loc
         (->> s
-             (reduce (fn [{:keys [open opened found-semi idx]
-                           :as   acc} i]
-                       (cond
-              ; hit a ` and we are not in an open string and we haven't already found a ;
-                         (and (= i \`) (not open) (not found-semi))
+             (reduce (fn [{:keys [opened found-semi idx] :as acc} i]
+                       (cond            
+                         ; opening a string.
+                         (and (or (= i \`) (= i \')) (not opened) (not found-semi))
                          (-> acc
-                             (assoc :open true)
-                             (assoc :opened \`)
+                             (assoc :opened i)
                              (update :idx inc))
-              ; hit a ` and we are in an open string, that was opened by a backtick.
-                         (and (= i \`) open (= opened \`))
+              
+                         ; closing a string
+                         (or (= i opened \') (= i opened \`))
                          (-> acc
-                             (assoc :open false)
                              (dissoc :opened)
                              (update :idx inc))
-              ; hit a ' and we are not in an open string, and we haven't already found a ;, so open it.
-                         (and (= i \') (not open))
-                         (-> acc
-                             (assoc :open true)
-                             (assoc :opened \')
-                             (update :idx inc))
-              ; hit a ` and we are in an open string, that was opened by a '.
-                         (and (= i \') open (= opened \'))
-                         (-> acc
-                             (assoc :open false)
-                             (dissoc :opened)
-                             (update :idx inc))
-              ; hit a ; and we are not in an open string, so note it's position, and also we haven't already hit a ;
-                         (and (= i \;) (not open) (not found-semi))
+              
+                         ; hit a ; and we are not in an open string, so note it's position,
+                         ; and also we haven't already hit a ;
+                         (and (= i \;) (not opened) (not found-semi))
                          (-> acc
                              (assoc :found-semi idx))
                          
                          :else
                          (update acc :idx inc)))
-                     {:open false
-                      :idx  0})
+                     {:idx 0})
              :found-semi)]
     (if comment-start-loc
-      (str/trim (subs s 0 comment-start-loc))
+      (-> (subs s 0 comment-start-loc) str/trim)
       s)))
 
 ;; ==============================================================================================

@@ -5,7 +5,7 @@
 (def matchers-and-formatters
   [[#"^:\w+"                                (fn [a] {:original a :formatted (keyword (subs a 1))})]
    [#"^(:\w+)\[(\d+|:\w+)?\]"               (fn [[_ reg idx]] {:original (str reg idx) :formatted {:register reg :index idx}})]
-   [#"^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)" (fn [[_ n]]  {:original n :formatted (js/Number n)})]
+   [#"^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)" (fn [[n _]]  {:original n :formatted (js/Number n)})]
    [#"^(['`])(?:(?=(\\?))\2.)*?\1"         (fn [[el _]] {:original el :formatted (subs el 1 (dec (count el)))})]
    [#"^\[(.*?)\]" (fn [[o a]] {:original o :formatted a :array true})]])
 
@@ -17,6 +17,7 @@
 (defn format-array 
   ([arr] (format-array arr []))
   ([arr items]
+   (prn arr)
    (if (= "" arr)
      (remove nil? items)
      (let [{:keys [original formatted array]} (format-element arr)]

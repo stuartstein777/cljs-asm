@@ -141,9 +141,17 @@
 
 (deftest scrubbing-comments-tests
   (is (= "inc a" (scrub-comments "inc a   ; some comment")))
+  (is (= "inc a" (scrub-comments "inc a; some comment")))
   (is (= "" (scrub-comments "; full line comment")))
-  (testing "we don't scrub comments from msg fields"
-    (is (= "msg '(5+1)/2 = ' a ; another comment." (scrub-comments "msg '(5+1)/2 = ' a ; another comment.")))))
+  (is (= "" (scrub-comments ";` full line comment `")))
+  (is (= "" (scrub-comments ";' `full` line comment'")))
+  (testing "we dont scrub comments from inside strings"
+    (is (= "mov :a `foobar;quax`" (scrub-comments "mov :a `foobar;quax`")))
+    (is (= "mov :a `foobar'';quax`" (scrub-comments "mov :a `foobar'';quax`")))
+    (is (= "mov :a `foobar;quax`" (scrub-comments "mov :a `foobar;quax` ;blach blah `` blah ")))
+    (is (= "mov :a 'foo`bar`;quax'" (scrub-comments "mov :a 'foo`bar`;quax'  ;scrub this")))
+    (is (= "mov :a" (scrub-comments "mov :a ;'foo`bar`;quax'"))))
+  )
 
 (deftest get-macro-tests
   (let [prepared-source (list ".macros"
@@ -173,20 +181,6 @@
   (is (= '("mov :a 5")
        (macro-expand-line {"square-and-sum" ["mul %1 %1" "mul %2 %2" "add %1 %2"], "add-ten" ["add %1 10"]}
                           "mov :a 5"))))
-
-(comment "If the line is a macro, expand it, otherwise just return the line (as a list) as we
-          use mapcat to concatenat all the results from macro-expand-line"
-         (macro-expand-line {"square-and-sum" ["mul %1 %1" "mul %2 %2" "add %1 %2"], "add-ten" ["add %1 10"]}
-                            "square-and-sum(:a, :b)")
-         (macro-expand-line {"square-and-sum" ["mul %1 %1" "mul %2 %2" "add %1 %2"], "add-ten" ["add %1 10"]}
-                            "mov :a 5"))
-
-(comment "If the line is a macro, expand it, otherwise just return the line (as a list) as we
-          use mapcat to concatenat all the results from macro-expand-line"
-         (macro-expand-line {"square-and-sum" ["mul %1 %1" "mul %2 %2" "add %1 %2"], "add-ten" ["add %1 10"]}
-                            "square-and-sum(:a, :b)")
-         (macro-expand-line {"square-and-sum" ["mul %1 %1" "mul %2 %2" "add %1 %2"], "add-ten" ["add %1 10"]}
-                            "mov :a 5"))
 
 (deftest get-code-tests
   (let [prepared-source (list ".macros"

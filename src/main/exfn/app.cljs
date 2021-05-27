@@ -1,7 +1,6 @@
 (ns exfn.app
   (:require
    [reagent.dom :as dom]
-   [reagent.core :as r]
    [re-frame-flow.core :as re-flow]
    [exfn.subs]
    [exfn.events]
@@ -50,16 +49,15 @@
 (defn parse-errors []
   (let [errors @(rf/subscribe [:parse-errors])]
     [:div.parsed-code-container
-     [header-with-clear :clear-parse-errors "Parse Errors"]
+     [:div.parsed-code-header.header
+      [:div {:style {:text-align   :left
+                     :padding-left 5
+                     :padding-top 3}}
+       "Errors"]]
      [:textarea#errors.parse-errors
       {:readOnly true
        :value errors
        :wrap      :off}]]))
-
-(defn array-index [{:keys [:array-index :register]}]
-  
-  )
-
 
 ;; Display the parsed code.
 (defn code []
@@ -68,7 +66,6 @@
         code-with-lines (mapv (fn [n l] [n l]) (iterate inc 1) code)
         eip             @(rf/subscribe [:eip])
         on-breakpoint?  @(rf/subscribe [:on-breakpoint])]
-    (js/console.log code)
     [:div.parsed-code-container
      [:div.parsed-code-header.header
       [:div
@@ -83,9 +80,9 @@
         [:button.btn.btn-danger.btn.py-0
          {:on-click #(rf/dispatch [:clear-parsed])
           :style    {:font-size    "0.8em"
-                    :float        :right
-                    :margin-top   5
-                    :margin-right 5}}
+                     :float        :right
+                     :margin-top   5
+                     :margin-right 5}}
          "clear"]]]]
      [:div#code-container.code-container
       [:table#code.code
@@ -100,30 +97,15 @@
             [:i.fas.fa-angle-double-right
              {:style {:visibility (if (= eip line-no) :visible :hidden)}}]]
            [:td.line-numbers [:div {:style {:height 20}}
-                             line-no]]
+                              line-no]]
            [:td
             [:span
              [:label.instruction (first code-line)]
              (let [arguments (rest code-line)]
-               (for [i (h/keyed-collection arguments)]
-                 (let [arg (val i)]
-                   (js/console.log arg)
-                   (cond
-                     ;; keyword, so its a register
-                     (keyword? arg)
-                     [:label.register {:key (key i)} (val i)]
-
-                     ;; seq, so its an array
-                     (seq? arg)
-                     [:label.value (str arg)]
-
-                     ;; map so its a register, with an array
-                     (map? arg)
-                     [:label.value "foo"]
-
-                     ;; otherwise just treat it as a value.
-                     :else
-                     [:label.value {:key (key i)} (val i)]))))]]])]]]
+               (for [[k i] (h/keyed-collection arguments)]
+                 (if (keyword? i)
+                   [:label.register {:key k} i]
+                   [:label.value {:key k} i])))]]])]]]
      [:div.breakpoint-indicator
       {:style {:visibility (if on-breakpoint? :visible :hidden)}}
       [:label (str "Breakpoint hit. Line: " eip)]]]))
@@ -191,8 +173,7 @@
       [:label (let [shortened (subs s 0 55)]
                 (if (> (count s) (count shortened))
                   (str shortened "...")
-                  shortened
-                  ))]
+                  shortened))]
       [:i.fas.fa-expand.expandable-expand-icon
        {:on-click #(rf/dispatch [:add-expanded-reg name])}]])])
 
@@ -290,14 +271,21 @@
                :on-change #(rf/dispatch [:update-input (-> % .-target .-value)])
                :style {:margin-left 5
                        :height 23
-                       :width 220
-                       :margin-right 5}             
+                       :width 180
+                       :margin-right 5}
                :value input}]
       [:button.btn.btn-success.py-0
-      {:disabled (not waiting-on-input?)
-       :on-click #(rf/dispatch [:enter-input])
-       :style {:font-size "0.7em"}} 
-       "OK"]]]))
+       {:disabled (not waiting-on-input?)
+        :on-click #(rf/dispatch [:enter-input :continue])
+        :style {:font-size "0.7em"
+                :margin-left "5px"
+                :margin-right "5px"}}
+       [:i.fas.fa-play]]
+      [:button.btn.btn-success.py-0
+       {:disabled (not waiting-on-input?)
+        :on-click #(rf/dispatch [:enter-input :next])
+        :style {:font-size "0.7em"}}
+       [:i.fas.fa-forward]]]]))
 
 ;; -- App ---------------------------------------------------------------------------
 (defn app []
@@ -307,7 +295,7 @@
       [:div.col.col-lg-4
        [code-editor]]
       [:div.col.col-lg-5
-       (if parse-errors? 
+       (if parse-errors?
          [parse-errors]
          [code])]
       [:div.col.col-lg-3
@@ -334,7 +322,7 @@
 (comment (rf/dispatch-sync [:reset-eip]))
 (comment (rf/dispatch-sync [:toggle-parse-errors]))
 
-(comment 
+(comment
   (let [registers [[:a 1] [:b 2] [:c 3] [:d 4] [:e 5] [:f 6]]]
     ((doseq [r registers]
        (rf/dispatch-sync [:add-value-to-registers r])))))

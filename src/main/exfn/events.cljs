@@ -294,17 +294,26 @@ setordinal:
 ;; add the input to the register for the current inp instruction
 (rf/reg-event-fx
  :enter-input
- (fn [{:keys [db]} _]
+ (fn [{:keys [db]} [_ continue-method]]
    (let [eip (-> db :memory :eip)
          register (second (nth (db :code) (dec eip)))]
-     {:db (-> db
-              (update-in [:memory :registers] assoc register (parse-input (db :input)))
-              (assoc-in [:memory :output] (str (-> db :memory :output) " " (db :input)))
-              (assoc :input "")
-              (assoc :waiting-on-input? false)
-              (assoc :running? true))
-      :toggle-running [true (db :ticker-handle) (db :running-speed)]
-      :scroll-output-to-end nil})))
+     (if (= continue-method :continue)
+       {:db (-> db
+                (update-in [:memory :registers] assoc register (parse-input (db :input)))
+                (assoc-in [:memory :output] (str (-> db :memory :output) " " (db :input)))
+                (assoc :input "")
+                (assoc :waiting-on-input? false)
+                (assoc :running? true))
+        :toggle-running [true (db :ticker-handle) (db :running-speed)]
+        :scroll-output-to-end nil}
+       {:db (-> db
+                (update-in [:memory :registers] assoc register (parse-input (db :input)))
+                (update-in [:memory :eip] inc)
+                (assoc-in [:memory :output] (str (-> db :memory :output) " " (db :input)))
+                (assoc :input "")
+                (assoc :waiting-on-input? false)
+                (assoc :running? false))
+        :scroll-output-to-end nil}))))
 
 (rf/reg-event-db
  :update-input
